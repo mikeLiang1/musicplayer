@@ -11,13 +11,7 @@ sealed interface Route : NavKey {
         data object Home : Route
 
         @Serializable
-        data object SearchRoutes : Route {
-            @Serializable
-            data object OverView : Route
-
-            @Serializable
-            data object Test : Route
-        }
+        data object SearchRoutes : Route
 
         @Serializable
         data object Profile : Route
@@ -32,8 +26,4 @@ val dashboardAllRoutes = setOf(
     Route.DashboardRoutes.SearchRoutes
 )
 
-val searchTopLevel = setOf(
-    Route.DashboardRoutes.SearchRoutes.OverView,
-    Route.DashboardRoutes.SearchRoutes.Test
-)
 

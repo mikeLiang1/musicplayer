@@ -17,7 +17,8 @@ import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
 import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
-import org.example.project.features.search.navigation.SearchNavigation
+import org.example.project.features.home.ui.HomeScreen
+import org.example.project.features.search.ui.SearchScreen
 
 @Composable
 fun DashboardNavigation() {
@@ -43,13 +44,10 @@ fun DashboardNavigation() {
     ) { innerPadding ->
         val entryProvider = entryProvider<NavKey> {
             entry<Route.DashboardRoutes.Home> {
-                Text("Home")
-                Button(onClick = {navigator.navigate(Route.DashboardRoutes.SearchRoutes)}) {
-                    Text("Hi")
-                }
+                HomeScreen()
             }
             entry<Route.DashboardRoutes.Profile> { Text("Profile") }
-            entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
+            entry<Route.DashboardRoutes.SearchRoutes> { SearchScreen() }
         }
 
         NavDisplay(

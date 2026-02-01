@@ -10,7 +10,12 @@ class YouTubeRepository {
     suspend fun searchSongs(query: String): List<Song> {
         return withContext(Dispatchers.IO) {
 
-            val searchResult = ExtractorHelper.searchFor(serviceId = 0, searchString = query, listOf("videos"), sortFilter = "")
+            val searchResult = ExtractorHelper.searchFor(
+                serviceId = 0,
+                searchString = query,
+                listOf("music_songs"),
+                sortFilter = ""
+            )
             val videoItems = searchResult.relatedItems.filterIsInstance<StreamInfoItem>()
 
             videoItems.map { item ->
@@ -19,9 +24,15 @@ class YouTubeRepository {
                     title = item.name,
                     artist = item.uploaderName ?: "Unknown",
                     thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                    duration =(item.duration * 1000).millisToDuration()
+                    duration = (item.duration * 1000).millisToDuration()
                 )
             }
+        }
+    }
+
+    suspend fun getSearchSuggestion(query: String): List<String> {
+        return withContext(Dispatchers.IO) {
+            ExtractorHelper.suggestionsFor(0, query)
         }
     }
 

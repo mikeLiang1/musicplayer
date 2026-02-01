@@ -1,6 +1,7 @@
 package org.example.project.core.repository
 
 import com.yushosei.newpipe.extractor.NewPipe
+import com.yushosei.newpipe.extractor.Page
 import com.yushosei.newpipe.extractor.stream.StreamInfoItem
 import com.yushosei.newpipe.util.ExtractorHelper
 import kotlinx.coroutines.Dispatchers
@@ -8,16 +9,45 @@ import kotlinx.coroutines.withContext
 import org.example.project.core.model.Song
 
 class YouTubeRepository {
+
+    private var page: Page? = null
     suspend fun searchSongs(query: String): List<Song> {
         return withContext(Dispatchers.IO) {
 
             val searchResult = ExtractorHelper.searchFor(
                 serviceId = 0,
                 searchString = query,
-                listOf("music_songs"),
+                contentFilter = listOf("music_songs"),
                 sortFilter = ""
             )
+            page = searchResult.nextPage
+
             val videoItems = searchResult.relatedItems.filterIsInstance<StreamInfoItem>()
+
+            videoItems.map { item ->
+                Song(
+                    id = item.url.split("v").last(),
+                    title = item.name,
+                    artist = item.uploaderName ?: "Unknown",
+                    thumbnailUrl = item.thumbnails.firstOrNull()?.url,
+                    duration = (item.duration * 1000).millisToDuration()
+                )
+            }
+        }
+    }
+
+    suspend fun searchMoreSongs(query: String): List<Song> {
+        return withContext(Dispatchers.IO) {
+            val searchResult = ExtractorHelper.getMoreSearchItems(
+                serviceId = 0,
+                searchString = query,
+                contentFilter = listOf("music_songs"),
+                sortFilter = "",
+                page = page
+            )
+            page = searchResult.nextPage
+
+            val videoItems = searchResult.items.filterIsInstance<StreamInfoItem>()
 
             videoItems.map { item ->
                 Song(

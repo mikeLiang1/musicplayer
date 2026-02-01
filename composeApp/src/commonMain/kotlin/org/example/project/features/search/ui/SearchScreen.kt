@@ -9,6 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
@@ -36,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.example.project.core.model.Song
 
 @Composable
@@ -60,7 +64,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
 //        }
 //    }
 
-    BackHandler { searchViewModel.onBackPressed() }
+    BackHandler(enabled = !state.onSearchScreen) { searchViewModel.onBackPressed() }
 
     val focusManager = LocalFocusManager.current
 
@@ -79,6 +83,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
+            .padding(top = 16.dp)
     ) {
         // Search Bar
         TextField(
@@ -101,6 +106,23 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             }
         )
 
+        val listState = rememberLazyListState()
+
+        // PAGINATION LOGIC OUTSIDE AnimatedContent
+        LaunchedEffect(listState) {
+            snapshotFlow {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                lastVisibleItem != null &&
+                        lastVisibleItem.index >= listState.layoutInfo.totalItemsCount - 5
+            }
+                .distinctUntilChanged()
+                .collect { shouldLoadMore ->
+                    if (shouldLoadMore && !state.isLoadingMore && !state.onSearchScreen) {
+                        searchViewModel.searchMoreSongs()
+                    }
+                }
+        }
+
         // Results List
         AnimatedContent(
             targetState = state.onSearchScreen,
@@ -109,10 +131,29 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             }
         ) { onSearchScreen ->
             LazyColumn(
+                state= listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 16.dp)
+                contentPadding = PaddingValues(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (!onSearchScreen) {
+                if (onSearchScreen) {
+                    // --- SEARCH SUGGESTIONS SCREEN ---
+                    items(state.suggestions) { suggestion ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    searchViewModel.onSuggestionClicked(suggestion)
+                                    focusManager.clearFocus()
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(suggestion)
+                        }
+                    }
+
+                } else {
                     // --- RESULTS SCREEN ---
                     if (state.isLoading) {
                         item {
@@ -127,20 +168,9 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                     items(state.songList) { song ->
                         SongItem(song) { }
                     }
-                } else {
-                    // --- SEARCH SUGGESTIONS SCREEN ---
-                    items(state.suggestions) { suggestion ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    searchViewModel.onSuggestionClicked(suggestion)
-                                    focusManager.clearFocus()
-                                }
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(suggestion)
+                    if (state.isLoadingMore) {
+                        item {
+                            CircularProgressIndicator(modifier = Modifier.padding(8.dp))
                         }
                     }
                 }

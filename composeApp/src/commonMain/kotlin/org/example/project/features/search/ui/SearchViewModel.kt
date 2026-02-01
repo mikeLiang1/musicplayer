@@ -67,6 +67,18 @@ class SearchViewModel constructor(
         }
     }
 
+    fun searchMoreSongs() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isLoadingMore = true)
+            }
+            val songList = repository.searchMoreSongs(_uiState.value.searchQuery)
+            _uiState.update {
+                it.copy(songList = _uiState.value.songList + songList, isLoadingMore = false)
+            }
+        }
+    }
+
     fun onBackPressed() {
         _uiState.update {
             it.copy(songList = listOf(), onSearchScreen = true)
@@ -92,6 +104,7 @@ data class SearchUiState(
     val suggestions: List<String> = listOf(),
     val songList: List<Song> = listOf(),
     val onSearchScreen: Boolean = true,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false
 )
 

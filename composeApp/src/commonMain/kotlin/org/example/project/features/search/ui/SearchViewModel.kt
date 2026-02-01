@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
@@ -25,6 +28,10 @@ class SearchViewModel constructor(
 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _effect = MutableSharedFlow<SearchEffect>()
+    val effect: SharedFlow<SearchEffect> = _effect.asSharedFlow()
+
 
     private val searchQuery = MutableStateFlow("")
 
@@ -47,23 +54,22 @@ class SearchViewModel constructor(
         }
     }
 
-
-
     fun onSuggestionClicked(suggestion: String) {
         _uiState.update {
-            it.copy(searchQuery = suggestion)
+            it.copy(searchQuery = suggestion, onSearchScreen = false, isLoading = true)
         }
         viewModelScope.launch {
+            // TODO: Try catch
             val songList = repository.searchSongs(suggestion)
             _uiState.update {
-                it.copy(songList = songList)
+                it.copy(songList = songList, isLoading = false)
             }
         }
     }
 
     fun onBackPressed() {
         _uiState.update {
-            it.copy(songList = listOf())
+            it.copy(songList = listOf(), onSearchScreen = true)
         }
     }
 
@@ -76,10 +82,16 @@ class SearchViewModel constructor(
     }
 }
 
+sealed interface SearchEffect {
+    data object NavigateToResult: SearchEffect
+}
+
 
 data class SearchUiState(
     val searchQuery: String = "",
     val suggestions: List<String> = listOf(),
-    val songList: List<Song> = listOf()
+    val songList: List<Song> = listOf(),
+    val onSearchScreen: Boolean = true,
+    val isLoading: Boolean = false
 )
 

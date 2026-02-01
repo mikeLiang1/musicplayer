@@ -11,7 +11,10 @@ sealed interface Route : NavKey {
         data object Home : Route
 
         @Serializable
-        data object SearchRoutes : Route
+        data object SearchRoutes : Route {
+            @Serializable
+            data object Suggestions : Route
+        }
 
         @Serializable
         data object Profile : Route
@@ -24,6 +27,10 @@ val dashboardAllRoutes = setOf(
     Route.DashboardRoutes.Home,
     Route.DashboardRoutes.Profile,
     Route.DashboardRoutes.SearchRoutes
+)
+
+val searchAllRoutes = setOf(
+    Route.DashboardRoutes.SearchRoutes.Suggestions
 )
 
 

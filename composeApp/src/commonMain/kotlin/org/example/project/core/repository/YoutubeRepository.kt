@@ -1,5 +1,6 @@
 package org.example.project.core.repository
 
+import com.yushosei.newpipe.extractor.NewPipe
 import com.yushosei.newpipe.extractor.stream.StreamInfoItem
 import com.yushosei.newpipe.util.ExtractorHelper
 import kotlinx.coroutines.Dispatchers

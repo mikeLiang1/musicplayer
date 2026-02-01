@@ -6,7 +6,6 @@ import com.example.budget.ui.theme.BudgetTheme
 import org.example.project.navigation.AppNavigation
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-@Preview
 @Composable
 fun App() {
     BudgetTheme {

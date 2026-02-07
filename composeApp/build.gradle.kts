@@ -63,6 +63,11 @@ kotlin {
             implementation(libs.coil.core)
             implementation(libs.coil.network.ktor)
 
+            implementation(libs.media3.exoplayer)
+            implementation(libs.media3.session)
+            implementation(libs.media3.ui.compose)
+            implementation(libs.media3.ui.compose.material)
+
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
         }

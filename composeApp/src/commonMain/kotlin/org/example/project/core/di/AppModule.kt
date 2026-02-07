@@ -10,7 +10,7 @@ val appModule = module {
     // Repositories are usually pure Kotlin, so they stay in common
     single { YouTubeRepository() }
 
-    viewModel{ HomeViewModel(get()) }
-    viewModel{ SearchViewModel(get()) }
+    viewModel { HomeViewModel(get()) }
+    viewModel { SearchViewModel(get()) }
 
 }

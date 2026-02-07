@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.yushosei.newpipe.extractor.NewPipe
 import com.yushosei.newpipe.util.DefaultDownloaderImpl
+import org.example.project.core.di.androidModule
 import org.example.project.core.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -24,7 +25,7 @@ open class MainApplication : Application() {
 
         startKoin {
             androidContext(this@MainApplication)
-            modules(appModule)
+            modules(appModule + androidModule)
         }
     }
 }

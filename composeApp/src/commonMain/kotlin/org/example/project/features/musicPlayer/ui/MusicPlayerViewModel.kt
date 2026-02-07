@@ -1,4 +1,4 @@
-package org.example.project.features.home.ui
+package org.example.project.features.musicPlayer.ui
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -8,17 +8,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
 
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-class HomeViewModel constructor(
+class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(HomeUiState())
+    private val _uiState = MutableStateFlow(MusicPlayerUiState())
     val uiState = _uiState.asStateFlow()
 
 }
 
 
-data class HomeUiState(
+data class MusicPlayerUiState(
     val isLoading: Boolean = false,
     val searchQuery: String = "",
     val songList: List<Song> = listOf(),

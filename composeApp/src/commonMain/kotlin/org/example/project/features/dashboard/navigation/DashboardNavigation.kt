@@ -33,6 +33,7 @@ fun DashboardNavigation() {
 
     Scaffold(
         bottomBar = {
+//            MusicPayerBar()
             if (isBottomBarVisible) {
                 BottomNavigationBar(
                     navigationState = navigationState,

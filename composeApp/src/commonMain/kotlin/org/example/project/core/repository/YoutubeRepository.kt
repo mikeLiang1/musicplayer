@@ -23,7 +23,7 @@ class YouTubeRepository {
             page = searchResult.nextPage
 
             val videoItems = searchResult.relatedItems.filterIsInstance<StreamInfoItem>()
-
+            // TODO: We can also return artists ? and albums maybe
             videoItems.map { item ->
                 Song(
                     id = item.url.split("v").last(),

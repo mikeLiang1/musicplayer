@@ -69,6 +69,7 @@ kotlin {
             implementation(libs.media3.session)
             implementation(libs.media3.ui.compose)
             implementation(libs.media3.ui.compose.material)
+            implementation(libs.media3.ui)
 
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)

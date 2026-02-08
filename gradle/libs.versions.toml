@@ -1,7 +1,7 @@
 [versions]
 agp = "8.11.2"
 android-compileSdk = "36"
-android-minSdk = "24"
+android-minSdk = "26"
 android-targetSdk = "36"
 androidx-activity = "1.12.2"
 androidx-appcompat = "1.7.1"
@@ -56,6 +56,7 @@ media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", versi
 media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
 media3-ui-compose = { group = "androidx.media3", name = "media3-ui-compose", version.ref = "media3" }
 media3-ui-compose-material = { group = "androidx.media3", name = "media3-ui-compose-material3", version.ref = "media3" }
+media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 
 #Coil for images
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }

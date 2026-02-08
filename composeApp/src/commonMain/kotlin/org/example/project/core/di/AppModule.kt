@@ -11,6 +11,6 @@ val appModule = module {
     single { YouTubeRepository() }
 
     viewModel { HomeViewModel(get()) }
-    viewModel { SearchViewModel(get()) }
+    viewModel { SearchViewModel(get(), get()) }
 
 }

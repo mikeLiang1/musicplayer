@@ -15,6 +15,7 @@ import com.example.budget.navigation.Navigator
 import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
 import org.example.project.features.home.ui.HomeScreen
+import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
@@ -33,7 +34,7 @@ fun DashboardNavigation() {
 
     Scaffold(
         bottomBar = {
-//            MusicPayerBar()
+//            MusicPlayerBar()
             if (isBottomBarVisible) {
                 BottomNavigationBar(
                     navigationState = navigationState,

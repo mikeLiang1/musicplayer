@@ -11,8 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import com.yushosei.newpipe.extractor.NewPipe
-import com.yushosei.newpipe.util.DefaultDownloaderImpl
+import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.NewPipe.getDownloader
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +23,7 @@ class MainActivity : ComponentActivity() {
             var isInitialized by rememberSaveable { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
-                NewPipe.init(DefaultDownloaderImpl.initDefault())
+                NewPipe.init(getDownloader())
                 isInitialized = true
             }
 
@@ -30,6 +31,11 @@ class MainActivity : ComponentActivity() {
                 App()
             }
         }
+    }
+
+    private fun getDownloader(): DownloaderImpl {
+        return DownloaderImpl.init(null)
+
     }
 }
 

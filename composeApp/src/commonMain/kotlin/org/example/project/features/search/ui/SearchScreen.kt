@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.example.project.core.model.Song
@@ -117,7 +118,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             }
                 .distinctUntilChanged()
                 .collect { shouldLoadMore ->
-                    if (shouldLoadMore && !state.isLoadingMore && !state.onSearchScreen) {
+                    if (shouldLoadMore && !state.isLoadingMore && !state.onSearchScreen && !state.isLoading) {
                         searchViewModel.searchMoreSongs()
                     }
                 }
@@ -166,7 +167,9 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                         }
                     }
                     items(state.songList) { song ->
-                        SongItem(song) { }
+                        SongItem(song) {
+                            searchViewModel.onSongClicked(song)
+                        }
                     }
                     if (state.isLoadingMore) {
                         item {

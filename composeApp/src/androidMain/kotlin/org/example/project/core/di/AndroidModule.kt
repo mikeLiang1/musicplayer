@@ -9,11 +9,12 @@ import org.koin.dsl.module
 
 val androidModule = module {
 
+    single { ExoPlayer.Builder(androidContext()).build() }
+
     single<MusicPlayerManager> {
-        MusicPlayerManagerImpl(get(), get())
+        MusicPlayerManagerImpl(get(), get<ExoPlayer>())
     }
 
-    single { ExoPlayer.Builder(androidContext()) }
 
     // 2. GIVE IT TO THE MANAGER (Logic)
     // PlayerManager uses it to obey the user.

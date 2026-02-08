@@ -18,12 +18,14 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class SearchViewModel constructor(
-    private val repository: YouTubeRepository
+    private val repository: YouTubeRepository,
+    private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -92,6 +94,15 @@ class SearchViewModel constructor(
             it.copy(searchQuery = query)
         }
     }
+
+    fun onSongClicked(song: Song) {
+        viewModelScope.launch {
+            val streamUrl = repository.getStreamUrl(song.url)
+            if (streamUrl != null) {
+                musicPlayerManager.start(song.copy(url = streamUrl))
+            }
+        }
+    }
 }
 
 sealed interface SearchEffect {
@@ -107,4 +118,3 @@ data class SearchUiState(
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false
 )
-

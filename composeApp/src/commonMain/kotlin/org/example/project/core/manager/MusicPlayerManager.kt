@@ -1,10 +1,11 @@
 package org.example.project.core.manager
 
 import androidx.media3.common.MediaItem
+import org.example.project.core.model.Song
 
 interface MusicPlayerManager {
 
-    fun start()
+    fun start(song: Song)
 
     fun pause()
 

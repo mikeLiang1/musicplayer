@@ -13,7 +13,8 @@ composeMultiplatform = "1.9.3"
 junit = "4.13.2"
 kotlin = "2.3.0"
 koin = "4.2"
-newpipe-extractor = "1.0"
+newpipe-extractor-kmp = "1.0"
+newpipe-extractor = "v0.25.2"
 nav3Core = "1.0.0"
 lifecycleViewmodelNav3 = "2.10.0"
 serializationjson = "1.9.0"
@@ -38,7 +39,8 @@ androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecyc
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 
 # Newpipe
-newpipe-extractor = { module = "io.github.yushosei:newpipe-extractor-kmp", version.ref = "newpipe-extractor" }
+newpipe-extractor-kmp = { module = "io.github.yushosei:newpipe-extractor-kmp", version.ref = "newpipe-extractor-kmp" }
+newpipe-extractor = { module = "com.github.teamnewpipe:NewPipeExtractor", version.ref = "newpipe-extractor" }
 
 #data store
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }

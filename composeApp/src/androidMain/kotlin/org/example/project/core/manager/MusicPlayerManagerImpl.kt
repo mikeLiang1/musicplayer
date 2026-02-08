@@ -3,11 +3,14 @@ package org.example.project.core.manager
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.example.project.core.model.Song
 import org.example.project.core.service.MediaService
 
 
@@ -48,7 +51,21 @@ class MusicPlayerManagerImpl(
     }
 
 
-    override fun start() {
+    override fun start(song: Song) {
+        val metadata = MediaMetadata.Builder()
+            .setTitle(song.title)
+            .setArtist(song.artist)
+            .setArtworkUri(song.thumbnailUrl?.toUri())
+            .build()
+
+         val mediaItem = MediaItem.Builder()
+            .setMediaId(song.url)
+            .setUri(song.url)
+            .setMediaMetadata(metadata)
+            .build()
+
+        player.setMediaItem(mediaItem)
+        player.prepare()
         player.play()
     }
 

@@ -16,10 +16,9 @@ class MusicPlayerViewModel constructor(
 ) : ViewModel() {
     val uiState: StateFlow<MusicPlayerUiState> = combine(
         musicPlayerManager.isPlaying,
-        musicPlayerManager.currentPosition,
         musicPlayerManager.duration,
         musicPlayerManager.currentSong
-    ) { isPlaying, position, duration, song ->
+    ) { isPlaying, duration, song ->
         MusicPlayerUiState(
             isPlaying = isPlaying,
             duration = duration,

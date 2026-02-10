@@ -16,14 +16,20 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.example.project.core.model.Song
+import org.example.project.core.repository.PlaybackRepository
+import org.example.project.core.repository.YouTubeRepository
 import org.example.project.core.service.MediaService
 
 
 class MusicPlayerManagerImpl(
-    private val context: Context
+    private val context: Context,
+    private val playbackRepository: PlaybackRepository,
+    private val youTubeRepository: YouTubeRepository
 ) : MusicPlayerManager {
+
     private var controller: MediaController? = null
 
     private val _isPlaying = MutableStateFlow(false)
@@ -43,7 +49,9 @@ class MusicPlayerManagerImpl(
 
     init {
         initializeController()
+        grabLastState()
     }
+
 
     private fun initializeController() {
         val sessionToken = SessionToken(
@@ -91,13 +99,26 @@ class MusicPlayerManagerImpl(
         }, MoreExecutors.directExecutor())
     }
 
+    private fun grabLastState() {
+        coroutineScope.launch {
+            val lastState = playbackRepository.playbackState.first() // Get only the first emission
+            val song = lastState.song
+            val currentPosition = lastState.positionMs
+            _currentSong.value = song
+            _currentPosition.value = currentPosition
+            song?.let {
+                prepare(song = song, autoPlay = false, startPosition = currentPosition)
+            }
+        }
+    }
+
     private fun startPositionUpdates() {
         positionUpdateJob?.cancel()
 
         positionUpdateJob = coroutineScope.launch {
             while (controller?.isPlaying == true) {
                 _currentPosition.value = controller?.currentPosition ?: 0L
-                delay(500) // 200ms for smooth updates
+                delay(1000) // 200ms for smooth updates
             }
         }
     }
@@ -108,8 +129,14 @@ class MusicPlayerManagerImpl(
         _currentPosition.value = controller?.currentPosition ?: 0L
     }
 
-    override fun start(song: Song) {
+    override suspend fun prepare(song: Song, autoPlay: Boolean, startPosition: Long?) {
+
+        val streamUrl = youTubeRepository.getStreamUrl(song.url) ?: throw IllegalStateException("Failed to get stream URL")
         _currentSong.value = song
+
+            playbackRepository.saveSong(song)
+
+
         val metadata = MediaMetadata.Builder()
             .setTitle(song.title)
             .setArtist(song.artist)
@@ -117,8 +144,8 @@ class MusicPlayerManagerImpl(
             .build()
 
         val mediaItem = MediaItem.Builder()
-            .setMediaId(song.url)
-            .setUri(song.url)
+            .setMediaId(streamUrl)
+            .setUri(streamUrl)
             .setMediaMetadata(metadata)
             .build()
 
@@ -126,7 +153,12 @@ class MusicPlayerManagerImpl(
         controller?.apply {
             setMediaItem(mediaItem)
             prepare()
-            play()
+            if (startPosition != null) {
+                seekTo(startPosition)
+            }
+            if (autoPlay) {
+                play()
+            }
         }
     }
 

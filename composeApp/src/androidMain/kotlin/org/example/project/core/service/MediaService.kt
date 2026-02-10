@@ -6,9 +6,14 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import kotlinx.coroutines.runBlocking
+import org.example.project.core.repository.PlaybackRepository
+import org.koin.android.ext.android.inject
 
 class MediaService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
+
+    private val playbackRepository by inject<PlaybackRepository>()
 
     override fun onCreate() {
         super.onCreate()
@@ -23,6 +28,8 @@ class MediaService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
         pauseAllPlayersAndStopSelf()
+        runBlocking { playbackRepository.savePosition(mediaSession?.player?.currentPosition) }
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onDestroy() {
@@ -33,5 +40,6 @@ class MediaService : MediaSessionService() {
         }
         super.onDestroy()
     }
+
 
 }

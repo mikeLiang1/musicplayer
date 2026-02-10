@@ -11,11 +11,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
@@ -97,16 +95,13 @@ class SearchViewModel constructor(
 
     fun onSongClicked(song: Song) {
         viewModelScope.launch {
-            val streamUrl = repository.getStreamUrl(song.url)
-            if (streamUrl != null) {
-                musicPlayerManager.start(song.copy(url = streamUrl))
-            }
+            musicPlayerManager.prepare(song, autoPlay = true)
         }
     }
 }
 
 sealed interface SearchEffect {
-    data object NavigateToResult: SearchEffect
+    data object NavigateToResult : SearchEffect
 }
 
 

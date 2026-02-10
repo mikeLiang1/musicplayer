@@ -30,7 +30,6 @@ val dashboardAllRoutes = setOf(
     Route.DashboardRoutes.Home,
     Route.DashboardRoutes.Profile,
     Route.DashboardRoutes.SearchRoutes,
-    Route.MusicPlayerRoute
 )
 
 val searchAllRoutes = setOf(

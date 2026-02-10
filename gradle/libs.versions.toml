@@ -24,6 +24,8 @@ ktor = "3.4.0"
 media3 = "1.9.1"
 coil = "3.3.0"
 koin-bom = "4.1.1"
+datastoreCore = "1.2.0"
+datastorePreferencesCore = "1.2.0"
 
 
 [libraries]
@@ -43,7 +45,8 @@ newpipe-extractor-kmp = { module = "io.github.yushosei:newpipe-extractor-kmp", v
 newpipe-extractor = { module = "com.github.teamnewpipe:NewPipeExtractor", version.ref = "newpipe-extractor" }
 
 #data store
-androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastoreCore" }
+datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastorePreferencesCore" }
 
 # Ktor (Networking)
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

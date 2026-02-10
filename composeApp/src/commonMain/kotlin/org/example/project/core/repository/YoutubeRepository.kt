@@ -93,7 +93,7 @@ class YouTubeRepository {
                 .maxByOrNull { it.bitrate }
                 ?: extractor.audioStreams.firstOrNull()
 
-            bestAudio?.url
+            bestAudio?.content
         }
     }
     private fun Long.millisToDuration(): String {

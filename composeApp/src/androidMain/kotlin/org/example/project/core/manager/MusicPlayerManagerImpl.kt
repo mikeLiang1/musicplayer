@@ -26,7 +26,6 @@ class MusicPlayerManagerImpl(
 ) : MusicPlayerManager {
     private var controller: MediaController? = null
 
-
     private val _isPlaying = MutableStateFlow(false)
     override val isPlaying = _isPlaying.asStateFlow()
 

@@ -1,5 +1,6 @@
 package org.example.project.features.dashboard.navigation
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,9 +17,11 @@ import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
+import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun DashboardNavigation() {
@@ -31,15 +34,21 @@ fun DashboardNavigation() {
 
     val isBottomBarVisible = navigationState.topLevelRoute in dashboardTopLevelDestinations.keys
 
+    val musicPlayerViewModel = koinViewModel<MusicPlayerViewModel>()
+
+
+
 
     Scaffold(
         bottomBar = {
-//            MusicPlayerBar()
-            if (isBottomBarVisible) {
-                BottomNavigationBar(
-                    navigationState = navigationState,
-                    navigator = navigator
-                )
+            Column {
+                MusicPlayerBar(musicPlayerViewModel)
+                if (isBottomBarVisible) {
+                    BottomNavigationBar(
+                        navigationState = navigationState,
+                        navigator = navigator
+                    )
+                }
             }
         },
     ) { innerPadding ->

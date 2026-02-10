@@ -1,10 +1,11 @@
 package org.example.project.features.musicPlayer.ui
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
@@ -13,20 +14,49 @@ class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(MusicPlayerUiState())
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<MusicPlayerUiState> = combine(
+        musicPlayerManager.isPlaying,
+        musicPlayerManager.currentPosition,
+        musicPlayerManager.duration,
+        musicPlayerManager.currentSong
+    ) { isPlaying, position, duration, song ->
+        MusicPlayerUiState(
+            isPlaying = isPlaying,
+            duration = duration,
+            currentSong = song
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = MusicPlayerUiState()
+    )
 
-    fun onPlayPressed() {
-//        musicPlayerManager.start()
+    val currentPosition = musicPlayerManager.currentPosition
+
+    fun onPlayPauseClicked() {
+        if (uiState.value.isPlaying) musicPlayerManager.pause()
+        else musicPlayerManager.play()
+    }
+
+    fun onNextClicked() {
+
+    }
+
+    fun onPreviousClicked() {
+
+    }
+
+    fun onSeekTo(seconds: Long) {
+        musicPlayerManager.seekTo(seconds)
     }
 
 }
 
 
 data class MusicPlayerUiState(
-    val isLoading: Boolean = false,
-    val searchQuery: String = "",
-    val songList: List<Song> = listOf(),
-    val suggestions: List<String> = listOf()
+    val currentSong: Song? = null,
+    val isPlaying: Boolean = false,
+    val duration: Long = 0L,
+    val isLoading: Boolean = false
 )
 

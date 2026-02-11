@@ -19,7 +19,7 @@ class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
     private object Keys {
         val SONG_JSON = stringPreferencesKey("last_song_json")
         val POSITION = longPreferencesKey("last_position_ms")
-        val IS_PLAYING = booleanPreferencesKey("is_playing")
+        val DURATION = longPreferencesKey("duration_ms")
     }
 
     // Combine all keys into a single PlaybackState Flow
@@ -28,7 +28,7 @@ class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
         PlaybackState(
             song = songJson?.let { Json.decodeFromString<Song>(it) },
             positionMs = prefs[Keys.POSITION] ?: 0L,
-            isPlaying = prefs[Keys.IS_PLAYING] ?: false
+            duration = prefs[Keys.DURATION] ?: 0L
         )
     }
 
@@ -36,7 +36,6 @@ class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
         try {
             dataStore.edit { prefs ->
                 prefs[Keys.SONG_JSON] = Json.encodeToString(song)
-                prefs[Keys.POSITION] = 0L
             }
         } catch (e: Exception) {
             // Log the error (e.g., Firebase Crashlytics or Log.e)
@@ -45,12 +44,15 @@ class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun savePosition(position: Long?) {
+    suspend fun savePosition(position: Long?, duration: Long?) {
         position?.let {
             try {
                 dataStore.edit { prefs ->
                     prefs[Keys.POSITION] = position
+                    prefs[Keys.DURATION] = duration ?: 0L
                 }
+                Log.d("PlaybackRepo", "Saved song at position $position")
+                Log.d("PlaybackRepo", "Duration $duration")
             } catch (e: Exception) {
                 Log.e("PlaybackRepo", "Failed to save position", e)
             }

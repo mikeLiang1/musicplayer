@@ -95,7 +95,7 @@ class SearchViewModel constructor(
 
     fun onSongClicked(song: Song) {
         viewModelScope.launch {
-            musicPlayerManager.prepare(song, autoPlay = true)
+            musicPlayerManager.prepare(song = song, autoPlay = true)
         }
     }
 }

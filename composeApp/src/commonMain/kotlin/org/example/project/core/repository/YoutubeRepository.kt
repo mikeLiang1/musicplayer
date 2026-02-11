@@ -39,8 +39,7 @@ class YouTubeRepository {
                         url = item.url,
                         title = item.name,
                         artist = item.uploaderName ?: "Unknown",
-                        thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                        duration = (item.duration * 1000).millisToDuration()
+                        thumbnailUrl = item.thumbnails.firstOrNull()?.url
                     )
                 }
         }
@@ -64,8 +63,7 @@ class YouTubeRepository {
                         url = item.url,
                         title = item.name,
                         artist = item.uploaderName ?: "Unknown",
-                        thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                        duration = (item.duration * 1000).millisToDuration()
+                        thumbnailUrl = item.thumbnails.firstOrNull()?.url
                     )
                 }
         }

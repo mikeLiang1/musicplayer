@@ -1,6 +1,5 @@
 package org.example.project.core.manager
 
-import androidx.media3.common.MediaItem
 import kotlinx.coroutines.flow.StateFlow
 import org.example.project.core.model.Song
 
@@ -18,12 +17,5 @@ interface MusicPlayerManager {
 
     fun stop()
 
-    fun getCurrentPosition(): Long?
-
-    fun getDuration(): Long?
-
     fun seekTo(seconds: Long)
-
-
-    fun release()
 }

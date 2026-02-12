@@ -6,7 +6,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.example.budget.navigation.NavigationState
-import com.example.budget.navigation.Navigator
+import org.example.project.navigation.Navigator
 import kotlin.collections.component1
 import kotlin.collections.component2
 

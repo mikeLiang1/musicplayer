@@ -9,7 +9,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,8 +24,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -44,9 +43,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.example.project.core.model.Song
@@ -94,17 +95,27 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             placeholder = { Text("Search on YouTube Music...") },
             trailingIcon = {
                 IconButton(onClick = {
-                    searchViewModel.onSuggestionClicked(state.searchQuery)
-                    focusManager.clearFocus()
+                    if (state.searchQuery.isNotEmpty()) {
+                        searchViewModel.onSuggestionClicked(state.searchQuery)
+                        focusManager.clearFocus()
+                    }
                 }) {
                     Icon(Icons.Default.Search, contentDescription = null)
                 }
             },
             interactionSource = interactionSource,
             keyboardActions = KeyboardActions {
-                searchViewModel.onSuggestionClicked(state.searchQuery)
-                focusManager.clearFocus()
-            }
+                if (state.searchQuery.isNotEmpty()) {
+                    searchViewModel.onSuggestionClicked(state.searchQuery)
+                    focusManager.clearFocus()
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Search
+            ),
+            singleLine = true
         )
 
         val listState = rememberLazyListState()
@@ -132,7 +143,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             }
         ) { onSearchScreen ->
             LazyColumn(
-                state= listState,
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally

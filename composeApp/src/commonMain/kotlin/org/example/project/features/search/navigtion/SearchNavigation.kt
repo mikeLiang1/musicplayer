@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import com.example.budget.navigation.Navigator
+import org.example.project.navigation.Navigator
 import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
 import org.example.project.features.search.ui.SearchScreen

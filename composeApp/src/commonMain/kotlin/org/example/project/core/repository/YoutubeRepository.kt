@@ -94,6 +94,7 @@ class YouTubeRepository {
             bestAudio?.content
         }
     }
+
     private fun Long.millisToDuration(): String {
         val totalSeconds = this / 1000
         val minutes = totalSeconds / 60

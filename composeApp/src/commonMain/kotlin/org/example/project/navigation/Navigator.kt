@@ -1,6 +1,7 @@
-package com.example.budget.navigation
+package org.example.project.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.example.budget.navigation.NavigationState
 
 /**
  * Handles navigation events (forward and back) by updating the navigation state.

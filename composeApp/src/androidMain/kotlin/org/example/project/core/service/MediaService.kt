@@ -13,10 +13,8 @@ import androidx.media3.session.MediaSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.koin.android.ext.android.inject
@@ -63,7 +61,7 @@ class MediaService : MediaLibraryService() {
 
         mediaSession?.player?.clearMediaItems()
 
-        if (currentPos!= null && duration!= null) {
+        if (currentPos != null && duration != null) {
             serviceScope.launch {
                 playbackRepository.savePosition(currentPos, duration)
             }

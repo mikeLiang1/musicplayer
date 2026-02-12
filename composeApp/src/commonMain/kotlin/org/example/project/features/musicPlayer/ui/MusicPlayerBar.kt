@@ -36,7 +36,7 @@ import coil3.compose.AsyncImage
 
 @OptIn(UnstableApi::class)
 @Composable
-fun MusicPlayerBar(viewModel: MusicPlayerViewModel, onBarClicked: () -> Unit) {
+fun MusicPlayerBar(viewModel: MusicPlayerViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
@@ -46,7 +46,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, onBarClicked: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceContainer)
-                .clickable { onBarClicked() }
+                .clickable { viewModel.setFullScreen(true) }
         ) {
 
             // Player content

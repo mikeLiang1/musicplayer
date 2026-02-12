@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Menu
@@ -49,11 +52,10 @@ fun MusicPlayerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .padding(horizontal = 16.dp)
     ) {
-        Row(
-
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             IconButton(
                 onClick = { navigateBack() }) {
                 Icon(
@@ -63,7 +65,7 @@ fun MusicPlayerScreen(
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = { //TODO: Open menu
-                }
+            }
             ) {
                 Icon(
                     imageVector = Icons.Filled.Menu,

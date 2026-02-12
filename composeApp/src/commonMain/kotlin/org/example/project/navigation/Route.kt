@@ -20,8 +20,6 @@ sealed interface Route : NavKey {
         data object Profile : Route
 
     }
-    @Serializable
-    data object MusicPlayerRoute : Route
 }
 
 val appTopLevelRoutes = setOf(Route.DashboardRoutes)

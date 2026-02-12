@@ -62,6 +62,18 @@ class MusicPlayerViewModel constructor(
 
     fun setFullScreen(fullScreen: Boolean) {
         _uiState.update { it.copy(isFullScreenVisible = fullScreen) }
+        viewModelScope.launch {
+            val queue =  repository.getRelated(_uiState.value.currentSong?.url ?: "")
+            _uiState.update { it.copy(queue = queue) }
+        }
+    }
+
+    fun onQueueClicked() {
+        viewModelScope.launch {
+            val queue =  repository.getPlaylist(_uiState.value.currentSong?.url ?: "")
+            _uiState.update { it.copy(queue = queue) }
+        }
+
     }
 
 }
@@ -72,6 +84,7 @@ data class MusicPlayerUiState(
     val isPlaying: Boolean = false,
     val duration: Long = 0L,
     val isLoading: Boolean = false,
-    val isFullScreenVisible: Boolean = false
+    val isFullScreenVisible: Boolean = false,
+    val queue: List<Song> = listOf()
 )
 

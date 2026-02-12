@@ -212,7 +212,7 @@ fun SongItem(song: Song, onClick: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column {
             Text(song.title, maxLines = 1, fontWeight = FontWeight.Bold)
-            Text(song.artist, style = MaterialTheme.typography.bodySmall)
+            Text("${song.artist} • ${song.duration}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

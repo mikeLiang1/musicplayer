@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import okhttp3.OkHttpClient
 import org.example.project.core.manager.MusicPlayerManager
 import org.koin.android.ext.android.inject
 import org.schabi.newpipe.extractor.NewPipe
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun getDownloader(): DownloaderImpl {
-        return DownloaderImpl.init(null)
+        return DownloaderImpl.init(OkHttpClient.Builder())
 
     }
 }

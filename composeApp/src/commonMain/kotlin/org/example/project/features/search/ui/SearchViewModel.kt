@@ -97,6 +97,9 @@ class SearchViewModel constructor(
         viewModelScope.launch {
             musicPlayerManager.prepare(song = song, autoPlay = true)
         }
+        viewModelScope.launch {
+            val songList =  repository.getPlaylist(song.url)
+        }
     }
 }
 

@@ -77,6 +77,10 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
+
+//            implementation("com.adamratzman:spotify-api-kotlin-core:4.1.3") {
+//                exclude(group = "com.adamratzman", module = "spotify-auth")
+//            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -100,6 +104,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false

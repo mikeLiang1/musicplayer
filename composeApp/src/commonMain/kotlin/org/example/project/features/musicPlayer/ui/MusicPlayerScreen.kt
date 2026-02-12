@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Menu
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.project.core.model.Song
+import org.example.project.features.search.ui.SongItem
 
 @Composable
 fun MusicPlayerScreen(
@@ -68,7 +71,8 @@ fun MusicPlayerScreen(
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = { //TODO: Open menu
+            IconButton(onClick = {
+                viewModel.onQueueClicked()
             }
             ) {
                 Icon(
@@ -100,6 +104,14 @@ fun MusicPlayerScreen(
             onNextClick = viewModel::onNextClicked,
             onPreviousClick = viewModel::onPreviousClicked
         )
+
+        LazyColumn {
+            items(state.queue) { song ->
+                SongItem(song) {
+
+                }
+            }
+        }
     }
 }
 

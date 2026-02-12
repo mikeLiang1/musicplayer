@@ -10,12 +10,12 @@ interface MusicPlayerManager {
     val duration: StateFlow<Long>
     val currentSong: StateFlow<Song?>
 
-    suspend fun prepare(song: Song, autoPlay: Boolean = true, startPosition: Long? = null)
+    fun initialise()
 
+    suspend fun prepare(song: Song, autoPlay: Boolean = true, startPosition: Long? = null)
     fun pause()
     fun play()
 
     fun stop()
-
     fun seekTo(seconds: Long)
 }

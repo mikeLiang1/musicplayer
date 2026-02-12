@@ -1,5 +1,6 @@
 package org.example.project.features.musicPlayer.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,9 @@ fun MusicPlayerScreen(
     viewModel: MusicPlayerViewModel,
     navigateBack: () -> Unit
 ) {
+
+    BackHandler { navigateBack() }
+
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()

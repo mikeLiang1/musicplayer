@@ -50,10 +50,16 @@ class MusicPlayerManagerImpl(
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var positionUpdateJob: Job? = null
 
-    private var isRestoring = false
+    private var isRestoringPlaybackState = false
 
-    init {
-        initializeController()
+
+    override fun initialise() {
+        if (controller == null || controller?.isConnected == false) {
+            initializeController()
+        } else {
+            // DOnt need to check if controller initialised because we check if media items == 0 inside restore playbackState
+            restorePlaybackState()
+        }
     }
 
     private fun initializeController() {
@@ -85,7 +91,6 @@ class MusicPlayerManagerImpl(
 
                             Player.STATE_ENDED -> {
                                 stopPositionUpdates()
-                                _currentPosition.value = duration // Set to end
                             }
                         }
                     }
@@ -93,7 +98,7 @@ class MusicPlayerManagerImpl(
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         // If we arent restoring a saved state, we need to immediately update the state
                         // only need to update the song (title, image etc) and the duration to reset the bar to the start
-                        if (!isRestoring) {
+                        if (!isRestoringPlaybackState) {
                             val song = mediaItem?.toSong()
                             _currentSong.value = song
                             _duration.value = 0L
@@ -103,25 +108,27 @@ class MusicPlayerManagerImpl(
                     }
                 })
             }
-            setSavedPlaybackState()
+            restorePlaybackState()
         }, MoreExecutors.directExecutor())
     }
 
-    private fun setSavedPlaybackState() {
-        coroutineScope.launch {
-            val lastState = playbackRepository.playbackState.first()
-            val song = lastState.song
-            val currentPosition = lastState.positionMs
-            song?.let {
-                Log.d("Restoring state", "Found ${song.title} to restore")
-                isRestoring = true
-                prepare(song = song, autoPlay = false, startPosition = currentPosition)
-                _currentSong.value = song
-                _currentPosition.value = currentPosition
-                _duration.value = lastState.duration
-                isRestoring = false
+    private fun restorePlaybackState() {
+        // Only if theres 0 items, we attempt to restore state. This can happen if we clear app, and restart, but this manager wasnt killed
+        if (controller?.mediaItemCount == 0) {
+            coroutineScope.launch {
+                val lastState = playbackRepository.playbackState.first()
+                val song = lastState.song
+                val currentPosition = lastState.positionMs
+                song?.let {
+                    Log.d("Restoring state", "Found ${song.title} to restore")
+                    isRestoringPlaybackState = true
+                    prepare(song = song, autoPlay = false, startPosition = currentPosition)
+                    _currentSong.value = song
+                    _currentPosition.value = currentPosition
+                    _duration.value = lastState.duration
+                    isRestoringPlaybackState = false
+                }
             }
-
         }
     }
 

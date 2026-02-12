@@ -13,7 +13,10 @@ import androidx.media3.session.MediaSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.koin.android.ext.android.inject
@@ -25,7 +28,7 @@ class MediaService : MediaLibraryService() {
     private val playbackRepository by inject<PlaybackRepository>()
     private val youtubeRepository by inject<YouTubeRepository>()
 
-    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 
     @OptIn(UnstableApi::class)
@@ -53,14 +56,18 @@ class MediaService : MediaLibraryService() {
 
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
         pauseAllPlayersAndStopSelf()
 
-        runBlocking { playbackRepository.savePosition(mediaSession?.player?.currentPosition, mediaSession?.player?.duration) }
+        val currentPos = mediaSession?.player?.currentPosition
+        val duration = mediaSession?.player?.duration
 
-        // TODO: Not sure why this doesnt guarentee ths notification / service is closed
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        mediaSession?.player?.clearMediaItems()
+
+        if (currentPos!= null && duration!= null) {
+            serviceScope.launch {
+                playbackRepository.savePosition(currentPos, duration)
+            }
+        }
 
     }
 

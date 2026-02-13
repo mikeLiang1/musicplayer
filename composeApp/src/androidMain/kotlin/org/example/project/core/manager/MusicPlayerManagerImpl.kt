@@ -87,10 +87,15 @@ class MusicPlayerManagerImpl(
 
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         // If we arent restoring a saved state, we need to immediately update the state
-                        // only need to update the song (title, image etc) and the duration to reset the bar to the start
+                        // only need to update the song (title, image etc) and force current position to start and index update index
                         if (!isRestoringPlaybackState) {
                             val song = mediaItem?.toSong()
-                            _playerState.update { it.copy(currentSong = song) }
+                            _playerState.update {
+                                it.copy(
+                                    currentSong = song,
+                                    currentIndex = controller?.currentMediaItemIndex ?: 0
+                                )
+                            }
                             // Save State
                             song?.let { coroutineScope.launch { playbackRepository.saveSong(song) } }
                         }
@@ -104,10 +109,7 @@ class MusicPlayerManagerImpl(
                         }
 
                         _playerState.update {
-                            it.copy(
-                                queue = items,
-                                currentIndex = controller?.currentMediaItemIndex ?: 0
-                            )
+                            it.copy(queue = items)
                         }
                     }
                 })
@@ -192,7 +194,7 @@ class MusicPlayerManagerImpl(
         positionUpdateJob = coroutineScope.launch {
             while (controller?.isPlaying == true) {
                 _currentPosition.value = controller?.currentPosition ?: 0L
-                delay(1000) // 200ms for smooth updates
+                delay(1000)
             }
         }
     }

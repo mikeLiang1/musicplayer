@@ -98,7 +98,8 @@ class SearchViewModel constructor(
             musicPlayerManager.prepare(song = song, autoPlay = true)
         }
         viewModelScope.launch {
-            val songList =  repository.getPlaylist(song.url)
+            val relatedSongs =  repository.getPlaylistRadio(song.url)
+            musicPlayerManager.setQueue(relatedSongs)
         }
     }
 }

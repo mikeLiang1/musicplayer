@@ -42,17 +42,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.project.core.model.Song
-import org.example.project.features.search.ui.SongItem
 
 @Composable
 fun MusicPlayerScreen(
     viewModel: MusicPlayerViewModel,
     navigateBack: () -> Unit
 ) {
-
     BackHandler { navigateBack() }
 
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.playerState.collectAsStateWithLifecycle()
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
 

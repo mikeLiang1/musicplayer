@@ -3,10 +3,9 @@ package org.example.project.core.manager
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
@@ -18,9 +17,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.example.project.core.helper.toMediaItem
+import org.example.project.core.helper.toSong
+import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
-import org.example.project.core.model.toSong
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.core.service.MediaService
@@ -34,18 +36,10 @@ class MusicPlayerManagerImpl(
 
     private var controller: MediaController? = null
 
-    // TODO: maybe these can move to its own state ?
-    private val _isPlaying = MutableStateFlow(false)
-    override val isPlaying = _isPlaying.asStateFlow()
-
+    private val _playerState = MutableStateFlow(PlayerState())
+    override val playerState = _playerState.asStateFlow()
     private val _currentPosition = MutableStateFlow(0L)
     override val currentPosition = _currentPosition.asStateFlow()
-
-    private val _duration = MutableStateFlow(0L)
-    override val duration = _duration.asStateFlow()
-
-    private val _currentSong = MutableStateFlow<Song?>(null)
-    override val currentSong = _currentSong.asStateFlow()
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var positionUpdateJob: Job? = null
@@ -75,7 +69,7 @@ class MusicPlayerManagerImpl(
             controller = controllerFuture.get().apply {
                 addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        _isPlaying.value = isPlaying
+                        _playerState.update { it.copy(isPlaying = isPlaying) }
                         if (isPlaying) {
                             startPositionUpdates()
                         } else {
@@ -86,7 +80,7 @@ class MusicPlayerManagerImpl(
                     override fun onPlaybackStateChanged(state: Int) {
                         when (state) {
                             Player.STATE_READY -> {
-                                _duration.value = duration
+                                _playerState.update { it.copy(duration = duration) }
                             }
 
                             Player.STATE_ENDED -> {
@@ -100,10 +94,24 @@ class MusicPlayerManagerImpl(
                         // only need to update the song (title, image etc) and the duration to reset the bar to the start
                         if (!isRestoringPlaybackState) {
                             val song = mediaItem?.toSong()
-                            _currentSong.value = song
-                            _duration.value = 0L
+                            _playerState.update { it.copy(currentSong = song, duration = 0L) }
                             // Save State
                             song?.let { coroutineScope.launch { playbackRepository.saveSong(song) } }
+                        }
+                    }
+
+                    override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                        val items = buildList {
+                            for (i in 0 until (controller?.mediaItemCount ?: 0)) {
+                                controller?.getMediaItemAt(i)?.toSong()?.let { add(it) }
+                            }
+                        }
+
+                        _playerState.update {
+                            it.copy(
+                                queue = items,
+                                currentIndex = controller?.currentMediaItemIndex ?: 0
+                            )
                         }
                     }
                 })
@@ -123,48 +131,33 @@ class MusicPlayerManagerImpl(
                     Log.d("Restoring state", "Found ${song.title} to restore")
                     isRestoringPlaybackState = true
                     prepare(song = song, autoPlay = false, startPosition = currentPosition)
-                    _currentSong.value = song
+                    _playerState.update { it.copy(currentSong = song) }
                     _currentPosition.value = currentPosition
-                    _duration.value = lastState.duration
+                    _playerState.update { it.copy(duration = lastState.duration) }
                     isRestoringPlaybackState = false
                 }
             }
         }
     }
 
-    private fun startPositionUpdates() {
-        positionUpdateJob?.cancel()
-
-        positionUpdateJob = coroutineScope.launch {
-            while (controller?.isPlaying == true) {
-                _currentPosition.value = controller?.currentPosition ?: 0L
-                delay(1000) // 200ms for smooth updates
-            }
-        }
-    }
-
-    private fun stopPositionUpdates() {
-        positionUpdateJob?.cancel()
-        positionUpdateJob = null
-        _currentPosition.value = controller?.currentPosition ?: 0L
-    }
 
     override suspend fun prepare(song: Song, autoPlay: Boolean, startPosition: Long?) {
-        val metadata = MediaMetadata.Builder()
-            .setTitle(song.title)
-            .setArtist(song.artist)
-            .setArtworkUri(song.thumbnailUrl?.toUri())
-            .build()
-        val mediaItem = MediaItem.Builder()
-            .setMediaId(song.url)
-            .setUri(song.url)
-            .setMediaMetadata(metadata)
-            .build()
+        val mediaItem = song.toMediaItem()
 
         controller?.apply {
             setMediaItem(mediaItem, startPosition ?: 0L)
             prepare()
             playWhenReady = autoPlay
+        }
+    }
+
+    override suspend fun setQueue(
+        songs: List<Song>,
+    ) {
+        val mediaItems = songs.map { it.toMediaItem() }
+
+        controller?.apply {
+            addMediaItems(mediaItems)
         }
     }
 
@@ -182,6 +175,39 @@ class MusicPlayerManagerImpl(
 
     override fun seekTo(seconds: Long) {
         controller?.seekTo(seconds)
+    }
+
+    override fun skipToNext() {
+        controller?.seekToNext()
+    }
+
+    override fun skipToPrevious() {
+        controller?.seekToPrevious()
+    }
+
+    override fun hasNext(): Boolean {
+        return controller?.hasNextMediaItem() ?: false
+    }
+
+    override fun hasPrevious(): Boolean {
+        return controller?.hasPreviousMediaItem() ?: false
+    }
+
+    private fun startPositionUpdates() {
+        positionUpdateJob?.cancel()
+
+        positionUpdateJob = coroutineScope.launch {
+            while (controller?.isPlaying == true) {
+                _currentPosition.value = controller?.currentPosition ?: 0L
+                delay(1000) // 200ms for smooth updates
+            }
+        }
+    }
+
+    private fun stopPositionUpdates() {
+        positionUpdateJob?.cancel()
+        positionUpdateJob = null
+        _currentPosition.value = controller?.currentPosition ?: 0L
     }
 
 }

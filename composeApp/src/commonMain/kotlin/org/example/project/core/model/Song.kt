@@ -12,15 +12,3 @@ data class Song(
     val thumbnailUrl: String?,
     val duration: String?
 )
-
-
-fun MediaItem.toSong(): Song {
-
-    return Song(
-        url = mediaId, // Retrieved from mediaId
-        title = mediaMetadata.title?.toString() ?: "Unknown",
-        artist = mediaMetadata.artist?.toString() ?: "Unknown",
-        thumbnailUrl = mediaMetadata.artworkUri?.toString(),
-        duration = mediaMetadata.durationMs?.secondsToDuration()
-    )
-}

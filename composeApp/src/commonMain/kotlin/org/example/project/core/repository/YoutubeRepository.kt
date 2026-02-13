@@ -126,7 +126,7 @@ class YouTubeRepository {
         }
     }
 
-    suspend fun getPlaylist(url: String): List<Song> {
+    suspend fun getPlaylistRadio(url: String): List<Song> {
         return withContext(Dispatchers.IO) {
             // 1. Get the stream extractor for a specific URL
             val videoId = url.toUri().getQueryParameter("v")

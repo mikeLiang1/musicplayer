@@ -37,7 +37,7 @@ import coil3.compose.AsyncImage
 @OptIn(UnstableApi::class)
 @Composable
 fun MusicPlayerBar(viewModel: MusicPlayerViewModel) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.playerState.collectAsStateWithLifecycle()
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
 

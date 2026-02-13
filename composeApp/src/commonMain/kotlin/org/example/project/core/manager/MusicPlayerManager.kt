@@ -15,7 +15,7 @@ interface MusicPlayerManager {
     suspend fun prepare(song: Song, autoPlay: Boolean = true, startPosition: Long? = null)
     fun pause()
     fun play()
-    suspend fun setQueue(songs: List<Song>)
+    suspend fun setQueue(songs: List<Song>, autoPlay: Boolean, startPosition: Long? = null)
     fun stop()
     fun seekTo(seconds: Long)
     fun skipToNext()

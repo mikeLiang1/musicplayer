@@ -2,7 +2,6 @@ package org.example.project.core.manager
 
 import android.content.ComponentName
 import android.content.Context
-import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -125,9 +124,10 @@ class MusicPlayerManagerImpl(
                 val song = lastState.song
                 val currentPosition = lastState.positionMs
                 song?.let {
-                    Log.d("Restoring state", "Found ${song.title} to restore")
                     isRestoringPlaybackState = true
-                    prepare(song = song, autoPlay = false, startPosition = currentPosition)
+                    val relatedSongs = youTubeRepository.getPlaylistRadio(song.url)
+                    setQueue(relatedSongs, autoPlay = false, startPosition = currentPosition)
+//                    prepare(song = song, autoPlay = false, startPosition = currentPosition)
                     _playerState.update { it.copy(currentSong = song) }
                     _currentPosition.value = currentPosition
                     isRestoringPlaybackState = false
@@ -147,13 +147,14 @@ class MusicPlayerManagerImpl(
         }
     }
 
-    override suspend fun setQueue(
-        songs: List<Song>,
-    ) {
+    // TODO: If we are playing a playilist need to save the index and set index
+    override suspend fun setQueue(songs: List<Song>, autoPlay: Boolean, startPosition: Long?) {
         val mediaItems = songs.map { it.toMediaItem() }
 
         controller?.apply {
-            addMediaItems(mediaItems)
+            setMediaItems(mediaItems, 0, startPosition ?: 0L)
+            prepare()
+            playWhenReady = autoPlay
         }
     }
 

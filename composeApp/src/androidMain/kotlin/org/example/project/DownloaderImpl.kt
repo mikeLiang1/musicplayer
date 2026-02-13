@@ -1,9 +1,8 @@
 package org.example.project
 
-import android.content.Context
-import android.preference.PreferenceManager
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
+import okhttp3.logging.HttpLoggingInterceptor
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
@@ -29,6 +28,9 @@ class DownloaderImpl private constructor(builder: OkHttpClient.Builder) : Downlo
         private var instance: DownloaderImpl? = null
 
         fun init(builder: OkHttpClient.Builder? = null): DownloaderImpl {
+            val httpLoggingInterceptor = HttpLoggingInterceptor()
+            httpLoggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
+//            builder?.addInterceptor(httpLoggingInterceptor)
             return DownloaderImpl(builder ?: OkHttpClient.Builder()).also {
                 instance = it
             }

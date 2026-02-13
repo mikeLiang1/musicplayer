@@ -127,7 +127,6 @@ class MusicPlayerManagerImpl(
                     isRestoringPlaybackState = true
                     val relatedSongs = youTubeRepository.getPlaylistRadio(song.url)
                     setQueue(relatedSongs, autoPlay = false, startPosition = currentPosition)
-//                    prepare(song = song, autoPlay = false, startPosition = currentPosition)
                     _playerState.update { it.copy(currentSong = song) }
                     _currentPosition.value = currentPosition
                     isRestoringPlaybackState = false
@@ -182,12 +181,9 @@ class MusicPlayerManagerImpl(
         controller?.seekToPrevious()
     }
 
-    override fun hasNext(): Boolean {
-        return controller?.hasNextMediaItem() ?: false
-    }
-
-    override fun hasPrevious(): Boolean {
-        return controller?.hasPreviousMediaItem() ?: false
+    override fun seekToIndex(index: Int) {
+        controller?.seekToDefaultPosition(index)
+        controller?.play()
     }
 
     private fun startPositionUpdates() {

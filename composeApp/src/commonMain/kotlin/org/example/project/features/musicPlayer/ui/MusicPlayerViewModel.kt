@@ -60,6 +60,11 @@ class MusicPlayerViewModel constructor(
 
         }
     }
+
+    fun changePlayingToIndex(index: Int) {
+        musicPlayerManager.seekToIndex(index)
+
+    }
     init {
 //        viewModelScope.launch {
 //            musicPlayerManager.isPlaying.collect { value ->

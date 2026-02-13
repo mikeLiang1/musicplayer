@@ -20,6 +20,5 @@ interface MusicPlayerManager {
     fun seekTo(seconds: Long)
     fun skipToNext()
     fun skipToPrevious()
-    fun hasNext(): Boolean
-    fun hasPrevious(): Boolean
+    fun seekToIndex(index: Int)
 }

@@ -79,9 +79,6 @@ class MusicPlayerManagerImpl(
 
                     override fun onPlaybackStateChanged(state: Int) {
                         when (state) {
-                            Player.STATE_READY -> {
-                                _playerState.update { it.copy(duration = duration) }
-                            }
 
                             Player.STATE_ENDED -> {
                                 stopPositionUpdates()
@@ -94,7 +91,7 @@ class MusicPlayerManagerImpl(
                         // only need to update the song (title, image etc) and the duration to reset the bar to the start
                         if (!isRestoringPlaybackState) {
                             val song = mediaItem?.toSong()
-                            _playerState.update { it.copy(currentSong = song, duration = 0L) }
+                            _playerState.update { it.copy(currentSong = song) }
                             // Save State
                             song?.let { coroutineScope.launch { playbackRepository.saveSong(song) } }
                         }
@@ -133,7 +130,6 @@ class MusicPlayerManagerImpl(
                     prepare(song = song, autoPlay = false, startPosition = currentPosition)
                     _playerState.update { it.copy(currentSong = song) }
                     _currentPosition.value = currentPosition
-                    _playerState.update { it.copy(duration = lastState.duration) }
                     isRestoringPlaybackState = false
                 }
             }

@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 
 @Composable
@@ -39,7 +40,10 @@ fun SongItem(song: Song, onClick: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column {
             Text(song.title, maxLines = 1, fontWeight = FontWeight.Bold)
-            Text("${song.artist} • ${song.duration}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                "${song.artist} • ${formatTime(song.duration)}",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

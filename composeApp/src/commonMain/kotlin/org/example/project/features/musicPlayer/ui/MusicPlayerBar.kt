@@ -134,7 +134,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel) {
             }
             LinearProgressIndicator(
                 progress = {
-                    if (state.duration > 0) currentPosition.toFloat() / state.duration.toFloat()
+                    if (song.duration > 0) currentPosition.toFloat() / song.duration.toFloat()
                     else 0f
                 },
                 modifier = Modifier

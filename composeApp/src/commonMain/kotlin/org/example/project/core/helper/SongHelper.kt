@@ -10,6 +10,7 @@ fun Song.toMediaItem(): MediaItem {
         .setTitle(title)
         .setArtist(artist)
         .setArtworkUri(thumbnailUrl?.toUri())
+        .setDurationMs(duration)
         .build()
     return MediaItem.Builder()
         .setMediaId(url)
@@ -25,6 +26,6 @@ fun MediaItem.toSong(): Song {
         title = mediaMetadata.title?.toString() ?: "Unknown",
         artist = mediaMetadata.artist?.toString() ?: "Unknown",
         thumbnailUrl = mediaMetadata.artworkUri?.toString(),
-        duration = mediaMetadata.durationMs?.secondsToDuration()
+        duration = mediaMetadata.durationMs ?: 0L
     )
 }

@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 
 @Composable
@@ -54,59 +55,59 @@ fun MusicPlayerScreen(
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 16.dp)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            IconButton(
-                onClick = { navigateBack() }) {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = "Close"
-                )
+    state.currentSong?.let { song ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(horizontal = 16.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                IconButton(
+                    onClick = { navigateBack() }) {
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "Close"
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = {
+                    viewModel.onQueueClicked()
+                }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu,
+                        contentDescription = "Menu"
+                    )
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {
-                viewModel.onQueueClicked()
-            }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = "Menu"
-                )
-            }
-        }
-        // Current song info
-        state.currentSong?.let { song ->
+            // Current song info
             SongInfo(song = song)
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Progress slider
-        ProgressSlider(
-            currentPosition = currentPosition,
-            duration = state.duration,
-            onSeek = viewModel::onSeekTo // Pass function reference
-        )
+            // Progress slider
+            ProgressSlider(
+                currentPosition = currentPosition,
+                duration = song.duration,
+                onSeek = viewModel::onSeekTo // Pass function reference
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Player controls
-        PlayerControls(
-            isPlaying = state.isPlaying,
-            onPlayPauseClick = viewModel::onPlayPauseClicked,
-            onNextClick = viewModel::onNextClicked,
-            onPreviousClick = viewModel::onPreviousClicked
-        )
+            // Player controls
+            PlayerControls(
+                isPlaying = state.isPlaying,
+                onPlayPauseClick = viewModel::onPlayPauseClicked,
+                onNextClick = viewModel::onNextClicked,
+                onPreviousClick = viewModel::onPreviousClicked
+            )
 
-        LazyColumn {
-            items(state.queue) { song ->
-                SongItem(song) {
+            LazyColumn {
+                items(state.queue) { song ->
+                    SongItem(song) {
 
+                    }
                 }
             }
         }
@@ -227,10 +228,4 @@ fun SongInfo(
             )
         }
     }
-}
-
-private fun formatTime(millis: Long): String {
-    val seconds = (millis / 1000) % 60
-    val minutes = (millis / (1000 * 60)) % 60
-    return String.format("%02d:%02d", minutes, seconds)
 }

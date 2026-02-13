@@ -3,7 +3,6 @@ package org.example.project.core.repository
 import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.example.project.core.helper.secondsToDuration
 import org.example.project.core.model.Song
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.ServiceList
@@ -66,7 +65,7 @@ class YouTubeRepository {
                         title = item.name,
                         artist = item.uploaderName ?: "Unknown",
                         thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                        duration = item.duration.secondsToDuration()
+                        duration = item.duration * 1000
                     )
                 }
         }
@@ -91,7 +90,7 @@ class YouTubeRepository {
                         title = item.name,
                         artist = item.uploaderName ?: "Unknown",
                         thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                        duration = item.duration.secondsToDuration()
+                        duration = item.duration * 1000
                     )
                 }
         }
@@ -120,7 +119,7 @@ class YouTubeRepository {
                     title = item.name,
                     artist = item.uploaderName ?: "Unknown",
                     thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                    duration = item.duration.secondsToDuration()
+                    duration = item.duration * 1000
                 )
             } ?: listOf()
         }
@@ -144,7 +143,7 @@ class YouTubeRepository {
                     title = item.name,
                     artist = item.uploaderName ?: "Unknown",
                     thumbnailUrl = item.thumbnails.firstOrNull()?.url,
-                    duration = item.duration.secondsToDuration()
+                    duration = item.duration * 1000
                 )
             }
         }

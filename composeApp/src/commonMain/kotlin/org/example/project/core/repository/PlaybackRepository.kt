@@ -27,8 +27,7 @@ class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
         val songJson = prefs[Keys.SONG_JSON]
         PlaybackState(
             song = songJson?.let { Json.decodeFromString<Song>(it) },
-            positionMs = prefs[Keys.POSITION] ?: 0L,
-            duration = prefs[Keys.DURATION] ?: 0L
+            positionMs = prefs[Keys.POSITION] ?: 0L
         )
     }
 
@@ -44,15 +43,11 @@ class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun savePosition(position: Long?, duration: Long?) {
+    suspend fun savePosition(position: Long?) {
         position?.let {
             try {
-                dataStore.edit { prefs ->
-                    prefs[Keys.POSITION] = position
-                    prefs[Keys.DURATION] = duration ?: 0L
-                }
+                dataStore.edit { prefs -> prefs[Keys.POSITION] = position }
                 Log.d("PlaybackRepo", "Saved song at position $position")
-                Log.d("PlaybackRepo", "Duration $duration")
             } catch (e: Exception) {
                 Log.e("PlaybackRepo", "Failed to save position", e)
             }

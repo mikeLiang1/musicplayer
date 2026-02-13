@@ -81,13 +81,12 @@ class MediaService : MediaLibraryService() {
         pauseAllPlayersAndStopSelf()
 
         val currentPos = mediaSession?.player?.currentPosition
-        val duration = mediaSession?.player?.duration
 
         mediaSession?.player?.clearMediaItems()
 
-        if (currentPos != null && duration != null) {
+        if (currentPos != null) {
             serviceScope.launch {
-                playbackRepository.savePosition(currentPos, duration)
+                playbackRepository.savePosition(currentPos)
             }
         }
 

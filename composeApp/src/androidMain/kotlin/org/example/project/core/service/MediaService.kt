@@ -3,6 +3,7 @@ package org.example.project.core.service
 import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
@@ -21,12 +22,20 @@ import org.koin.android.ext.android.inject
 
 @OptIn(UnstableApi::class)
 class MediaService : MediaLibraryService() {
+
+    companion object {
+        private const val CACHE_DURATION = 60 * 60 * 1000L
+    }
+
     private var mediaSession: MediaLibrarySession? = null
 
     private val playbackRepository by inject<PlaybackRepository>()
     private val youtubeRepository by inject<YouTubeRepository>()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val urlCache =
+        mutableMapOf<String, Pair<String, Long>>()
 
 
     @OptIn(UnstableApi::class)
@@ -35,10 +44,25 @@ class MediaService : MediaLibraryService() {
         val resolvingDataSourceFactory = ResolvingDataSource.Factory(
             DefaultHttpDataSource.Factory()
         ) { dataSpec ->
-            val mediaId = dataSpec.uri.toString() // This is the YouTube ID
+            val youtubeId = dataSpec.uri.toString() // This is the YouTube ID
 
-            // Fetch the fresh stream URL synchronously (safe on background thread)
-            val streamUrl = runBlocking { youtubeRepository.getStreamUrl(mediaId) } ?: ""
+            val cached = urlCache[youtubeId]
+            val streamUrl =
+                if (cached != null && System.currentTimeMillis() - cached.second < CACHE_DURATION) {
+                    cached.first // Use cached URL
+                } else {
+                    // Fetch fresh URL
+                    runBlocking(Dispatchers.IO) {
+                        try {
+                            youtubeRepository.getStreamUrl(youtubeId)?.also { url ->
+                                urlCache[youtubeId] = url to System.currentTimeMillis()
+                            } ?: ""
+                        } catch (e: Exception) {
+                            Log.e("MediaService", "Failed to resolve: $youtubeId", e)
+                            ""
+                        }
+                    }
+                }
 
             // Swap the YouTube ID for the real Stream URL
             dataSpec.withUri(streamUrl.toUri())

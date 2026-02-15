@@ -1,6 +1,7 @@
 package org.example.project.core.model
 
 data class PlaybackState(
-    val song: Song?,
-    val positionMs: Long
+    val currentSongId: String?,
+    val positionMs: Long,
+    val queue: List<Song> = emptyList()
 )

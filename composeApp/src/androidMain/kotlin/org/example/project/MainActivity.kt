@@ -40,6 +40,13 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         musicPlayerManager.initialise()
+        musicPlayerManager.onAppEnteredForeground()
+    }
+
+    override fun onStop() {
+        musicPlayerManager.onAppEnteredBackground()
+        super.onStop()
+
     }
 
     private fun getDownloader(): DownloaderImpl {

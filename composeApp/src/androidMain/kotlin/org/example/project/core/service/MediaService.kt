@@ -29,7 +29,7 @@ class MediaService : MediaLibraryService() {
 
     private var mediaSession: MediaLibrarySession? = null
 
-    private val playbackRepository by inject<PlaybackRepository>()
+    private val repo by inject<PlaybackRepository>()
     private val youtubeRepository by inject<YouTubeRepository>()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -79,17 +79,9 @@ class MediaService : MediaLibraryService() {
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
         pauseAllPlayersAndStopSelf()
-
-        val currentPos = mediaSession?.player?.currentPosition
-
+        saveData()
+        Log.d("Media service", "Task removed saved")
         mediaSession?.player?.clearMediaItems()
-
-        if (currentPos != null) {
-            serviceScope.launch {
-                playbackRepository.savePosition(currentPos)
-            }
-        }
-
     }
 
     @UnstableApi
@@ -134,12 +126,27 @@ class MediaService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        saveData()
+        Log.d("Media service", "OnDestroy saved")
         mediaSession?.run {
             player.release()
             release()
             mediaSession = null
         }
         super.onDestroy()
+    }
+
+    private fun saveData() {
+        val currentPos = mediaSession?.player?.currentPosition
+
+        mediaSession?.player?.clearMediaItems()
+
+        if (currentPos != null) {
+            serviceScope.launch {
+                repo.savePosition(currentPos)
+            }
+        }
+
     }
 
 

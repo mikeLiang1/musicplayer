@@ -8,15 +8,21 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_11)
+                }
+            }
         }
     }
-    
+
 //    listOf(
 //        iosArm64(),
 //        iosSimulatorArm64()
@@ -26,20 +32,20 @@ kotlin {
 //            isStatic = true
 //        }
 //    }
-    
+
     sourceSets {
-        val androidMain by getting {
-            dependencies {
-                implementation(compose.preview)
-                implementation(libs.androidx.activity.compose)
-                implementation(libs.ktor.client.okhttp)
-                implementation(libs.okhttp.logging)
-                implementation(libs.newpipe.extractor)
-            }
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.okhttp.logging)
+            implementation(libs.newpipe.extractor)
         }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
+
+        // Only if iOS is enabled
+//        iosMain.dependencies {
+//            implementation(libs.ktor.client.darwin)
+//        }
 
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -62,7 +68,6 @@ kotlin {
             implementation(libs.ktor.serialization.json)
             implementation(compose.materialIconsExtended)
 
-
             implementation(libs.coil.compose)
             implementation(libs.coil.core)
             implementation(libs.coil.network.ktor)
@@ -77,12 +82,12 @@ kotlin {
             implementation(libs.datastore.preferences.core)
 
             implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
 
-//            implementation("com.adamratzman:spotify-api-kotlin-core:4.1.3") {
-//                exclude(group = "com.adamratzman", module = "spotify-auth")
-//            }
+            // Room dependencies
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
@@ -100,6 +105,7 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -111,13 +117,29 @@ android {
             isMinifyEnabled = false
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
+// Room configuration - MUST be outside the android block
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     debugImplementation(compose.uiTooling)
+
+    // KSP for Room - Add for each target you're using
+    add("kspCommonMainMetadata", "androidx.room:room-compiler:2.8.4")
+    add("kspAndroid", "androidx.room:room-compiler:2.8.4")
+
+    // Only add these if you enable iOS targets
+//    add("kspIosX64", libs.room.compiler)
+//    add("kspIosArm64", libs.room.compiler)
+//    add("kspIosSimulatorArm64", libs.room.compiler)
 }
+
 

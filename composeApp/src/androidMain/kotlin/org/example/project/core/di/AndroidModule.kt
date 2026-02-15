@@ -2,6 +2,9 @@ package org.example.project.core.di
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.room.RoomDatabase
+import org.example.project.core.dao.MusicDatabase
+import org.example.project.core.dao.getDatabaseBuilder
 import org.example.project.core.helper.createDataStore
 import org.example.project.core.helper.dataStoreFileName
 import org.example.project.core.manager.MusicPlayerManager
@@ -11,8 +14,11 @@ import org.koin.dsl.module
 
 val androidModule = module {
 
+    single<RoomDatabase.Builder<MusicDatabase>> {
+        getDatabaseBuilder(get())
+    }
     single<MusicPlayerManager> {
-        MusicPlayerManagerImpl(get(), get(), get())
+        MusicPlayerManagerImpl(get(), get())
     }
 
     single<DataStore<Preferences>> {

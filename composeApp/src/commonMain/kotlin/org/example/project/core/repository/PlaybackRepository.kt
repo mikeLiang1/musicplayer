@@ -1,56 +1,63 @@
 package org.example.project.core.repository
 
-
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.combine
+import org.example.project.core.dao.MusicDatabase
 import org.example.project.core.model.PlaybackState
 import org.example.project.core.model.Song
+import org.example.project.core.model.entity.PlaybackStateEntity
+import org.example.project.core.model.entity.QueueEntity
 
+class PlaybackRepository(private val database: MusicDatabase) {
+    private val dao = database.playbackDao()
 
-class PlaybackRepository(private val dataStore: DataStore<Preferences>) {
-    private object Keys {
-        val SONG_JSON = stringPreferencesKey("last_song_json")
-        val POSITION = longPreferencesKey("last_position_ms")
-        val DURATION = longPreferencesKey("duration_ms")
-    }
-
-    // Combine all keys into a single PlaybackState Flow
-    val playbackState: Flow<PlaybackState> = dataStore.data.map { prefs ->
-        val songJson = prefs[Keys.SONG_JSON]
+    // The Main UI Flow: Combines Queue and State into one object
+    val playbackState: Flow<PlaybackState> = combine(
+        dao.getQueueFlow(),
+        dao.getPlaybackStateFlow()
+    ) { queueEntities, stateEntity ->
+        val songs = queueEntities.map { it.toDomain() }
         PlaybackState(
-            song = songJson?.let { Json.decodeFromString<Song>(it) },
-            positionMs = prefs[Keys.POSITION] ?: 0L
+            queue = songs,
+            positionMs = stateEntity?.positionMs ?: 0L,
+            currentSongId = stateEntity?.currentSongUrl // This is your "pointer"
         )
     }
 
-    suspend fun saveSong(song: Song) {
-        try {
-            dataStore.edit { prefs ->
-                prefs[Keys.SONG_JSON] = Json.encodeToString(song)
-            }
-        } catch (e: Exception) {
-            // Log the error (e.g., Firebase Crashlytics or Log.e)
-            // But don't crash the app!
-            Log.e("PlaybackRepo", "Failed to save song state", e)
-        }
+    // Save position: Fetch current row, update time, save back
+    suspend fun savePosition(position: Long) {
+        Log.d("Logging", "saved position : $position")
+        val current = dao.getPlaybackStateOnce() ?: PlaybackStateEntity(id = 0)
+        dao.upsertPlaybackState(
+            current.copy(positionMs = position)
+        )
     }
 
-    suspend fun savePosition(position: Long?) {
-        position?.let {
-            try {
-                dataStore.edit { prefs -> prefs[Keys.POSITION] = position }
-                Log.d("PlaybackRepo", "Saved song at position $position")
-            } catch (e: Exception) {
-                Log.e("PlaybackRepo", "Failed to save position", e)
-            }
+    // Save Song Change: Reset position to 0 and update ID
+    suspend fun saveCurrentSongId(songId: String) {
+        Log.d("Logging", "saved song id :$songId")
+        dao.upsertPlaybackState(
+            PlaybackStateEntity(
+                id = 0,
+                currentSongUrl = songId,
+                positionMs = 0L // New song starts at the beginning
+            )
+        )
+    }
+
+    // Save Queue: Map Domain to Entity and perform transaction
+    suspend fun saveQueue(songs: List<Song>) {
+        val entities = songs.mapIndexed { index, song ->
+            song.toEntity(index)
         }
+        dao.saveFullQueue(entities)
     }
 }
+
+// Mappers
+fun QueueEntity.toDomain() = Song(url, title, artist, thumbnailUrl, duration)
+fun Song.toEntity(index: Int) = QueueEntity(
+    title = title, artist = artist,
+    thumbnailUrl = thumbnailUrl, url = url, duration = duration, orderIndex = index
+)

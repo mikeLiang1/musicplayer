@@ -53,8 +53,6 @@ fun MusicPlayerScreen(
 
     val state by viewModel.playerState.collectAsStateWithLifecycle()
 
-    val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
-
     state.currentSong?.let { song ->
         Column(
             modifier = Modifier
@@ -87,10 +85,9 @@ fun MusicPlayerScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Progress slider
-            ProgressSlider(
-                currentPosition = currentPosition,
-                duration = song.duration,
-                onSeek = viewModel::onSeekTo // Pass function reference
+            MusicPlayerProgressSlider(
+                viewModel,
+                duration = song.duration
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -152,6 +149,22 @@ fun PlayerControls(
             )
         }
     }
+}
+
+@Composable
+fun MusicPlayerProgressSlider(
+    viewModel: MusicPlayerViewModel,
+    duration: Long,
+    modifier: Modifier = Modifier
+) {
+    val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
+
+    ProgressSlider(
+        currentPosition = currentPosition,
+        duration = duration,
+        onSeek = viewModel::onSeekTo,
+        modifier = modifier
+    )
 }
 
 @Composable

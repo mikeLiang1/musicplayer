@@ -22,14 +22,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import org.example.project.navigation.Navigator
 import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
+import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.search.navigtion.SearchNavigation
+import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
 import org.koin.compose.viewmodel.koinViewModel
@@ -46,7 +47,9 @@ fun DashboardNavigation() {
     val isBottomBarVisible = navigationState.topLevelRoute in dashboardTopLevelDestinations.keys
 
     val musicPlayerViewModel = koinViewModel<MusicPlayerViewModel>()
-    val musicPlayerState by musicPlayerViewModel.uiState.collectAsStateWithLifecycle()
+    val isFullScreenVisible by remember {
+        musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
+    }.collectAsStateWithLifecycle(initialValue = false)
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -78,7 +81,7 @@ fun DashboardNavigation() {
             )
         }
         AnimatedVisibility(
-            visible = musicPlayerState.isFullScreenVisible,
+            visible = isFullScreenVisible,
             enter = slideInVertically(
                 initialOffsetY = { it }, // Start from bottom
                 animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)

@@ -80,7 +80,7 @@ class MediaService : MediaLibraryService() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         pauseAllPlayersAndStopSelf()
         saveData()
-        Log.d("Media service", "Task removed saved")
+        Log.d("Logging", "Task removed saved")
         mediaSession?.player?.clearMediaItems()
     }
 
@@ -127,7 +127,7 @@ class MediaService : MediaLibraryService() {
 
     override fun onDestroy() {
         saveData()
-        Log.d("Media service", "OnDestroy saved")
+        Log.d("Logging", "OnDestroy saved")
         mediaSession?.run {
             player.release()
             release()
@@ -148,6 +148,4 @@ class MediaService : MediaLibraryService() {
         }
 
     }
-
-
 }

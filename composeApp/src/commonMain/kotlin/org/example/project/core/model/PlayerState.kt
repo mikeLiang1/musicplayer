@@ -9,6 +9,8 @@ data class PlayerState(
     val queue: List<Song> = emptyList(),
     val currentIndex: Int = 0
 ) {
-    val visibleQueue: List<Song>
+    val upcomingQueue: List<Song>
         get() = queue.drop(currentIndex)
+    val previousInQueue: List<Song>
+        get() = queue.take(currentIndex)
 }

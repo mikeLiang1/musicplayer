@@ -1,7 +1,11 @@
 package org.example.project.features.musicPlayer.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Menu
@@ -27,9 +34,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,11 +46,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.project.core.helper.formatTime
+import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 
 @Composable
@@ -100,15 +114,17 @@ fun MusicPlayerScreen(
                 onPreviousClick = viewModel::onPreviousClicked
             )
 
-            LazyColumn {
-                itemsIndexed(
-                    items = state.visibleQueue, key = { _, song -> song.url }
-                ) { index, song ->
-                    SongItem(song = song, isCurrentlyPlaying = index == 0) {
-                        viewModel.changePlayingToIndex(index)
-                    }
-                }
-            }
+            QueueSection(viewModel = viewModel, playerState = state)
+
+//            LazyColumn {
+//                itemsIndexed(
+//                    items = state.upcomingQueue, key = { _, song -> song.url }
+//                ) { index, song ->
+//                    SongItem(song = song, isCurrentlyPlaying = index == 0) {
+//                        viewModel.changePlayingToIndex(index)
+//                    }
+//                }
+//            }
         }
     }
 }
@@ -241,6 +257,116 @@ fun SongInfo(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun QueueSection(viewModel: MusicPlayerViewModel, playerState: PlayerState) {
+    // Collect state as a State object
+    val state = viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+
+    // 1. Simplified "At Top" logic
+    val isAtTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0 &&
+                    listState.firstVisibleItemScrollOffset == 0
+        }
+    }
+
+    // Only update VM when we cross the "Top" boundary.
+    // This replaces the need for isScrolling.
+    LaunchedEffect(isAtTop) {
+        if (isAtTop) viewModel.onAtTop() else viewModel.onScrolling()
+    }
+
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // If we are at the top and user pulls DOWN (y > 0)
+                if (state.value.queueState == QueueState.AT_TOP &&
+                    available.y > 0f &&
+                    !listState.canScrollBackward
+                ) {
+                    viewModel.onRevealHistory()
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+    Box(modifier = Modifier.nestedScroll(nestedScrollConnection)) {
+        // --- CRITICAL PERFORMANCE FIX ---
+        // We call a separate function for the list.
+        // This stops the list from redrawing when the Hint Chip fades in/out.
+        QueueList(
+            listState = listState,
+            showHistory = state.value.showHistory,
+            playerState = playerState,
+            onSongClick = viewModel::changePlayingToIndex
+        )
+
+        // Hint chip
+        AnimatedVisibility(
+            visible = state.value.queueState == QueueState.AT_TOP,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+            ) {
+                Text(
+                    text = "↑ Previous songs",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+}
+
+// Moving the LazyColumn to its own function creates a "Recomposition Barrier"
+@Composable
+private fun QueueList(
+    listState: LazyListState,
+    showHistory: Boolean,
+    playerState: PlayerState,
+    onSongClick: (Int, Boolean) -> Unit
+) {
+    LazyColumn(state = listState) {
+        if (showHistory) {
+            item(key = "history_header") {
+                Text(
+                    text = "Previously played",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+            itemsIndexed(
+                items = playerState.previousInQueue,
+                key = { _, song -> "prev_${song.url}" }
+            ) { index, song ->
+                SongItem(song = song) {
+                    onSongClick(index, true)
+                }
+            }
+        }
+
+        itemsIndexed(
+            items = playerState.upcomingQueue,
+            key = { _, song -> song.url }
+        ) { index, song ->
+            SongItem(
+                song = song,
+                isCurrentlyPlaying = index == 0,
+            ) {
+                onSongClick(index, false)
+            }
         }
     }
 }

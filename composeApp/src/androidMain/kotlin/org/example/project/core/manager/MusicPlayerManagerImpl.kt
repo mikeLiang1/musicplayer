@@ -10,7 +10,6 @@ import androidx.media3.common.Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED
 import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.collect.Multimaps.index
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,7 +101,6 @@ class MusicPlayerManagerImpl(
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         // If we arent restoring a saved state, we need to immediately update the state
                         // only need to update the song (title, image etc) and force current position to start and index update index
-
                             val song = mediaItem?.toSong()
                             val index = currentMediaItemIndex
                             _playerState.update {

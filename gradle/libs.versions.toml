@@ -13,6 +13,7 @@ composeMultiplatform = "1.9.3"
 junit = "4.13.2"
 kotlin = "2.3.0"
 koin = "4.2"
+kotlinxCollectionsImmutable = "0.4.0"
 newpipe-extractor-kmp = "1.0"
 newpipe-extractor = "v0.25.2"
 nav3Core = "1.0.0"
@@ -45,6 +46,7 @@ androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecyc
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 
 # Newpipe
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 newpipe-extractor-kmp = { module = "io.github.yushosei:newpipe-extractor-kmp", version.ref = "newpipe-extractor-kmp" }
 newpipe-extractor = { module = "com.github.teamnewpipe:NewPipeExtractor", version.ref = "newpipe-extractor" }
 

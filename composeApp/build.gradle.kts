@@ -86,6 +86,7 @@ kotlin {
             // Room dependencies
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
+            implementation("io.github.theapache64:rebugger:1.0.0-rc03")
         }
 
         commonTest.dependencies {

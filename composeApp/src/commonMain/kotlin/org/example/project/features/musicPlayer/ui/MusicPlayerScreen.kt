@@ -101,8 +101,10 @@ fun MusicPlayerScreen(
             )
 
             LazyColumn {
-                itemsIndexed(state.queue) { index, song ->
-                    SongItem(song = song, isCurrentlyPlaying = state.currentSong?.url == song.url) {
+                itemsIndexed(
+                    items = state.visibleQueue, key = { _, song -> song.url }
+                ) { index, song ->
+                    SongItem(song = song, isCurrentlyPlaying = index == 0) {
                         viewModel.changePlayingToIndex(index)
                     }
                 }

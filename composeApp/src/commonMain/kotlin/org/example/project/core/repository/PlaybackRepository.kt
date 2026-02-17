@@ -21,7 +21,8 @@ class PlaybackRepository(private val database: MusicDatabase) {
         PlaybackState(
             queue = songs,
             positionMs = stateEntity?.positionMs ?: 0L,
-            currentSongId = stateEntity?.currentSongUrl // This is your "pointer"
+            currentSongId = stateEntity?.currentSongUrl,
+            index = stateEntity?.currentIndex
         )
     }
 
@@ -35,13 +36,14 @@ class PlaybackRepository(private val database: MusicDatabase) {
     }
 
     // Save Song Change: Reset position to 0 and update ID
-    suspend fun saveCurrentSongId(songId: String) {
+    suspend fun saveCurrentSongIdAndIndex(songId: String, index: Int) {
         Log.d("Logging", "saved song id :$songId")
         dao.upsertPlaybackState(
             PlaybackStateEntity(
                 id = 0,
                 currentSongUrl = songId,
-                positionMs = 0L // New song starts at the beginning
+                positionMs = 0L,
+                currentIndex = index
             )
         )
     }

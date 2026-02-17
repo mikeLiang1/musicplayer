@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "4e00e0afc197572fd7f8ccaa9f29dfbf",
+    "identityHash": "9d77b9c5eea40cb85e15de40df73dc23",
     "entities": [
       {
         "tableName": "QueueEntity",
@@ -59,7 +59,7 @@
       },
       {
         "tableName": "PlaybackStateEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `currentSongUrl` TEXT, `positionMs` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `currentSongUrl` TEXT, `positionMs` INTEGER NOT NULL, `currentIndex` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -77,6 +77,11 @@
             "columnName": "positionMs",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "currentIndex",
+            "columnName": "currentIndex",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -89,7 +94,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4e00e0afc197572fd7f8ccaa9f29dfbf')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9d77b9c5eea40cb85e15de40df73dc23')"
     ]
   }
 }

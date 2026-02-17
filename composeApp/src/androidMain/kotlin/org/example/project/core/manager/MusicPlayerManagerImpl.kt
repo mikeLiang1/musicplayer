@@ -10,6 +10,7 @@ import androidx.media3.common.Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED
 import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.google.common.collect.Multimaps.index
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,8 +46,6 @@ class MusicPlayerManagerImpl(
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var positionUpdateJob: Job? = null
-
-    private var isRestoringPlaybackState = false
 
     private var queueSaveJob: Job? = null
 
@@ -89,22 +88,32 @@ class MusicPlayerManagerImpl(
                             Player.STATE_ENDED -> {
                                 stopPositionUpdates()
                             }
+
+                            // Maybe TODO: Use buffering state to show loading
+                            Player.STATE_BUFFERING -> {
+                                Log.d("logging", "bufferoing")
+                            }
+                            Player.STATE_READY -> {
+                                Log.d("logging", "ready")
+                            }
                         }
                     }
 
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         // If we arent restoring a saved state, we need to immediately update the state
                         // only need to update the song (title, image etc) and force current position to start and index update index
-                        if (!isRestoringPlaybackState) {
+
                             val song = mediaItem?.toSong()
+                            val index = currentMediaItemIndex
                             _playerState.update {
                                 it.copy(
-                                    currentSong = song
+                                    currentSong = song,
+                                    currentIndex = index
                                 )
                             }
                             // Save State
-                            song?.let { ioScope.launch { repo.saveCurrentSongId(song.url) } }
-                        }
+                            song?.let { ioScope.launch { repo.saveCurrentSongIdAndIndex(song.url, index) } }
+
                     }
 
                     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -112,8 +121,8 @@ class MusicPlayerManagerImpl(
                         if (reason == TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
 
                             val items = buildList {
-                                for (i in 0 until (controller?.mediaItemCount ?: 0)) {
-                                    controller?.getMediaItemAt(i)?.toSong()?.let { add(it) }
+                                for (i in 0 until (mediaItemCount)) {
+                                    add(getMediaItemAt(i).toSong())
                                 }
                             }
 
@@ -158,21 +167,19 @@ class MusicPlayerManagerImpl(
             coroutineScope.launch {
                 val lastState = repo.playbackState.first()
                 val queue = lastState.queue
-                val found = lastState.queue.withIndex().find { (_, song) ->
+                val song = lastState.queue.find { song ->
                     song.url == lastState.currentSongId
                 }
                 val currentPosition = lastState.positionMs
-                found?.let {
-                    isRestoringPlaybackState = true
+                val index = lastState.index ?: 0
+                song?.let {
                     setQueue(
                         queue,
                         autoPlay = false,
                         startPosition = currentPosition,
-                        startIndex = found.index
+                        startIndex = index
                     )
-                    _playerState.update { it.copy(currentSong = found.value, queue = queue) }
                     _currentPosition.value = currentPosition
-                    isRestoringPlaybackState = false
                 }
             }
         }

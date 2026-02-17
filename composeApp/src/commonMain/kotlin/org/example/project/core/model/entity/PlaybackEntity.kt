@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class PlaybackStateEntity(
     @PrimaryKey val id: Int = 0,
     val currentSongUrl: String? = null,
-    val positionMs: Long = 0
+    val positionMs: Long = 0,
+    val currentIndex: Int? = null
 )

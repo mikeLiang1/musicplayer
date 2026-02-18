@@ -1,9 +1,6 @@
 package org.example.project.features.musicPlayer.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,12 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -38,25 +35,27 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.yield
 import org.example.project.core.helper.formatTime
-import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
+import org.schabi.newpipe.extractor.timeago.patterns.it
 
 @Composable
 fun MusicPlayerScreen(
@@ -114,7 +113,9 @@ fun MusicPlayerScreen(
                 onPreviousClick = viewModel::onPreviousClicked
             )
 
-            QueueSection(viewModel = viewModel, playerState = state)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            QueueSection(viewModel = viewModel)
 
 //            LazyColumn {
 //                itemsIndexed(
@@ -261,111 +262,128 @@ fun SongInfo(
     }
 }
 
+// Composable - much simpler now
 @Composable
-private fun QueueSection(viewModel: MusicPlayerViewModel, playerState: PlayerState) {
-    // Collect state as a State object
-    val state = viewModel.uiState.collectAsStateWithLifecycle()
+private fun QueueSection(viewModel: MusicPlayerViewModel) {
+
+    val showHistory by remember {
+        viewModel.uiState.map { it.showHistory }
+    }.collectAsStateWithLifecycle(initialValue = false)
+
+    val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
-    // 1. Simplified "At Top" logic
-    val isAtTop by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex == 0 &&
-                    listState.firstVisibleItemScrollOffset == 0
-        }
-    }
+    // 1. We manually track where the list should start visually.
+    // Initialize it to the current index so it starts correctly.
+    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex) }
 
-    // Only update VM when we cross the "Top" boundary.
-    // This replaces the need for isScrolling.
-    LaunchedEffect(isAtTop) {
-        if (isAtTop) viewModel.onAtTop() else viewModel.onScrolling()
-    }
-
-
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // If we are at the top and user pulls DOWN (y > 0)
-                if (state.value.queueState == QueueState.AT_TOP &&
-                    available.y > 0f &&
-                    !listState.canScrollBackward
-                ) {
-                    viewModel.onRevealHistory()
-                }
-                return Offset.Zero
-            }
-        }
-    }
-
-    Box(modifier = Modifier.nestedScroll(nestedScrollConnection)) {
-        // --- CRITICAL PERFORMANCE FIX ---
-        // We call a separate function for the list.
-        // This stops the list from redrawing when the Hint Chip fades in/out.
-        QueueList(
-            listState = listState,
-            showHistory = state.value.showHistory,
-            playerState = playerState,
-            onSongClick = viewModel::changePlayingToIndex
-        )
-
-        // Hint chip
-        AnimatedVisibility(
-            visible = state.value.queueState == QueueState.AT_TOP,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
-            ) {
-                Text(
-                    text = "↑ Previous songs",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-        }
-    }
-}
-
-// Moving the LazyColumn to its own function creates a "Recomposition Barrier"
-@Composable
-private fun QueueList(
-    listState: LazyListState,
-    showHistory: Boolean,
-    playerState: PlayerState,
-    onSongClick: (Int, Boolean) -> Unit
-) {
-    LazyColumn(state = listState) {
+    // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
+    // rather than the live 'playerState.currentIndex' (REAL STATE).
+    val visibleSongs = remember(playerState.queue, showHistory, visibleStartIndex) {
         if (showHistory) {
-            item(key = "history_header") {
-                Text(
-                    text = "Previously played",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+            playerState.queue
+        } else {
+            // Safety check to prevent crash if queue is cleared
+            playerState.queue.drop(visibleStartIndex.coerceIn(0, playerState.queue.size))
+        }
+    }
+
+    LaunchedEffect(playerState.currentSong?.url) {
+        if (showHistory) {
+            // -- HISTORY MODE --
+            // Always ensure we see the full list starting at 0
+            visibleStartIndex = 0
+
+            // Scroll to the current song in the full list
+            listState.animateScrollToItem(playerState.currentIndex)
+
+            // (Optional) If you want to auto-hide history after scroll:
+             viewModel.changeHistory(false)
+            // visibleStartIndex = playerState.currentIndex
+            // listState.scrollToItem(0)
+        } else {
+            // -- UP NEXT MODE (History Hidden) --
+
+            // CASE: We are moving to the NEXT song (Index 5 -> 6)
+            if (playerState.currentIndex > visibleStartIndex) {
+                // 1. The 'visibleSongs' list is currently still starting at 5 (Old Song).
+                //    So Index 0 = Song 5, Index 1 = Song 6.
+
+                // 2. Calculate where the new song is relative to our current cut list.
+                val relativeIndex = playerState.currentIndex - visibleStartIndex
+
+                // 3. Animate scroll to that item.
+                //    User sees Song 5 scroll up and Song 6 arrive at the top.
+                listState.animateScrollToItem(relativeIndex)
+
+                // 4. NOW we update the list structure.
+                //    We cut the list so it starts at 6.
+                visibleStartIndex = playerState.currentIndex
+
+                // 5. Snap to 0.
+                //    Song 6 was at 'relativeIndex'. Now in the new list, Song 6 is at '0'.
+                //    Snapping ensures no visual jump occurs.
+                listState.scrollToItem(0)
             }
+//            // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
+            else if (playerState.currentIndex < visibleStartIndex) {
+                // update the list first
+                visibleStartIndex = playerState.currentIndex
+
+                // Ensure the visibleList has enough time first
+                delay(15)
+
+                // 4. Now animate "up" to the new current song (Index 0).
+                listState.animateScrollToItem(0)
+            }
+        }
+    }
+
+    Box {
+        LazyColumn(state = listState) {
             itemsIndexed(
-                items = playerState.previousInQueue,
-                key = { _, song -> "prev_${song.url}" }
+                items = visibleSongs,
+                key = { _, song -> song.url }
             ) { index, song ->
-                SongItem(song = song) {
-                    onSongClick(index, true)
+
+                val absoluteIndex = if (showHistory) index else visibleStartIndex + index
+
+                SongItem(
+                    song = song,
+                    isCurrentlyPlaying = absoluteIndex == playerState.currentIndex
+                ) {
+                    viewModel.changePlayingToIndex(absoluteIndex)
                 }
             }
         }
 
-        itemsIndexed(
-            items = playerState.upcomingQueue,
-            key = { _, song -> song.url }
-        ) { index, song ->
-            SongItem(
-                song = song,
-                isCurrentlyPlaying = index == 0,
+
+        // Simple chip - only shows when history is hidden and there are previous songs
+        if (!showHistory && playerState.currentIndex > 0) {
+            Surface(
+                onClick = { viewModel.changeHistory(true) },
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+                tonalElevation = 4.dp,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = 48.dp)
             ) {
-                onSongClick(index, false)
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowUp,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "${playerState.currentIndex} previous songs",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }

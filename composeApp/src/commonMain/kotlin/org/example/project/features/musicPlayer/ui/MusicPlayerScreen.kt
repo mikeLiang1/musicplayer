@@ -44,6 +44,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -279,31 +283,33 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
-    val visibleSongs = remember(playerState.queue, showHistory, visibleStartIndex) {
+    val visibleSongs = remember(showHistory, visibleStartIndex) {
         if (showHistory) {
             playerState.queue
         } else {
-            // Safety check to prevent crash if queue is cleared
-            playerState.queue.drop(visibleStartIndex.coerceIn(0, playerState.queue.size))
+            if (playerState.currentIndex < playerState.queue.size) {
+                playerState.queue.subList(playerState.currentIndex, playerState.queue.size)
+            } else {
+                emptyList()
+            }
         }
     }
 
-    LaunchedEffect(playerState.currentSong?.url) {
+    // When current index changes (i.e new song selected)
+    LaunchedEffect(playerState.currentIndex) {
         if (showHistory) {
-            // -- HISTORY MODE --
-            // Always ensure we see the full list starting at 0
-            visibleStartIndex = 0
-
-            // Scroll to the current song in the full list
+            // SHow history true means we have the whole list, so we can
+            // directly scroll to the current index
             listState.animateScrollToItem(playerState.currentIndex)
 
-            // (Optional) If you want to auto-hide history after scroll:
-             viewModel.changeHistory(false)
-            // visibleStartIndex = playerState.currentIndex
-            // listState.scrollToItem(0)
-        } else {
-            // -- UP NEXT MODE (History Hidden) --
+            // updates starting position
+            visibleStartIndex = playerState.currentIndex
 
+            // updates visible song list
+            viewModel.changeHistory(false)
+
+            // History hidden
+        } else {
             // CASE: We are moving to the NEXT song (Index 5 -> 6)
             if (playerState.currentIndex > visibleStartIndex) {
                 // 1. The 'visibleSongs' list is currently still starting at 5 (Old Song).
@@ -320,10 +326,6 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                 //    We cut the list so it starts at 6.
                 visibleStartIndex = playerState.currentIndex
 
-                // 5. Snap to 0.
-                //    Song 6 was at 'relativeIndex'. Now in the new list, Song 6 is at '0'.
-                //    Snapping ensures no visual jump occurs.
-                listState.scrollToItem(0)
             }
 //            // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
@@ -339,7 +341,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
         }
     }
 
-    Box {
+    Box(modifier = Modifier) {
         LazyColumn(state = listState) {
             itemsIndexed(
                 items = visibleSongs,
@@ -350,7 +352,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
                 SongItem(
                     song = song,
-                    isCurrentlyPlaying = absoluteIndex == playerState.currentIndex
+                    isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
                 ) {
                     viewModel.changePlayingToIndex(absoluteIndex)
                 }

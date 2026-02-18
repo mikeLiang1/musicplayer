@@ -1,5 +1,6 @@
 package org.example.project.features.musicPlayer.ui
 
+import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +32,7 @@ import org.example.project.core.model.Song
 fun SongItem(
     song: Song,
     isCurrentlyPlaying: Boolean = false,
+    alpha: Float = 1f,
     onClick: () -> Unit
 ) {
     val backgroundColor =
@@ -49,6 +52,7 @@ fun SongItem(
             .fillMaxWidth()
             .background(backgroundColor, RoundedCornerShape(8.dp))
             .clickable { onClick() }
+            .alpha(alpha)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

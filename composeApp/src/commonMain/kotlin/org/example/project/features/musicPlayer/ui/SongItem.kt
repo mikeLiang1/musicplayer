@@ -1,6 +1,5 @@
 package org.example.project.features.musicPlayer.ui
 
-import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -30,10 +30,10 @@ import org.example.project.core.model.Song
 
 @Composable
 fun SongItem(
+    modifier: Modifier = Modifier,
     song: Song,
     isCurrentlyPlaying: Boolean = false,
     alpha: Float = 1f,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val backgroundColor =
@@ -62,7 +62,8 @@ fun SongItem(
             contentDescription = null,
             modifier = Modifier
                 .size(50.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(4.dp)),
+            contentScale = ContentScale.Crop
         )
 
         Spacer(Modifier.width(12.dp))

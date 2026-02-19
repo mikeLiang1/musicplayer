@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -233,12 +234,15 @@ fun SongInfo(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+
     ) {
         AsyncImage(
             model = song.thumbnailUrl,
             contentDescription = null,
-            modifier = Modifier.size(80.dp)
+            modifier = Modifier.size(80.dp),
+                    contentScale = ContentScale.Crop
         )
 
         Column {
@@ -320,8 +324,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                 // updates visible song list
                 viewModel.changeHistory(false)
             }
-
-            // History hidden
+            // TODO: We can remove animate scroll to item and let songItem.animateItem choose the animation potenietally
         } else {
             // CASE: We are moving to the NEXT song (Index 5 -> 6)
             if (playerState.currentIndex > visibleStartIndex) {
@@ -342,7 +345,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
 
             }
-//            // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
+            // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
                 try {
                     // update the list first
@@ -399,10 +402,10 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
             val isPreviousSong = absoluteIndex < playerState.currentIndex
 
             SongItem(
+                modifier = Modifier.animateItem(),
                 song = song,
                 isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
-                alpha = if (isPreviousSong) 0.6f else 1f,
-                modifier = Modifier.animateItem()
+                alpha = if (isPreviousSong) 0.6f else 1f
             ) {
                 viewModel.changePlayingToIndex(absoluteIndex)
             }

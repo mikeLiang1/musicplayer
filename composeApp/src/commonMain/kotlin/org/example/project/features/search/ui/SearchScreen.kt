@@ -170,7 +170,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                         }
                     }
                     items(state.songList) { song ->
-                        SongItem(song) {
+                        SongItem(song = song) {
                             searchViewModel.onSongClicked(song)
                         }
                     }

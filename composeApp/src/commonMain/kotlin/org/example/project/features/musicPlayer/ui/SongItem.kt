@@ -33,6 +33,7 @@ fun SongItem(
     song: Song,
     isCurrentlyPlaying: Boolean = false,
     alpha: Float = 1f,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val backgroundColor =
@@ -48,7 +49,7 @@ fun SongItem(
             MaterialTheme.colorScheme.onSurface
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(backgroundColor, RoundedCornerShape(8.dp))
             .clickable { onClick() }

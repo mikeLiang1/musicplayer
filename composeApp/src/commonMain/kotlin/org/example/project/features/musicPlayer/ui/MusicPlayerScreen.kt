@@ -2,7 +2,6 @@ package org.example.project.features.musicPlayer.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,25 +40,17 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.yield
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
-import org.schabi.newpipe.extractor.timeago.patterns.it
 
 @Composable
 fun MusicPlayerScreen(
@@ -270,16 +261,40 @@ fun SongInfo(
 @Composable
 private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
-    val showHistory by remember {
-        viewModel.uiState.map { it.showHistory }
-    }.collectAsStateWithLifecycle(initialValue = false)
-
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
     // 1. We manually track where the list should start visually.
     // Initialize it to the current index so it starts correctly.
-    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex) }
+    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex + 1) }
+
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is MusicPlayerEffect.ScrollUp -> {
+                    // Force the next composition to stay (since when chip removed, first song will be at index 0)
+                    listState.requestScrollToItem(playerState.currentIndex)
+                    // Make full list available
+                    viewModel.changeHistory(true)
+
+                    // scroll to 2.5 items
+                    val targetIndex = (playerState.currentIndex - 1).coerceAtLeast(0)
+                    val itemHeight = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
+                    try {
+                        listState.animateScrollToItem(targetIndex, -itemHeight / 2)
+                    } catch (e: CancellationException) {
+
+                    }
+                }
+            }
+        }
+    }
+
+    val showHistory by remember {
+        viewModel.uiState.map { it.showHistory }
+    }.collectAsStateWithLifecycle(initialValue = false)
+
 
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
@@ -287,26 +302,24 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
         if (showHistory) {
             playerState.queue
         } else {
-            if (playerState.currentIndex < playerState.queue.size) {
-                playerState.queue.subList(playerState.currentIndex, playerState.queue.size)
-            } else {
-                emptyList()
-            }
+            playerState.queue.drop(playerState.currentIndex.coerceIn(0, playerState.queue.size))
         }
     }
 
     // When current index changes (i.e new song selected)
     LaunchedEffect(playerState.currentIndex) {
         if (showHistory) {
-            // SHow history true means we have the whole list, so we can
-            // directly scroll to the current index
-            listState.animateScrollToItem(playerState.currentIndex)
+            try {
+                // SHow history true means we have the whole list, so we can
+                // directly scroll to the current index
+                listState.animateScrollToItem(playerState.currentIndex + 1)
+            } finally {
+                // updates starting position
+                visibleStartIndex = playerState.currentIndex
 
-            // updates starting position
-            visibleStartIndex = playerState.currentIndex
-
-            // updates visible song list
-            viewModel.changeHistory(false)
+                // updates visible song list
+                viewModel.changeHistory(false)
+            }
 
             // History hidden
         } else {
@@ -314,79 +327,86 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
             if (playerState.currentIndex > visibleStartIndex) {
                 // 1. The 'visibleSongs' list is currently still starting at 5 (Old Song).
                 //    So Index 0 = Song 5, Index 1 = Song 6.
-
                 // 2. Calculate where the new song is relative to our current cut list.
                 val relativeIndex = playerState.currentIndex - visibleStartIndex
 
-                // 3. Animate scroll to that item.
-                //    User sees Song 5 scroll up and Song 6 arrive at the top.
-                listState.animateScrollToItem(relativeIndex)
+                try {
+                    // 3. Animate scroll to that item.
+                    //    User sees Song 5 scroll up and Song 6 arrive at the top.
+                    listState.animateScrollToItem(relativeIndex + 1)
+                } finally {
+                    // 4. NOW we update the list structure.
+                    //    We cut the list so it starts at 6.
+                    visibleStartIndex = playerState.currentIndex
+                }
 
-                // 4. NOW we update the list structure.
-                //    We cut the list so it starts at 6.
-                visibleStartIndex = playerState.currentIndex
 
             }
 //            // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
-                // update the list first
-                visibleStartIndex = playerState.currentIndex
+                try {
+                    // update the list first
+                    visibleStartIndex = playerState.currentIndex
+                } finally {
+                    // Ensure the visibleList has enough time first
+                    delay(25)
 
-                // Ensure the visibleList has enough time first
-                delay(15)
+                    // 4. Now animate "up" to the new current song (Index 0).
+                    listState.animateScrollToItem(1)
+                }
 
-                // 4. Now animate "up" to the new current song (Index 0).
-                listState.animateScrollToItem(0)
             }
         }
     }
 
-    Box(modifier = Modifier) {
-        LazyColumn(state = listState) {
-            itemsIndexed(
-                items = visibleSongs,
-                key = { _, song -> song.url }
-            ) { index, song ->
-
-                val absoluteIndex = if (showHistory) index else visibleStartIndex + index
-
-                SongItem(
-                    song = song,
-                    isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
+    LazyColumn(state = listState) {
+        item {
+            if (!showHistory && playerState.currentIndex > 0) {
+                Surface(
+                    onClick = {
+                        viewModel.scrollWhenHistoryOpened()
+                    },
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+                    tonalElevation = 4.dp,
+                    modifier = Modifier.padding(horizontal = 48.dp)
                 ) {
-                    viewModel.changePlayingToIndex(absoluteIndex)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "${playerState.currentIndex} previous songs",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
             }
         }
 
+        itemsIndexed(
+            items = visibleSongs,
+            key = { _, song -> song.url }
+        ) { index, song ->
 
-        // Simple chip - only shows when history is hidden and there are previous songs
-        if (!showHistory && playerState.currentIndex > 0) {
-            Surface(
-                onClick = { viewModel.changeHistory(true) },
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
-                tonalElevation = 4.dp,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(horizontal = 48.dp)
+            val absoluteIndex = if (showHistory) index else visibleStartIndex + index
+            val isPreviousSong = absoluteIndex < playerState.currentIndex
+
+            SongItem(
+                song = song,
+                isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
+                alpha = if (isPreviousSong) 0.6f else 1f,
+                modifier = Modifier.animateItem()
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "${playerState.currentIndex} previous songs",
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
+                viewModel.changePlayingToIndex(absoluteIndex)
             }
         }
+
     }
 }

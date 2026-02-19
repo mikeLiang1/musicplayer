@@ -2,13 +2,17 @@ package org.example.project.features.musicPlayer.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
+import org.example.project.features.search.ui.SearchEffect
 
 class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository,
@@ -17,6 +21,9 @@ class MusicPlayerViewModel constructor(
 
     private val _uiState = MutableStateFlow(MusicPlayerUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _effect = MutableSharedFlow<MusicPlayerEffect>()
+    val effect: SharedFlow<MusicPlayerEffect> = _effect.asSharedFlow()
 
     val playerState = musicPlayerManager.playerState
     val currentPosition = musicPlayerManager.currentPosition
@@ -55,6 +62,11 @@ class MusicPlayerViewModel constructor(
         _uiState.update { it.copy(showHistory = value) }
     }
 
+    fun scrollWhenHistoryOpened (index: Int = 0) {
+        viewModelScope.launch {
+            _effect.emit(MusicPlayerEffect.ScrollUp)
+        }
+    }
 
 }
 
@@ -63,4 +75,8 @@ data class MusicPlayerUiState(
     val showHistory: Boolean = false,
     val visibleStartIndex: Int = 0
 )
+
+sealed interface MusicPlayerEffect {
+    data object ScrollUp : MusicPlayerEffect
+}
 

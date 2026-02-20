@@ -2,7 +2,8 @@ package org.example.project.core.di
 
 import org.example.project.core.dao.MusicDatabase
 import org.example.project.core.dao.getRoomDatabase
-import org.example.project.core.repository.PlaybackRepository
+import org.example.project.core.repository.QueueRepository
+import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
@@ -14,15 +15,17 @@ val appModule = module {
     // Repositories are usually pure Kotlin, so they stay in common
     single { YouTubeRepository() }
 
+    single { QueueRepository() }
 
     viewModel { HomeViewModel(get()) }
-    viewModel { SearchViewModel(get(), get()) }
-    viewModel { MusicPlayerViewModel(get(), get()) }
+    viewModel { SearchViewModel(get(), get(), get()) }
+    viewModel { MusicPlayerViewModel(get(), get(), get()) }
 
     single<MusicDatabase> {
         getRoomDatabase(get())
     }
 
-    single { PlaybackRepository(get()) }
+
+    single { SavedDataRepository(get()) }
 
 }

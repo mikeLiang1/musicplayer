@@ -21,6 +21,8 @@ interface MusicPlayerManager {
     fun skipToNext()
     fun skipToPrevious()
     fun seekToIndex(index: Int)
+    fun shuffleOn()
+    fun shuffleOff()
 
     fun onAppEnteredForeground()
 

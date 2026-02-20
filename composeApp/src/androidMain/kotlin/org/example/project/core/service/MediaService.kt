@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.example.project.core.repository.PlaybackRepository
+import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.koin.android.ext.android.inject
 
@@ -29,7 +29,7 @@ class MediaService : MediaLibraryService() {
 
     private var mediaSession: MediaLibrarySession? = null
 
-    private val repo by inject<PlaybackRepository>()
+    private val repo by inject<SavedDataRepository>()
     private val youtubeRepository by inject<YouTubeRepository>()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

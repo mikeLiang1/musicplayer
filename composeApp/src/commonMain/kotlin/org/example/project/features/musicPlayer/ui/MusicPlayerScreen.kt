@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.FilledIconButton
@@ -104,41 +105,43 @@ fun MusicPlayerScreen(
             // Player controls
             PlayerControls(
                 isPlaying = state.isPlaying,
+                isShuffle = state.isShuffle,
                 onPlayPauseClick = viewModel::onPlayPauseClicked,
                 onNextClick = viewModel::onNextClicked,
-                onPreviousClick = viewModel::onPreviousClicked
+                onPreviousClick = viewModel::onPreviousClicked,
+                onShuffleClicked = {viewModel::onPreviousClicked}
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             QueueSection(viewModel = viewModel)
 
-//            LazyColumn {
-//                itemsIndexed(
-//                    items = state.upcomingQueue, key = { _, song -> song.url }
-//                ) { index, song ->
-//                    SongItem(song = song, isCurrentlyPlaying = index == 0) {
-//                        viewModel.changePlayingToIndex(index)
-//                    }
-//                }
-//            }
         }
     }
 }
 
 @Composable
 fun PlayerControls(
+    modifier: Modifier = Modifier,
     isPlaying: Boolean,
+    isShuffle: Boolean,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onShuffleClicked: () -> Unit
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        IconButton(onClick = onPreviousClick) {
+            Icon(
+                imageVector = Icons.Filled.Shuffle,
+                contentDescription = "Shuffle"
+            )
+        }
+
         IconButton(onClick = onPreviousClick) {
             Icon(
                 imageVector = Icons.Filled.SkipPrevious,
@@ -242,7 +245,7 @@ fun SongInfo(
             model = song.thumbnailUrl,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-                    contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop
         )
 
         Column {
@@ -267,6 +270,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // 1. We manually track where the list should start visually.
     // Initialize it to the current index so it starts correctly.
@@ -295,24 +299,21 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
         }
     }
 
-    val showHistory by remember {
-        viewModel.uiState.map { it.showHistory }
-    }.collectAsStateWithLifecycle(initialValue = false)
 
 
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
-    val visibleSongs = remember(showHistory, visibleStartIndex) {
-        if (showHistory) {
-            playerState.queue
+    val visibleSongs = remember(uiState.showHistory, visibleStartIndex) {
+        if (uiState.showHistory) {
+            uiState.queue
         } else {
-            playerState.queue.drop(playerState.currentIndex.coerceIn(0, playerState.queue.size))
+            uiState.queue.drop(playerState.currentIndex.coerceIn(0, uiState.queue.size))
         }
     }
 
     // When current index changes (i.e new song selected)
     LaunchedEffect(playerState.currentIndex) {
-        if (showHistory) {
+        if (uiState.showHistory) {
             try {
                 // SHow history true means we have the whole list, so we can
                 // directly scroll to the current index
@@ -364,7 +365,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     LazyColumn(state = listState) {
         item {
-            if (!showHistory && playerState.currentIndex > 0) {
+            if (!uiState.showHistory && playerState.currentIndex > 0) {
                 Surface(
                     onClick = {
                         viewModel.scrollWhenHistoryOpened()
@@ -398,7 +399,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
             key = { _, song -> song.url }
         ) { index, song ->
 
-            val absoluteIndex = if (showHistory) index else visibleStartIndex + index
+            val absoluteIndex = if (uiState.showHistory) index else visibleStartIndex + index
             val isPreviousSong = absoluteIndex < playerState.currentIndex
 
             SongItem(

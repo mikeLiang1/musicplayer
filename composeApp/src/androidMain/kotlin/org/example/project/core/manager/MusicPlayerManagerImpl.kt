@@ -25,13 +25,15 @@ import org.example.project.core.helper.toMediaItem
 import org.example.project.core.helper.toSong
 import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
-import org.example.project.core.repository.PlaybackRepository
+import org.example.project.core.repository.QueueRepository
+import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.service.MediaService
 
 
 class MusicPlayerManagerImpl(
     private val context: Context,
-    private val repo: PlaybackRepository
+    private val repo: SavedDataRepository,
+    private val queueRepository: QueueRepository
 ) : MusicPlayerManager {
     private var controller: MediaController? = null
 
@@ -124,10 +126,6 @@ class MusicPlayerManagerImpl(
                                 }
                             }
 
-                            _playerState.update {
-                                it.copy(queue = items)
-                            }
-
                             ioScope.launch {
                                 queueSaveJob?.cancel()
                                 queueSaveJob = launch {
@@ -151,6 +149,10 @@ class MusicPlayerManagerImpl(
                             _currentPosition.value = newPosition.positionMs
 
                         }
+                    }
+
+                    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                        _playerState.update { it.copy(isShuffle = shuffleModeEnabled) }
                     }
                 })
             }
@@ -177,6 +179,7 @@ class MusicPlayerManagerImpl(
                         startPosition = currentPosition,
                         startIndex = index
                     )
+                    queueRepository.setQueue(queue)
                     _currentPosition.value = currentPosition
                 }
             }
@@ -238,6 +241,14 @@ class MusicPlayerManagerImpl(
     override fun seekToIndex(index: Int) {
         controller?.seekToDefaultPosition(index)
         controller?.play()
+    }
+
+    override fun shuffleOn() {
+        controller?.shuffleModeEnabled = true
+    }
+
+    override fun shuffleOff() {
+        controller?.shuffleModeEnabled = false
     }
 
     override fun onAppEnteredForeground() {

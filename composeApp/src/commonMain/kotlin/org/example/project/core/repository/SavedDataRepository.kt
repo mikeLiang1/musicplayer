@@ -9,7 +9,7 @@ import org.example.project.core.model.Song
 import org.example.project.core.model.entity.PlaybackStateEntity
 import org.example.project.core.model.entity.QueueEntity
 
-class PlaybackRepository(private val database: MusicDatabase) {
+class SavedDataRepository(private val database: MusicDatabase) {
     private val dao = database.playbackDao()
 
     // The Main UI Flow: Combines Queue and State into one object

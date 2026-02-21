@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity
 data class PlaybackStateEntity(
     @PrimaryKey val id: Int = 0,
-    val currentSongUrl: String? = null,
+    val currentSongId: String? = null,
     val positionMs: Long = 0,
     val currentIndex: Int? = null,
     val isShuffled: Boolean = false

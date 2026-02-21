@@ -51,7 +51,7 @@ interface PlaybackDao {
     @Query("UPDATE PlaybackStateEntity SET positionMs = :position WHERE id = 0")
     suspend fun updatePosition(position: Long)
 
-    @Query("UPDATE PlaybackStateEntity SET currentSongUrl = :songId, currentIndex = :index, positionMs = 0 WHERE id = 0")
+    @Query("UPDATE PlaybackStateEntity SET currentSongId = :songId, currentIndex = :index, positionMs = 0 WHERE id = 0")
     suspend fun updateCurrentSong(songId: String, index: Int)
 
     @Query("UPDATE PlaybackStateEntity SET currentIndex = :index WHERE id = 0")

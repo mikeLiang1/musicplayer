@@ -277,7 +277,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 1. We manually track where the list should start visually.
     // Initialize it to the current index so it starts correctly.
-    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex) }
+    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex+1) }
 
 
     LaunchedEffect(Unit) {
@@ -291,7 +291,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
                     // scroll to 2.5 items
                     val targetIndex = (playerState.currentIndex - 2).coerceAtLeast(0)
-                    val itemHeight = listState.layoutInfo.visibleItemsInfo[playerState.currentIndex].size
+                    val itemHeight = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
                     try {
                         listState.animateScrollToItem(targetIndex, -itemHeight / 2)
                     } catch (e: CancellationException) {
@@ -394,7 +394,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
         itemsIndexed(
             items = visibleSongs,
-            key = { _, song -> song.url }
+            key = { _, song -> song.uniqueId }
         ) { index, song ->
 
             val absoluteIndex = if (uiState.showHistory) index else visibleStartIndex + index

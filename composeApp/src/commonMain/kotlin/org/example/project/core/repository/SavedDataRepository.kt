@@ -12,7 +12,10 @@ import org.example.project.core.model.Song
 import org.example.project.core.model.entity.PlaybackStateEntity
 import org.example.project.core.model.entity.QueueEntity
 
-class SavedDataRepository(database: MusicDatabase, private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) {
+class SavedDataRepository(
+    database: MusicDatabase,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
     private val dao = database.playbackDao()
 
     private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
@@ -35,7 +38,7 @@ class SavedDataRepository(database: MusicDatabase, private val ioDispatcher: Cor
             queue = queue,
             originalQueue = originalQueue,
             positionMs = stateEntity.positionMs,
-            currentSongId = stateEntity.currentSongUrl,
+            currentSongId = stateEntity.currentSongId,
             index = stateEntity.currentIndex,
             isShuffled = stateEntity.isShuffled
         )
@@ -51,7 +54,7 @@ class SavedDataRepository(database: MusicDatabase, private val ioDispatcher: Cor
         dao.updateCurrentSong(songId = songId, index = index)
     }
 
-    suspend fun saveIndex(index:Int) {
+    suspend fun saveIndex(index: Int) {
         dao.updateIndex(index)
     }
 
@@ -78,8 +81,24 @@ class SavedDataRepository(database: MusicDatabase, private val ioDispatcher: Cor
 }
 
 // Mappers
-fun QueueEntity.toDomain() = Song(url, title, artist, thumbnailUrl, duration)
+fun QueueEntity.toDomain() = Song(
+    uniqueId = uniqueId,
+    url = url,
+    title = title,
+    artist = artist,
+    thumbnailUrl = thumbnailUrl,
+    duration = duration,
+    isManual = isManual
+)
+
 fun Song.toEntity(index: Int, type: String) = QueueEntity(
-    title = title, artist = artist,
-    thumbnailUrl = thumbnailUrl, url = url, duration = duration, orderIndex = index, type = type
+    title = title,
+    artist = artist,
+    thumbnailUrl = thumbnailUrl,
+    url = url,
+    duration = duration,
+    orderIndex = index,
+    type = type,
+    uniqueId = uniqueId,
+    isManual = isManual
 )

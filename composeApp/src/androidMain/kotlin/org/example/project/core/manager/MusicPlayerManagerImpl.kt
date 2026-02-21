@@ -115,7 +115,7 @@ class MusicPlayerManagerImpl(
                         song?.let {
                             ioScope.launch {
                                 repo.saveCurrentSongIdAndIndex(
-                                    song.url,
+                                    song.uniqueId,
                                     index
                                 )
                             }
@@ -123,6 +123,7 @@ class MusicPlayerManagerImpl(
 
                     }
 
+                    // TODO: Remove
                     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                         // Only if queue order / items change
                         if (reason == TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
@@ -174,7 +175,7 @@ class MusicPlayerManagerImpl(
                 lastState?.let {
                     val queue = lastState.queue
                     val song = lastState.queue.find { song ->
-                        song.url == lastState.currentSongId
+                        song.uniqueId == lastState.currentSongId
                     }
                     val currentPosition = lastState.positionMs
                     val index = lastState.index ?: 0

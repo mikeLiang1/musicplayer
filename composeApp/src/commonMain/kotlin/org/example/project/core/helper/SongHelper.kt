@@ -13,7 +13,7 @@ fun Song.toMediaItem(): MediaItem {
         .setDurationMs(duration)
         .build()
     return MediaItem.Builder()
-        .setMediaId(url)
+        .setMediaId(uniqueId)
         .setUri(url)
         .setMediaMetadata(metadata)
         .build()
@@ -22,10 +22,11 @@ fun Song.toMediaItem(): MediaItem {
 fun MediaItem.toSong(): Song {
 
     return Song(
-        url = mediaId, // Retrieved from mediaId
+        url = localConfiguration?.uri.toString(), // Retrieved from mediaId
         title = mediaMetadata.title?.toString() ?: "Unknown",
         artist = mediaMetadata.artist?.toString() ?: "Unknown",
         thumbnailUrl = mediaMetadata.artworkUri?.toString(),
-        duration = mediaMetadata.durationMs ?: 0L
+        duration = mediaMetadata.durationMs ?: 0L,
+        uniqueId = mediaId
     )
 }

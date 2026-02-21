@@ -62,7 +62,7 @@ class QueueRepository(
             originalQueue = queue  // snapshot before shuffling
             val played = queue.subList(0, currentIndex + 1)
             val upcoming = queue.subList(currentIndex + 1, queue.size)
-                .filter { it.url !in manualQueueIds }
+                .filter { !it.isManual}
             _queue.value = played + _manualQueue.value + upcoming.shuffled()
             QueueUpdateResult(_queue.value, currentIndex)
         }
@@ -70,11 +70,11 @@ class QueueRepository(
         // before and after
         else {
             val currentSong = queue[currentIndex]
-            val currentOriginalIndex = originalQueue.indexOfFirst { it.url == currentSong.url }
+            val currentOriginalIndex = originalQueue.indexOfFirst { it.uniqueId == currentSong.uniqueId }
 
             val played = originalQueue.subList(0, currentOriginalIndex + 1)
             val upcoming = originalQueue.subList(currentOriginalIndex + 1, originalQueue.size)
-                .filter { it.url !in manualQueueIds }
+                .filter { !it.isManual}
 
             _queue.value = played + _manualQueue.value + upcoming
 

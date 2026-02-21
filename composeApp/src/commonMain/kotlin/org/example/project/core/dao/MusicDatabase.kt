@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import org.example.project.core.model.entity.PlaybackStateEntity
 import org.example.project.core.model.entity.QueueEntity
 
-@Database(entities = [QueueEntity::class, PlaybackStateEntity::class], version = 3)
+@Database(entities = [QueueEntity::class, PlaybackStateEntity::class], version = 1)
 abstract class MusicDatabase : RoomDatabase() {
     abstract fun playbackDao(): PlaybackDao
 }

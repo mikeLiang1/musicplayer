@@ -6,6 +6,5 @@ import androidx.compose.runtime.Stable
 data class PlayerState(
     val currentSong: Song? = null,
     val isPlaying: Boolean = false,
-    val currentIndex: Int = 0,
-    val isShuffle: Boolean = false
+    val currentIndex: Int = 0
 )

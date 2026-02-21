@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.ShuffleOn
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.FilledIconButton
@@ -48,10 +49,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.google.common.collect.Multimaps.index
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.map
 import org.example.project.core.helper.formatTime
+import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 
 @Composable
@@ -61,6 +63,7 @@ fun MusicPlayerScreen(
 ) {
     BackHandler { navigateBack() }
 
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.playerState.collectAsStateWithLifecycle()
 
     state.currentSong?.let { song ->
@@ -80,7 +83,7 @@ fun MusicPlayerScreen(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    viewModel.onQueueClicked()
+                    viewModel.onMenuClicked()
                 }
                 ) {
                     Icon(
@@ -105,11 +108,11 @@ fun MusicPlayerScreen(
             // Player controls
             PlayerControls(
                 isPlaying = state.isPlaying,
-                isShuffle = state.isShuffle,
+                isShuffle = uiState.isShuffle,
                 onPlayPauseClick = viewModel::onPlayPauseClicked,
                 onNextClick = viewModel::onNextClicked,
                 onPreviousClick = viewModel::onPreviousClicked,
-                onShuffleClicked = {viewModel::onPreviousClicked}
+                onShuffleClicked = viewModel::changeShuffleOption
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -135,9 +138,9 @@ fun PlayerControls(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPreviousClick) {
+        IconButton(onClick = onShuffleClicked) {
             Icon(
-                imageVector = Icons.Filled.Shuffle,
+                imageVector = if(!isShuffle) Icons.Filled.Shuffle else Icons.Filled.ShuffleOn,
                 contentDescription = "Shuffle"
             )
         }
@@ -266,7 +269,7 @@ fun SongInfo(
 
 // Composable - much simpler now
 @Composable
-private fun QueueSection(viewModel: MusicPlayerViewModel) {
+private fun QueueSection(viewModel: MusicPlayerViewModel,) {
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -274,7 +277,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 1. We manually track where the list should start visually.
     // Initialize it to the current index so it starts correctly.
-    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex + 1) }
+    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex) }
 
 
     LaunchedEffect(Unit) {
@@ -287,7 +290,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                     viewModel.changeHistory(true)
 
                     // scroll to 2.5 items
-                    val targetIndex = (playerState.currentIndex - 1).coerceAtLeast(0)
+                    val targetIndex = (playerState.currentIndex - 2).coerceAtLeast(0)
                     val itemHeight = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
                     try {
                         listState.animateScrollToItem(targetIndex, -itemHeight / 2)
@@ -300,10 +303,9 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
     }
 
 
-
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
-    val visibleSongs = remember(uiState.showHistory, visibleStartIndex) {
+    val visibleSongs = remember(uiState.showHistory, visibleStartIndex, uiState.queue) {
         if (uiState.showHistory) {
             uiState.queue
         } else {
@@ -317,7 +319,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
             try {
                 // SHow history true means we have the whole list, so we can
                 // directly scroll to the current index
-                listState.animateScrollToItem(playerState.currentIndex + 1)
+                listState.animateScrollToItem(playerState.currentIndex)
             } finally {
                 // updates starting position
                 visibleStartIndex = playerState.currentIndex
@@ -336,18 +338,19 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
                 try {
                     // 3. Animate scroll to that item.
-                    //    User sees Song 5 scroll up and Song 6 arrive at the top.
+                    //    User sees Song 5 scroll up and Song 6 arrive at the top. + 1 for chip
                     listState.animateScrollToItem(relativeIndex + 1)
                 } finally {
                     // 4. NOW we update the list structure.
                     //    We cut the list so it starts at 6.
+                    delay(25)
                     visibleStartIndex = playerState.currentIndex
                 }
-
 
             }
             // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
+                val index = if (playerState.currentIndex == 0) 0 else 1
                 try {
                     // update the list first
                     visibleStartIndex = playerState.currentIndex
@@ -355,8 +358,8 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                     // Ensure the visibleList has enough time first
                     delay(25)
 
-                    // 4. Now animate "up" to the new current song (Index 0).
-                    listState.animateScrollToItem(1)
+                    // 4. Now animate "up" to the new current song (Index 0) + 1 for chip.
+                    listState.animateScrollToItem(index)
                 }
 
             }
@@ -364,8 +367,8 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
     }
 
     LazyColumn(state = listState) {
-        item {
-            if (!uiState.showHistory && playerState.currentIndex > 0) {
+        if (!uiState.showHistory && playerState.currentIndex > 0) {
+            item {
                 Surface(
                     onClick = {
                         viewModel.scrollWhenHistoryOpened()

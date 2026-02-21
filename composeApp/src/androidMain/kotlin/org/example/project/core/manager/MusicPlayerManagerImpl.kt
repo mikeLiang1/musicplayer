@@ -10,6 +10,7 @@ import androidx.media3.common.Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED
 import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.google.common.collect.Multimaps.index
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -94,6 +95,7 @@ class MusicPlayerManagerImpl(
                             Player.STATE_BUFFERING -> {
                                 Log.d("logging", "bufferoing")
                             }
+
                             Player.STATE_READY -> {
                                 Log.d("logging", "ready")
                             }
@@ -103,16 +105,23 @@ class MusicPlayerManagerImpl(
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         // If we arent restoring a saved state, we need to immediately update the state
                         // only need to update the song (title, image etc) and force current position to start and index update index
-                            val song = mediaItem?.toSong()
-                            val index = currentMediaItemIndex
-                            _playerState.update {
-                                it.copy(
-                                    currentSong = song,
-                                    currentIndex = index
+                        val song = mediaItem?.toSong()
+                        val index = currentMediaItemIndex
+                        _playerState.update {
+                            it.copy(
+                                currentSong = song,
+                                currentIndex = index
+                            )
+                        }
+                        // Save State
+                        song?.let {
+                            ioScope.launch {
+                                repo.saveCurrentSongIdAndIndex(
+                                    song.url,
+                                    index
                                 )
                             }
-                            // Save State
-                            song?.let { ioScope.launch { repo.saveCurrentSongIdAndIndex(song.url, index) } }
+                        }
 
                     }
 
@@ -151,9 +160,6 @@ class MusicPlayerManagerImpl(
                         }
                     }
 
-                    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-                        _playerState.update { it.copy(isShuffle = shuffleModeEnabled) }
-                    }
                 })
             }
             restorePlaybackState()
@@ -213,6 +219,32 @@ class MusicPlayerManagerImpl(
         }
     }
 
+    override fun replaceQueueKeepingCurrentSong(songs: List<Song>, currentIndex: Int) {
+        val upcoming = songs.drop(currentIndex + 1)
+
+        // Remove everything after current
+        controller?.removeMediaItems(currentIndex + 1, controller!!.mediaItemCount)
+
+        // Add new upcoming items
+        controller?.addMediaItems(currentIndex + 1, upcoming.map { it.toMediaItem() })
+    }
+
+    override fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int) {
+        val controller = controller ?: return
+        _playerState.update { it.copy(currentIndex = newIndex) }
+        val originalCurrentIndex = controller.currentMediaItemIndex  // capture before any changes
+
+        // Replace after first (indices unaffected)
+        val upcoming = songs.drop(newIndex + 1)
+        controller.removeMediaItems(originalCurrentIndex + 1, controller.mediaItemCount)
+        controller.addMediaItems(originalCurrentIndex + 1, upcoming.map { it.toMediaItem() })
+
+        // Replace before (shifts current index but current item unaffected)
+        val played = songs.subList(0, newIndex)
+        controller.removeMediaItems(0, originalCurrentIndex)
+        controller.addMediaItems(0, played.map { it.toMediaItem() })
+    }
+
     override fun pause() {
         controller?.pause()
     }
@@ -242,6 +274,7 @@ class MusicPlayerManagerImpl(
         controller?.seekToDefaultPosition(index)
         controller?.play()
     }
+
 
     override fun shuffleOn() {
         controller?.shuffleModeEnabled = true

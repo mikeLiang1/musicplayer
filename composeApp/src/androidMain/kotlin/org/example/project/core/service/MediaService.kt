@@ -34,8 +34,7 @@ class MediaService : MediaLibraryService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val urlCache =
-        mutableMapOf<String, Pair<String, Long>>()
+    private val urlCache = mutableMapOf<String, Pair<String, Long>>()
 
 
     @OptIn(UnstableApi::class)

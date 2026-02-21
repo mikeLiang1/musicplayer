@@ -1,6 +1,7 @@
 package org.example.project.core.manager
 
 import kotlinx.coroutines.flow.StateFlow
+import org.example.project.core.helper.toMediaItem
 import org.example.project.core.model.Song
 import org.example.project.core.model.PlayerState
 
@@ -16,6 +17,10 @@ interface MusicPlayerManager {
     fun pause()
     fun play()
     suspend fun setQueue(songs: List<Song>, autoPlay: Boolean, startPosition: Long? = null, startIndex: Int)
+    fun replaceQueueKeepingCurrentSong(songs: List<Song>, currentIndex: Int)
+
+    fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int)
+
     fun stop()
     fun seekTo(seconds: Long)
     fun skipToNext()

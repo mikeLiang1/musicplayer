@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -16,7 +15,6 @@ import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.model.Song
 import org.example.project.core.repository.QueueRepository
 import org.example.project.core.repository.YouTubeRepository
-import org.example.project.features.search.ui.SearchEffect
 
 class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository,
@@ -28,9 +26,10 @@ class MusicPlayerViewModel constructor(
 
     val uiState = combine(
         _uiState,
-        queueRepository.queue
-    ) { uiState, queue ->
-        uiState.copy(queue = queue)
+        queueRepository.queue,
+        queueRepository.isShuffle
+    ) { uiState, queue, isShuffle ->
+        uiState.copy(queue = queue, isShuffle = isShuffle)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -64,10 +63,8 @@ class MusicPlayerViewModel constructor(
         _uiState.update { it.copy(isFullScreenVisible = fullScreen) }
     }
 
-    fun onQueueClicked() {
-        viewModelScope.launch {
-            repository.getPlaylistRadio(playerState.value.currentSong?.url ?: "")
-        }
+    fun onMenuClicked() {
+
     }
 
     fun changePlayingToIndex(index: Int) {
@@ -77,15 +74,23 @@ class MusicPlayerViewModel constructor(
         _uiState.update { it.copy(showHistory = value) }
     }
 
-    fun scrollWhenHistoryOpened (index: Int = 0) {
+    fun scrollWhenHistoryOpened () {
         viewModelScope.launch {
             _effect.emit(MusicPlayerEffect.ScrollUp)
         }
     }
 
-//    fun onShuffleClicked() {
-//        musicPlayerManager.
-//    }
+    fun changeShuffleOption() {
+        val queueResult = queueRepository.shuffleClicked(playerState.value.currentIndex)
+        if (queueRepository.isShuffle.value) {
+            musicPlayerManager.replaceQueueKeepingCurrentSong(
+                queueResult.queue,
+                queueResult.currentIndex
+            )
+        }else {
+            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queueResult.queue, queueResult.currentIndex)
+        }
+    }
 
 }
 
@@ -93,7 +98,8 @@ data class MusicPlayerUiState(
     val isFullScreenVisible: Boolean = false,
     val showHistory: Boolean = false,
     val visibleStartIndex: Int = 0,
-    val queue: List<Song> = listOf()
+    val queue: List<Song> = listOf(),
+    val isShuffle: Boolean = false
 )
 
 sealed interface MusicPlayerEffect {

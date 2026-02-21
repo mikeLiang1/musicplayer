@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "44dae173267da45f99228b1c4d976375",
+    "version": 2,
+    "identityHash": "645905af3ca8ff31294801af59413c13",
     "entities": [
       {
         "tableName": "QueueEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`autoId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `thumbnailUrl` TEXT, `url` TEXT NOT NULL, `duration` INTEGER NOT NULL, `orderIndex` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`autoId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `thumbnailUrl` TEXT, `url` TEXT NOT NULL, `duration` INTEGER NOT NULL, `type` TEXT NOT NULL, `orderIndex` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "autoId",
@@ -41,6 +41,12 @@
             "fieldPath": "duration",
             "columnName": "duration",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -100,7 +106,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '44dae173267da45f99228b1c4d976375')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '645905af3ca8ff31294801af59413c13')"
     ]
   }
 }

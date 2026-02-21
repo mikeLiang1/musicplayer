@@ -1,7 +1,12 @@
 package org.example.project.core.repository
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.example.project.core.model.Song
 
 
@@ -10,7 +15,11 @@ data class QueueUpdateResult(
     val currentIndex: Int
 )
 
-class QueueRepository {
+class QueueRepository(
+    val savedDataRepository: SavedDataRepository,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
     private val _queue = MutableStateFlow<List<Song>>(listOf())
     val queue = _queue.asStateFlow()
     private val _isShuffled = MutableStateFlow(false)
@@ -24,27 +33,34 @@ class QueueRepository {
     private var originalQueue = listOf<Song>()
 
 
-    fun setQueue(queue: List<Song>) {
-        _isShuffled.value = false
+    fun setQueue(queue: List<Song>, isShuffled: Boolean, savedOriginalQueue: List<Song>? = null) {
+        _isShuffled.value = isShuffled
         _queue.value = queue
+        savedOriginalQueue?.let {
+            originalQueue = it
+        }
     }
 
     fun addToQueue() {
 
     }
 
+    // Returns the new index after shuffling
     fun shuffleClicked(currentIndex: Int): QueueUpdateResult {
-        _isShuffled.value = !_isShuffled.value
         val queue = _queue.value
 
-        if (_isShuffled.value) {
+        // Currently not shuffled, shuffle everything after curentindex
+        val queueUpdateResult = if (!_isShuffled.value) {
             originalQueue = queue  // snapshot before shuffling
             val played = queue.subList(0, currentIndex + 1)
             val upcoming = queue.subList(currentIndex + 1, queue.size)
                 .filter { it.url !in manualQueueIds }
             _queue.value = played + _manualQueue.value + upcoming.shuffled()
-            return  QueueUpdateResult(_queue.value, currentIndex)
-        } else {
+            QueueUpdateResult(_queue.value, currentIndex)
+        }
+        // Currently shuffled, to unshuffle, find the index where current song is playing, and restore
+        // before and after
+        else {
             val currentSong = queue[currentIndex]
             val currentOriginalIndex = originalQueue.indexOfFirst { it.url == currentSong.url }
 
@@ -54,16 +70,16 @@ class QueueRepository {
 
             _queue.value = played + _manualQueue.value + upcoming
 
-            return QueueUpdateResult(_queue.value, currentOriginalIndex)
+            QueueUpdateResult(_queue.value, currentOriginalIndex)
         }
-    }
-
-    private fun shuffleQueue() {
-
-    }
-
-    private fun unShuffleQueue() {
-
+        // Only when we successfully update, change the value
+        _isShuffled.value = !_isShuffled.value
+        scope.launch {
+            savedDataRepository.saveOriginalQueue(originalQueue)
+            savedDataRepository.saveIsShuffled(_isShuffled.value)
+            savedDataRepository.saveIndex(queueUpdateResult.currentIndex)
+        }
+        return queueUpdateResult
     }
 
 }

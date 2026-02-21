@@ -11,5 +11,6 @@ data class QueueEntity(
     val thumbnailUrl: String?,
     val url: String,
     val duration: Long,
+    val type: String, // "current" or "original"
     val orderIndex: Int // Important for maintaining list order
 )

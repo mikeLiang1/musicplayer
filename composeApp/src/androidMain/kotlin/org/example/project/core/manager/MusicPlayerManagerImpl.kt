@@ -10,7 +10,6 @@ import androidx.media3.common.Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED
 import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.collect.Multimaps.index
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +18,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.helper.toMediaItem
@@ -166,27 +164,34 @@ class MusicPlayerManagerImpl(
         }, MoreExecutors.directExecutor())
     }
 
+    // TODO: i would rather have this in playback repositroy init
     private fun restorePlaybackState() {
         // Only if theres 0 items, we attempt to restore state. This can happen if we clear app, and restart, but this manager wasnt killed
         Log.d("Logging", "restoring playback items = ${controller?.mediaItemCount}")
         if (controller?.mediaItemCount == 0) {
             coroutineScope.launch {
-                val lastState = repo.playbackState.first()
-                val queue = lastState.queue
-                val song = lastState.queue.find { song ->
-                    song.url == lastState.currentSongId
-                }
-                val currentPosition = lastState.positionMs
-                val index = lastState.index ?: 0
-                song?.let {
-                    setQueue(
-                        queue,
-                        autoPlay = false,
-                        startPosition = currentPosition,
-                        startIndex = index
-                    )
-                    queueRepository.setQueue(queue)
-                    _currentPosition.value = currentPosition
+                val lastState = repo.getPlaybackState()
+                lastState?.let {
+                    val queue = lastState.queue
+                    val song = lastState.queue.find { song ->
+                        song.url == lastState.currentSongId
+                    }
+                    val currentPosition = lastState.positionMs
+                    val index = lastState.index ?: 0
+                    song?.let {
+                        setQueue(
+                            queue,
+                            autoPlay = false,
+                            startPosition = currentPosition,
+                            startIndex = index
+                        )
+                        queueRepository.setQueue(
+                            queue,
+                            lastState.isShuffled,
+                            lastState.originalQueue
+                        )
+                        _currentPosition.value = currentPosition
+                    }
                 }
             }
         }
@@ -229,9 +234,9 @@ class MusicPlayerManagerImpl(
         controller?.addMediaItems(currentIndex + 1, upcoming.map { it.toMediaItem() })
     }
 
+    // Replace before and af
     override fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int) {
         val controller = controller ?: return
-        _playerState.update { it.copy(currentIndex = newIndex) }
         val originalCurrentIndex = controller.currentMediaItemIndex  // capture before any changes
 
         // Replace after first (indices unaffected)
@@ -243,6 +248,7 @@ class MusicPlayerManagerImpl(
         val played = songs.subList(0, newIndex)
         controller.removeMediaItems(0, originalCurrentIndex)
         controller.addMediaItems(0, played.map { it.toMediaItem() })
+        _playerState.update { it.copy(currentIndex = newIndex) }
     }
 
     override fun pause() {

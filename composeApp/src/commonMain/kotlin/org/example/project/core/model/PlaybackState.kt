@@ -4,5 +4,7 @@ data class PlaybackState(
     val currentSongId: String?,
     val positionMs: Long,
     val queue: List<Song> = emptyList(),
-    val index: Int?
+    val originalQueue: List<Song> = emptyList(),
+    val index: Int?,
+    val isShuffled: Boolean
 )

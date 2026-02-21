@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import org.example.project.core.model.entity.PlaybackStateEntity
 import org.example.project.core.model.entity.QueueEntity
 
-@Database(entities = [QueueEntity::class, PlaybackStateEntity::class], version = 1)
+@Database(entities = [QueueEntity::class, PlaybackStateEntity::class], version = 3)
 abstract class MusicDatabase : RoomDatabase() {
     abstract fun playbackDao(): PlaybackDao
 }
@@ -17,5 +17,6 @@ fun getRoomDatabase(builder: RoomDatabase.Builder<MusicDatabase>): MusicDatabase
     return builder
         .setDriver(BundledSQLiteDriver()) // Use the bundled driver for KMP
         .setQueryCoroutineContext(Dispatchers.IO)
+        .fallbackToDestructiveMigration()
         .build()
 }

@@ -6,21 +6,15 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
-import kotlinx.coroutines.flow.Flow
 import org.example.project.core.model.entity.PlaybackStateEntity
 import org.example.project.core.model.entity.QueueEntity
 
 @Dao
 interface PlaybackDao {
     // --- Queue Logic ---
-    @Query("SELECT * FROM QueueEntity ORDER BY orderIndex ASC")
-    fun getQueueFlow(): Flow<List<QueueEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQueue(songs: List<QueueEntity>)
-
-    @Query("DELETE FROM QueueEntity")
-    suspend fun clearQueue()
 
     @Transaction
     suspend fun saveFullQueue(songs: List<QueueEntity>) {
@@ -28,13 +22,41 @@ interface PlaybackDao {
         insertQueue(songs)
     }
 
-    // --- Playback State Logic ---
-    @Query("SELECT * FROM PlaybackStateEntity WHERE id = 0")
-    fun getPlaybackStateFlow(): Flow<PlaybackStateEntity?>
+    @Transaction
+    suspend fun saveFullOriginalQueue(songs: List<QueueEntity>) {
+        clearOriginalQueue()
+        insertQueue(songs)
+    }
+
+    @Query("SELECT * FROM QueueEntity WHERE type = 'current' ORDER BY orderIndex ASC")
+    suspend fun getQueueOnce(): List<QueueEntity>
+
+    @Query("SELECT * FROM QueueEntity WHERE type = 'original' ORDER BY orderIndex ASC")
+    suspend fun getOriginalQueueOnce(): List<QueueEntity>
+
+    @Query("DELETE FROM QueueEntity WHERE type = 'current'")
+    suspend fun clearQueue()
+
+    @Query("DELETE FROM QueueEntity WHERE type = 'original'")
+    suspend fun clearOriginalQueue()
+
 
     @Query("SELECT * FROM PlaybackStateEntity WHERE id = 0")
     suspend fun getPlaybackStateOnce(): PlaybackStateEntity?
 
     @Upsert
     suspend fun upsertPlaybackState(state: PlaybackStateEntity)
+
+
+    @Query("UPDATE PlaybackStateEntity SET positionMs = :position WHERE id = 0")
+    suspend fun updatePosition(position: Long)
+
+    @Query("UPDATE PlaybackStateEntity SET currentSongUrl = :songId, currentIndex = :index, positionMs = 0 WHERE id = 0")
+    suspend fun updateCurrentSong(songId: String, index: Int)
+
+    @Query("UPDATE PlaybackStateEntity SET currentIndex = :index WHERE id = 0")
+    suspend fun updateIndex(index: Int)
+
+    @Query("UPDATE PlaybackStateEntity SET isShuffled = :isShuffled WHERE id = 0")
+    suspend fun updateIsShuffled(isShuffled: Boolean)
 }

@@ -82,14 +82,7 @@ class MusicPlayerViewModel constructor(
 
     fun changeShuffleOption() {
         val queueResult = queueRepository.shuffleClicked(playerState.value.currentIndex)
-        if (queueRepository.isShuffle.value) {
-            musicPlayerManager.replaceQueueKeepingCurrentSong(
-                queueResult.queue,
-                queueResult.currentIndex
-            )
-        }else {
-            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queueResult.queue, queueResult.currentIndex)
-        }
+        musicPlayerManager.replaceFullQueueKeepingCurrentSong(queueResult.queue, queueResult.currentIndex)
     }
 
 }

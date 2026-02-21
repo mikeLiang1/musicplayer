@@ -1,5 +1,7 @@
 package org.example.project.core.di
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import org.example.project.core.dao.MusicDatabase
 import org.example.project.core.dao.getRoomDatabase
 import org.example.project.core.repository.QueueRepository
@@ -15,7 +17,9 @@ val appModule = module {
     // Repositories are usually pure Kotlin, so they stay in common
     single { YouTubeRepository() }
 
-    single { QueueRepository() }
+    single<CoroutineDispatcher> { Dispatchers.IO }
+
+    single { QueueRepository(get(), get()) }
 
     viewModel { HomeViewModel(get()) }
     viewModel { SearchViewModel(get(), get(), get()) }

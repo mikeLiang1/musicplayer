@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -49,11 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.google.common.collect.Multimaps.index
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.yield
 import org.example.project.core.helper.formatTime
-import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 
 @Composable
@@ -140,7 +140,7 @@ fun PlayerControls(
     ) {
         IconButton(onClick = onShuffleClicked) {
             Icon(
-                imageVector = if(!isShuffle) Icons.Filled.Shuffle else Icons.Filled.ShuffleOn,
+                imageVector = if (!isShuffle) Icons.Filled.Shuffle else Icons.Filled.ShuffleOn,
                 contentDescription = "Shuffle"
             )
         }
@@ -269,7 +269,7 @@ fun SongInfo(
 
 // Composable - much simpler now
 @Composable
-private fun QueueSection(viewModel: MusicPlayerViewModel,) {
+private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -285,17 +285,17 @@ private fun QueueSection(viewModel: MusicPlayerViewModel,) {
             when (effect) {
                 is MusicPlayerEffect.ScrollUp -> {
                     // Force the next composition to stay (since when chip removed, first song will be at index 0)
-                    listState.requestScrollToItem(playerState.currentIndex)
+                    listState.requestScrollToItem(playerState.currentIndex - 1)
                     // Make full list available
                     viewModel.changeHistory(true)
 
                     // scroll to 2.5 items
                     val targetIndex = (playerState.currentIndex - 2).coerceAtLeast(0)
-                    val itemHeight = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
+                    val itemHeight = listState.layoutInfo.visibleItemsInfo[playerState.currentIndex].size
                     try {
                         listState.animateScrollToItem(targetIndex, -itemHeight / 2)
                     } catch (e: CancellationException) {
-
+                        // Swallow to avoid bugs
                     }
                 }
             }
@@ -331,19 +331,14 @@ private fun QueueSection(viewModel: MusicPlayerViewModel,) {
         } else {
             // CASE: We are moving to the NEXT song (Index 5 -> 6)
             if (playerState.currentIndex > visibleStartIndex) {
-                // 1. The 'visibleSongs' list is currently still starting at 5 (Old Song).
-                //    So Index 0 = Song 5, Index 1 = Song 6.
-                // 2. Calculate where the new song is relative to our current cut list.
                 val relativeIndex = playerState.currentIndex - visibleStartIndex
 
                 try {
-                    // 3. Animate scroll to that item.
-                    //    User sees Song 5 scroll up and Song 6 arrive at the top. + 1 for chip
+                    // Animate while list still has old content
                     listState.animateScrollToItem(relativeIndex + 1)
                 } finally {
-                    // 4. NOW we update the list structure.
-                    //    We cut the list so it starts at 6.
-                    delay(25)
+                    // Then update list structure
+                    yield()
                     visibleStartIndex = playerState.currentIndex
                 }
 
@@ -351,17 +346,17 @@ private fun QueueSection(viewModel: MusicPlayerViewModel,) {
             // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
                 val index = if (playerState.currentIndex == 0) 0 else 1
+                // Expand list to include previous songs
+                visibleStartIndex = playerState.currentIndex
+
+                withFrameNanos {  }
+
                 try {
-                    // update the list first
-                    visibleStartIndex = playerState.currentIndex
-                } finally {
-                    // Ensure the visibleList has enough time first
-                    delay(25)
-
-                    // 4. Now animate "up" to the new current song (Index 0) + 1 for chip.
+                    // Now animate up to the new current song
                     listState.animateScrollToItem(index)
-                }
+                } catch (e: CancellationException) {
 
+                }
             }
         }
     }

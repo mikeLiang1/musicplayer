@@ -17,8 +17,6 @@ interface MusicPlayerManager {
     fun pause()
     fun play()
     suspend fun setQueue(songs: List<Song>, autoPlay: Boolean, startPosition: Long? = null, startIndex: Int)
-    fun replaceQueueKeepingCurrentSong(songs: List<Song>, currentIndex: Int)
-
     fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int)
 
     fun stop()

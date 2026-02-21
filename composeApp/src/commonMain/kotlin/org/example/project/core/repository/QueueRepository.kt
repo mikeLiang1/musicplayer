@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.model.Song
 
@@ -26,9 +27,9 @@ class QueueRepository(
     val isShuffle = _isShuffled.asStateFlow()
 
     private val _manualQueue = MutableStateFlow<List<Song>>(listOf())
-    val manual = _manualQueue.asStateFlow()
+    val manualQueue = _manualQueue.asStateFlow()
 
-    private val manualQueueIds = setOf<String>()
+    private val manualQueueIds = mutableSetOf<String>()
 
     private var originalQueue = listOf<Song>()
 
@@ -41,8 +42,15 @@ class QueueRepository(
         }
     }
 
-    fun addToQueue() {
+    fun addToQueue(song: Song, currentIndex: Int): Int {
+        manualQueueIds.add(song.url)
+        _manualQueue.update { it + song }
+        val insertIndex = currentIndex + _manualQueue.value.size
+        _queue.value = _queue.value.toMutableList().apply {
+            add(insertIndex, song)
+        }
 
+        return insertIndex
     }
 
     // Returns the new index after shuffling

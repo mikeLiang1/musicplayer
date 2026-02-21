@@ -70,11 +70,12 @@ class MusicPlayerViewModel constructor(
     fun changePlayingToIndex(index: Int) {
         musicPlayerManager.seekToIndex(index)
     }
+
     fun changeHistory(value: Boolean) {
         _uiState.update { it.copy(showHistory = value) }
     }
 
-    fun scrollWhenHistoryOpened () {
+    fun scrollWhenHistoryOpened() {
         viewModelScope.launch {
             _effect.emit(MusicPlayerEffect.ScrollUp)
         }
@@ -82,7 +83,10 @@ class MusicPlayerViewModel constructor(
 
     fun changeShuffleOption() {
         val queueResult = queueRepository.shuffleClicked(playerState.value.currentIndex)
-        musicPlayerManager.replaceFullQueueKeepingCurrentSong(queueResult.queue, queueResult.currentIndex)
+        musicPlayerManager.replaceFullQueueKeepingCurrentSong(
+            queueResult.queue,
+            queueResult.currentIndex
+        )
     }
 
 }
@@ -90,9 +94,8 @@ class MusicPlayerViewModel constructor(
 data class MusicPlayerUiState(
     val isFullScreenVisible: Boolean = false,
     val showHistory: Boolean = false,
-    val visibleStartIndex: Int = 0,
     val queue: List<Song> = listOf(),
-    val isShuffle: Boolean = false
+    val isShuffle: Boolean = false,
 )
 
 sealed interface MusicPlayerEffect {

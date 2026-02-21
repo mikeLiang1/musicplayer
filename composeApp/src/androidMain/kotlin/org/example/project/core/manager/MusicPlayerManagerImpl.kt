@@ -224,15 +224,6 @@ class MusicPlayerManagerImpl(
         }
     }
 
-    override fun replaceQueueKeepingCurrentSong(songs: List<Song>, currentIndex: Int) {
-        val upcoming = songs.drop(currentIndex + 1)
-
-        // Remove everything after current
-        controller?.removeMediaItems(currentIndex + 1, controller!!.mediaItemCount)
-
-        // Add new upcoming items
-        controller?.addMediaItems(currentIndex + 1, upcoming.map { it.toMediaItem() })
-    }
 
     // Replace before and af
     override fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int) {

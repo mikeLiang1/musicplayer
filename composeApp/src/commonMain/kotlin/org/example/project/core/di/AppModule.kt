@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import org.example.project.core.dao.MusicDatabase
 import org.example.project.core.dao.getRoomDatabase
-import org.example.project.core.repository.QueueRepository
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.home.ui.HomeViewModel
@@ -19,11 +18,9 @@ val appModule = module {
 
     single<CoroutineDispatcher> { Dispatchers.IO }
 
-    single { QueueRepository(get(), get()) }
-
     viewModel { HomeViewModel(get()) }
-    viewModel { SearchViewModel(get(), get(), get()) }
-    viewModel { MusicPlayerViewModel(get(), get(), get()) }
+    viewModel { SearchViewModel(get(), get()) }
+    viewModel { MusicPlayerViewModel(get(), get()) }
 
     single<MusicDatabase> {
         getRoomDatabase(get())

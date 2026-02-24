@@ -1,7 +1,6 @@
 package org.example.project.core.manager
 
 import kotlinx.coroutines.flow.StateFlow
-import org.example.project.core.helper.toMediaItem
 import org.example.project.core.model.Song
 import org.example.project.core.model.PlayerState
 
@@ -24,7 +23,7 @@ interface MusicPlayerManager {
     fun skipToNext()
     fun skipToPrevious()
     fun seekToIndex(index: Int)
-    fun shuffleOn()
+    fun shuffleClicked()
     fun shuffleOff()
 
     fun onAppEnteredForeground()

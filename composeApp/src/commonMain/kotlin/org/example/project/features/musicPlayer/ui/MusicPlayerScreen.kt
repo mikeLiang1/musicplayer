@@ -108,7 +108,7 @@ fun MusicPlayerScreen(
             // Player controls
             PlayerControls(
                 isPlaying = state.isPlaying,
-                isShuffle = uiState.isShuffle,
+                isShuffle = state.isShuffled,
                 onPlayPauseClick = viewModel::onPlayPauseClicked,
                 onNextClick = viewModel::onNextClicked,
                 onPreviousClick = viewModel::onPreviousClicked,
@@ -305,11 +305,11 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
-    val visibleSongs = remember(uiState.showHistory, visibleStartIndex, uiState.queue) {
+    val visibleSongs = remember(uiState.showHistory, visibleStartIndex, playerState.queue) {
         if (uiState.showHistory) {
-            uiState.queue
+            playerState.queue
         } else {
-            uiState.queue.drop(playerState.currentIndex.coerceIn(0, uiState.queue.size))
+            playerState.queue.drop(playerState.currentIndex.coerceIn(0, playerState.queue.size))
         }
     }
 

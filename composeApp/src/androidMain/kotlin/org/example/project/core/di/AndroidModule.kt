@@ -18,7 +18,7 @@ val androidModule = module {
         getDatabaseBuilder(get())
     }
     single<MusicPlayerManager> {
-        MusicPlayerManagerImpl(get(), get(), get())
+        MusicPlayerManagerImpl(get(), get())
     }
 
     single<DataStore<Preferences>> {

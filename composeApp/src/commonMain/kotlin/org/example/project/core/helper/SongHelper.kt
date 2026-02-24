@@ -1,5 +1,6 @@
 package org.example.project.core.helper
 
+import android.os.Bundle
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -11,6 +12,9 @@ fun Song.toMediaItem(): MediaItem {
         .setArtist(artist)
         .setArtworkUri(thumbnailUrl?.toUri())
         .setDurationMs(duration)
+        .setExtras(Bundle().apply {
+            putBoolean("isManual", isManual)
+        })
         .build()
     return MediaItem.Builder()
         .setMediaId(uniqueId)
@@ -27,6 +31,7 @@ fun MediaItem.toSong(): Song {
         artist = mediaMetadata.artist?.toString() ?: "Unknown",
         thumbnailUrl = mediaMetadata.artworkUri?.toString(),
         duration = mediaMetadata.durationMs ?: 0L,
-        uniqueId = mediaId
+        uniqueId = mediaId,
+        isManual = mediaMetadata.extras?.getBoolean("isManual") ?: false
     )
 }

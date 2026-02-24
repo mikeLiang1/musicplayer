@@ -24,15 +24,13 @@ import org.example.project.core.helper.toMediaItem
 import org.example.project.core.helper.toSong
 import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
-import org.example.project.core.repository.QueueRepository
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.service.MediaService
 
 
 class MusicPlayerManagerImpl(
     private val context: Context,
-    private val repo: SavedDataRepository,
-    private val queueRepository: QueueRepository
+    private val savedDataRepository: SavedDataRepository
 ) : MusicPlayerManager {
     private var controller: MediaController? = null
 
@@ -114,7 +112,7 @@ class MusicPlayerManagerImpl(
                         // Save State
                         song?.let {
                             ioScope.launch {
-                                repo.saveCurrentSongIdAndIndex(
+                                savedDataRepository.saveCurrentSongIdAndIndex(
                                     song.uniqueId,
                                     index
                                 )
@@ -134,12 +132,14 @@ class MusicPlayerManagerImpl(
                                 }
                             }
 
+                            _playerState.update { it.copy(queue = items) }
+
                             ioScope.launch {
                                 queueSaveJob?.cancel()
                                 queueSaveJob = launch {
                                     delay(2000)
                                     if (items.isNotEmpty()) {
-                                        repo.saveQueue(items)
+                                        savedDataRepository.saveQueue(items)
                                     }
                                 }
                             }
@@ -171,7 +171,7 @@ class MusicPlayerManagerImpl(
         Log.d("Logging", "restoring playback items = ${controller?.mediaItemCount}")
         if (controller?.mediaItemCount == 0) {
             coroutineScope.launch {
-                val lastState = repo.getPlaybackState()
+                val lastState = savedDataRepository.getPlaybackState()
                 lastState?.let {
                     val queue = lastState.queue
                     val song = lastState.queue.find { song ->
@@ -185,11 +185,6 @@ class MusicPlayerManagerImpl(
                             autoPlay = false,
                             startPosition = currentPosition,
                             startIndex = index
-                        )
-                        queueRepository.setQueue(
-                            queue,
-                            lastState.isShuffled,
-                            lastState.originalQueue
                         )
                         _currentPosition.value = currentPosition
                     }
@@ -209,7 +204,6 @@ class MusicPlayerManagerImpl(
         }
     }
 
-    // TODO: If we are playing a playilist need to save the index and set index
     override suspend fun setQueue(
         songs: List<Song>,
         autoPlay: Boolean,
@@ -274,9 +268,61 @@ class MusicPlayerManagerImpl(
     }
 
 
-    override fun shuffleOn() {
-        controller?.shuffleModeEnabled = true
+    override fun shuffleClicked() {
+        val controller = controller ?: return
+        val currentIndex = _playerState.value.currentIndex
+        val queue = _playerState.value.queue
+        val queueLength = queue.size
+        val isShuffled = _playerState.value.isShuffled
+
+        // Shuffle queue
+        if (!isShuffled) {
+            _playerState.update { it.copy(originalQueue = queue) }
+            val (manual, upcoming) = (currentIndex + 1 until queueLength)
+                .map { queue[it] }
+                .partition { it.isManual }
+
+            val shuffled = upcoming.shuffled()
+            controller.removeMediaItems(currentIndex + manual.size + 1, queueLength)
+            controller.addMediaItems(
+                currentIndex + manual.size + 1,
+                shuffled.map { it.toMediaItem() })
+            ioScope.launch {
+                savedDataRepository.saveOriginalQueue(queue)
+                savedDataRepository.saveIsShuffled(true)
+            }
+        }
+        // Unshuffle queue
+        else {
+            val originalQueue = _playerState.value.originalQueue
+            val currentSongId = _playerState.value.currentSong?.uniqueId ?: return
+            val newIndex = originalQueue.indexOfFirst { it.uniqueId == currentSongId }
+            if (newIndex == -1) return
+
+            val manualSongs = queue.subList(currentIndex + 1, queueLength).filter { it.isManual }
+
+            val played = originalQueue.subList(0, newIndex + 1)
+            val upcoming = originalQueue.subList(newIndex + 1, originalQueue.size)
+                .filter { !it.isManual }
+
+            // Replace before current
+            controller.removeMediaItems(0, currentIndex)
+            controller.addMediaItems(0, played.dropLast(1).map { it.toMediaItem() })
+
+            // Replace after current
+            controller.removeMediaItems(newIndex + 1, controller.mediaItemCount)
+            controller.addMediaItems(
+                newIndex + 1,
+                (manualSongs + upcoming).map { it.toMediaItem() })
+            _playerState.update { it.copy(currentIndex = newIndex) }
+            ioScope.launch {
+                savedDataRepository.saveIndex(index = newIndex)
+                savedDataRepository.saveIsShuffled(false)
+            }
+        }
+        _playerState.update { it.copy(isShuffled = !isShuffled) }
     }
+
 
     override fun shuffleOff() {
         controller?.shuffleModeEnabled = false
@@ -300,6 +346,7 @@ class MusicPlayerManagerImpl(
         positionUpdateJob = coroutineScope.launch {
             while (controller?.isPlaying == true && isAppInForeground) {
                 _currentPosition.value = controller?.currentPosition ?: 0L
+                // update every second
                 delay(1000)
             }
         }

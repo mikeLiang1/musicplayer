@@ -5,36 +5,21 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
-import org.example.project.core.model.Song
-import org.example.project.core.repository.QueueRepository
 import org.example.project.core.repository.YouTubeRepository
 
 class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository,
-    private val musicPlayerManager: MusicPlayerManager,
-    private val queueRepository: QueueRepository
+    private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MusicPlayerUiState())
+    val uiState = _uiState.asStateFlow()
 
-    val uiState = combine(
-        _uiState,
-        queueRepository.queue,
-        queueRepository.isShuffle
-    ) { uiState, queue, isShuffle ->
-        uiState.copy(queue = queue, isShuffle = isShuffle)
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = MusicPlayerUiState()
-    )
 
     private val _effect = MutableSharedFlow<MusicPlayerEffect>()
     val effect: SharedFlow<MusicPlayerEffect> = _effect.asSharedFlow()
@@ -82,20 +67,14 @@ class MusicPlayerViewModel constructor(
     }
 
     fun changeShuffleOption() {
-        val queueResult = queueRepository.shuffleClicked(playerState.value.currentIndex)
-        musicPlayerManager.replaceFullQueueKeepingCurrentSong(
-            queueResult.queue,
-            queueResult.currentIndex
-        )
+        musicPlayerManager.shuffleClicked()
     }
 
 }
 
 data class MusicPlayerUiState(
     val isFullScreenVisible: Boolean = false,
-    val showHistory: Boolean = false,
-    val queue: List<Song> = listOf(),
-    val isShuffle: Boolean = false,
+    val showHistory: Boolean = false
 )
 
 sealed interface MusicPlayerEffect {

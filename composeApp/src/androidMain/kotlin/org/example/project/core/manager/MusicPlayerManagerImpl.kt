@@ -26,6 +26,7 @@ import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.service.MediaService
+import java.util.UUID
 
 
 class MusicPlayerManagerImpl(
@@ -99,26 +100,30 @@ class MusicPlayerManagerImpl(
                     }
 
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                        // If we arent restoring a saved state, we need to immediately update the state
-                        // only need to update the song (title, image etc) and force current position to start and index update index
+                        val lastPlayedIndex = _playerState.value.currentIndex
+                        if (_playerState.value.currentSong?.isManual == true) {
+                            controller?.removeMediaItem(lastPlayedIndex)
+                        }
+
                         val song = mediaItem?.toSong()
-                        val index = currentMediaItemIndex
+                        val newIndex = currentMediaItemIndex
+
                         _playerState.update {
                             it.copy(
                                 currentSong = song,
-                                currentIndex = index
+                                currentIndex = newIndex
                             )
                         }
+
                         // Save State
                         song?.let {
                             ioScope.launch {
                                 savedDataRepository.saveCurrentSongIdAndIndex(
                                     song.uniqueId,
-                                    index
+                                    newIndex
                                 )
                             }
                         }
-
                     }
 
                     // TODO: Remove
@@ -268,7 +273,7 @@ class MusicPlayerManagerImpl(
     }
 
 
-    override fun shuffleClicked() {
+    override fun shuffle() {
         val controller = controller ?: return
         val currentIndex = _playerState.value.currentIndex
         val queue = _playerState.value.queue
@@ -324,8 +329,13 @@ class MusicPlayerManagerImpl(
     }
 
 
-    override fun shuffleOff() {
-        controller?.shuffleModeEnabled = false
+
+    override fun addToQueue(song: Song) {
+        val insertIndex = (controller?.currentMediaItemIndex ?: return) + 1
+        controller?.addMediaItem(
+            insertIndex,
+            song.copy(uniqueId = UUID.randomUUID().toString(), isManual = true).toMediaItem()
+        )
     }
 
     override fun onAppEnteredForeground() {

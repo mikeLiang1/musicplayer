@@ -2,9 +2,11 @@ package org.example.project.features.musicPlayer.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -12,8 +14,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.example.project.core.helper.formatTime
@@ -34,13 +40,14 @@ fun SongItem(
     song: Song,
     isCurrentlyPlaying: Boolean = false,
     alpha: Float = 1f,
+    onMenuClicked: () -> Unit,
     onClick: () -> Unit
 ) {
     val backgroundColor =
         if (isCurrentlyPlaying)
             MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
         else
-            Color.Transparent
+            if (song.isManual) Color.Green.copy(alpha = 0.1f) else Color.Transparent
 
     val titleColor =
         if (isCurrentlyPlaying)
@@ -57,14 +64,31 @@ fun SongItem(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = song.thumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            contentScale = ContentScale.Crop
-        )
+        Box(
+            // 1. Center all children within the Box
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(50.dp) // Match the size of the image
+        ) {
+            // 2. Draw the Image first (bottom layer)
+            AsyncImage(
+                model = song.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize() // Fills the 50.dp box
+                    .clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            // 3. Draw the Icon second (top layer)
+            if (isCurrentlyPlaying) {
+                Icon(
+                    imageVector = Icons.Filled.GraphicEq,
+                    contentDescription = "Currently playing",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp) // Adjust icon size as needed
+                )
+            }
+        }
 
         Spacer(Modifier.width(12.dp))
 
@@ -84,13 +108,30 @@ fun SongItem(
             )
         }
 
-        if (isCurrentlyPlaying) {
+        IconButton(
+            onClick = { onMenuClicked() }
+        ) {
             Icon(
-                imageVector = Icons.Filled.GraphicEq,
-                contentDescription = "Currently playing",
-                tint = MaterialTheme.colorScheme.primary
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = "SongMenu"
             )
         }
+
+    }
+}
+
+@Preview
+@Composable
+fun SongItemPreview() {
+    Surface {
+        SongItem(
+            song = Song(
+                url = "item.url",
+                title = "title",
+                artist = "Unknown",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ), isCurrentlyPlaying = true, onMenuClicked = {}) { }
     }
 }
 

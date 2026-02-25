@@ -67,7 +67,7 @@ class MusicPlayerViewModel constructor(
     }
 
     fun changeShuffleOption() {
-        musicPlayerManager.shuffleClicked()
+        musicPlayerManager.shuffle()
     }
 
 }

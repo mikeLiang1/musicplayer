@@ -404,6 +404,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                 modifier = Modifier.animateItem(),
                 song = song,
                 isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
+                onMenuClicked = {},
                 alpha = if (isPreviousSong) 0.6f else 1f
             ) {
                 viewModel.changePlayingToIndex(absoluteIndex)

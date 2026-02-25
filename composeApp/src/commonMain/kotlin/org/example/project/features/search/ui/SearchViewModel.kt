@@ -99,6 +99,10 @@ class SearchViewModel constructor(
             musicPlayerManager.setQueue(relatedSongs, autoPlay = true, startIndex = 0)
         }
     }
+
+    fun openSongMenu(song: Song) {
+        musicPlayerManager.addToQueue(song)
+    }
 }
 
 sealed interface SearchEffect {

@@ -35,3 +35,7 @@ fun MediaItem.toSong(): Song {
         isManual = mediaMetadata.extras?.getBoolean("isManual") ?: false
     )
 }
+
+fun MediaItem.isManual(): Boolean {
+    return mediaMetadata.extras?.getBoolean("isManual") ?: false
+}

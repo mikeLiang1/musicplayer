@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.example.project.core.helper.isManual
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.helper.toSong
 import org.example.project.core.model.PlayerState
@@ -105,8 +106,27 @@ class MusicPlayerManagerImpl(
                             controller?.removeMediaItem(lastPlayedIndex)
                         }
 
-                        val song = mediaItem?.toSong()
+
+                        // If user has selected place in queue
+                        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
+                            val manualItems = mutableListOf<MediaItem>()
+
+                            // collect in reverse, remove as we go - no index shifting issues
+                            for (i in mediaItemCount - 1 downTo 0) {
+                                val item = getMediaItemAt(i)
+                                if (item.isManual()) {
+                                    manualItems.add(0, item) // add to front to preserve order
+                                    controller?.removeMediaItem(i)
+                                }
+                            }
+
+                            controller?.addMediaItems(currentMediaItemIndex + 1, manualItems)
+
+
+                        }
                         val newIndex = currentMediaItemIndex
+                        val song = mediaItem?.toSong()
+
 
                         _playerState.update {
                             it.copy(
@@ -126,7 +146,6 @@ class MusicPlayerManagerImpl(
                         }
                     }
 
-                    // TODO: Remove
                     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                         // Only if queue order / items change
                         if (reason == TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
@@ -282,7 +301,7 @@ class MusicPlayerManagerImpl(
 
         // Shuffle queue
         if (!isShuffled) {
-            _playerState.update { it.copy(originalQueue = queue) }
+            _playerState.update { it.copy(originalQueue = queue, isShuffled = true) }
             val (manual, upcoming) = (currentIndex + 1 until queueLength)
                 .map { queue[it] }
                 .partition { it.isManual }
@@ -310,24 +329,19 @@ class MusicPlayerManagerImpl(
             val upcoming = originalQueue.subList(newIndex + 1, originalQueue.size)
                 .filter { !it.isManual }
 
-            // Replace before current
             controller.removeMediaItems(0, currentIndex)
             controller.addMediaItems(0, played.dropLast(1).map { it.toMediaItem() })
 
-            // Replace after current
             controller.removeMediaItems(newIndex + 1, controller.mediaItemCount)
-            controller.addMediaItems(
-                newIndex + 1,
-                (manualSongs + upcoming).map { it.toMediaItem() })
-            _playerState.update { it.copy(currentIndex = newIndex) }
+            controller.addMediaItems(newIndex + 1, (manualSongs + upcoming).map { it.toMediaItem() })
+
+            _playerState.update { it.copy(currentIndex = newIndex, isShuffled = false) }
             ioScope.launch {
                 savedDataRepository.saveIndex(index = newIndex)
                 savedDataRepository.saveIsShuffled(false)
             }
         }
-        _playerState.update { it.copy(isShuffled = !isShuffled) }
     }
-
 
 
     override fun addToQueue(song: Song) {

@@ -10,4 +10,6 @@ data class PlayerState(
     val queue: List<Song> = listOf(),
     val originalQueue: List<Song> = listOf(),
     val isShuffled: Boolean = false,
+    val manualItemCount: Int = 0,
+    val firstManualIndex: Int? = null
 )

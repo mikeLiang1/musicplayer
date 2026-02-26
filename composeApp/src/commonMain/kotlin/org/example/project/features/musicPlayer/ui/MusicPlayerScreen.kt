@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
@@ -63,7 +62,6 @@ fun MusicPlayerScreen(
 ) {
     BackHandler { navigateBack() }
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.playerState.collectAsStateWithLifecycle()
 
     state.currentSong?.let { song ->
@@ -83,7 +81,7 @@ fun MusicPlayerScreen(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    viewModel.onMenuClicked()
+
                 }
                 ) {
                     Icon(
@@ -277,7 +275,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 1. We manually track where the list should start visually.
     // Initialize it to the current index so it starts correctly.
-    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex+1) }
+    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex + 1) }
 
 
     LaunchedEffect(Unit) {
@@ -305,6 +303,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
+    // TODO: maybe not use queue directly ?
     val visibleSongs = remember(uiState.showHistory, visibleStartIndex, playerState.queue) {
         if (uiState.showHistory) {
             playerState.queue
@@ -335,13 +334,21 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
                 try {
                     // Animate while list still has old content
-                    listState.animateScrollToItem(relativeIndex + 1)
+                    listState.animateScrollToItem(1)
                 } finally {
                     // Then update list structure
                     yield()
                     visibleStartIndex = playerState.currentIndex
                 }
-
+//1 manual
+//        0 -> 1 :  1
+//                0 -> 2 = + 1 : 2
+//                0 -> 3 = + 2 : 3
+//
+//                2 manual
+//                        0 -> 1 : 1-0 + 1 - 2
+//                0 -> 2
+//                0 -> 3 = 1
             }
             // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
@@ -349,7 +356,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                 // Expand list to include previous songs
                 visibleStartIndex = playerState.currentIndex
 
-                withFrameNanos {  }
+                withFrameNanos { }
 
                 try {
                     // Now animate up to the new current song
@@ -404,7 +411,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                 modifier = Modifier.animateItem(),
                 song = song,
                 isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
-                onMenuClicked = {},
+                onMenuClicked = {viewModel.onMenuClicked(song)},
                 alpha = if (isPreviousSong) 0.6f else 1f
             ) {
                 viewModel.changePlayingToIndex(absoluteIndex)

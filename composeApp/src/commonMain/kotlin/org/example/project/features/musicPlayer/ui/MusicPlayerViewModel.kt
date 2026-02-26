@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
+import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
 
 class MusicPlayerViewModel constructor(
@@ -48,8 +49,8 @@ class MusicPlayerViewModel constructor(
         _uiState.update { it.copy(isFullScreenVisible = fullScreen) }
     }
 
-    fun onMenuClicked() {
-
+    fun onMenuClicked(song: Song) {
+        musicPlayerManager.addToQueue(song)
     }
 
     fun changePlayingToIndex(index: Int) {

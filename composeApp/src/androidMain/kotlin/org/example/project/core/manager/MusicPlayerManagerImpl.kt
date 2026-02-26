@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.project.core.helper.isManual
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.helper.toSong
 import org.example.project.core.model.PlayerState
@@ -102,26 +101,29 @@ class MusicPlayerManagerImpl(
 
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         val lastPlayedIndex = _playerState.value.currentIndex
+
                         if (_playerState.value.currentSong?.isManual == true) {
                             controller?.removeMediaItem(lastPlayedIndex)
                         }
 
-
                         // If user has selected place in queue
                         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
-                            val manualItems = mutableListOf<MediaItem>()
+                            val manualCount = _playerState.value.manualItemCount
+                            val firstManualIndex = _playerState.value.firstManualIndex
+                            if (manualCount > 0 && firstManualIndex != null) {
 
-                            // collect in reverse, remove as we go - no index shifting issues
-                            for (i in mediaItemCount - 1 downTo 0) {
-                                val item = getMediaItemAt(i)
-                                if (item.isManual()) {
-                                    manualItems.add(0, item) // add to front to preserve order
-                                    controller?.removeMediaItem(i)
+                                val adjustedIndex = if (currentMediaItemIndex > firstManualIndex) {
+                                    currentMediaItemIndex - manualCount + 1
+                                } else {
+                                    currentMediaItemIndex + 1
                                 }
+
+                                controller?.moveMediaItems(
+                                    firstManualIndex,
+                                    firstManualIndex + manualCount,
+                                    adjustedIndex
+                                )
                             }
-
-                            controller?.addMediaItems(currentMediaItemIndex + 1, manualItems)
-
 
                         }
                         val newIndex = currentMediaItemIndex
@@ -149,14 +151,27 @@ class MusicPlayerManagerImpl(
                     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                         // Only if queue order / items change
                         if (reason == TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
+                            var manualItemCount = 0
+                            var firstManualIndex: Int? = null
 
                             val items = buildList {
                                 for (i in 0 until (mediaItemCount)) {
-                                    add(getMediaItemAt(i).toSong())
+                                    val song = getMediaItemAt(i).toSong()
+                                    add(song)
+                                    if (song.isManual) {
+                                        if (firstManualIndex == null) firstManualIndex = i
+                                        manualItemCount++
+                                    }
                                 }
                             }
 
-                            _playerState.update { it.copy(queue = items) }
+                            _playerState.update {
+                                it.copy(
+                                    queue = items,
+                                    manualItemCount = manualItemCount,
+                                    firstManualIndex = firstManualIndex
+                                )
+                            }
 
                             ioScope.launch {
                                 queueSaveJob?.cancel()

@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.yield
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 
@@ -286,6 +285,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                     listState.requestScrollToItem(playerState.currentIndex - 1)
                     // Make full list available
                     viewModel.changeHistory(true)
+                    visibleStartIndex = 0
 
                     // scroll to 2.5 items
                     val targetIndex = (playerState.currentIndex - 2).coerceAtLeast(0)
@@ -304,22 +304,26 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
     // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
     // rather than the live 'playerState.currentIndex' (REAL STATE).
     // TODO: maybe not use queue directly ?
-    val visibleSongs = remember(uiState.showHistory, visibleStartIndex, playerState.queue) {
-        if (uiState.showHistory) {
-            playerState.queue
-        } else {
-            playerState.queue.drop(playerState.currentIndex.coerceIn(0, playerState.queue.size))
+    val visibleSongs =
+        remember(uiState.showHistory, visibleStartIndex, playerState.manualItemCount, playerState.isShuffled) {
+            if (uiState.showHistory) {
+                playerState.queue
+            } else {
+                playerState.queue.drop(playerState.currentIndex.coerceIn(0, playerState.queue.size))
+            }
         }
-    }
 
     // When current index changes (i.e new song selected)
     LaunchedEffect(playerState.currentIndex) {
+        val relativeIndex =
+            if (playerState.manualItemCount > 0) 0 else playerState.currentIndex - visibleStartIndex
         if (uiState.showHistory) {
             try {
                 // SHow history true means we have the whole list, so we can
                 // directly scroll to the current index
-                listState.animateScrollToItem(playerState.currentIndex)
+                listState.animateScrollToItem(relativeIndex)
             } finally {
+                withFrameNanos { }
                 // updates starting position
                 visibleStartIndex = playerState.currentIndex
 
@@ -330,25 +334,16 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
         } else {
             // CASE: We are moving to the NEXT song (Index 5 -> 6)
             if (playerState.currentIndex > visibleStartIndex) {
-                val relativeIndex = playerState.currentIndex - visibleStartIndex
 
                 try {
                     // Animate while list still has old content
-                    listState.animateScrollToItem(1)
+                    listState.animateScrollToItem(relativeIndex + 1)
                 } finally {
                     // Then update list structure
-                    yield()
+                    withFrameNanos { }
                     visibleStartIndex = playerState.currentIndex
                 }
-//1 manual
-//        0 -> 1 :  1
-//                0 -> 2 = + 1 : 2
-//                0 -> 3 = + 2 : 3
-//
-//                2 manual
-//                        0 -> 1 : 1-0 + 1 - 2
-//                0 -> 2
-//                0 -> 3 = 1
+
             }
             // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
             else if (playerState.currentIndex < visibleStartIndex) {
@@ -411,7 +406,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                 modifier = Modifier.animateItem(),
                 song = song,
                 isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
-                onMenuClicked = {viewModel.onMenuClicked(song)},
+                onMenuClicked = { viewModel.onMenuClicked(song) },
                 alpha = if (isPreviousSong) 0.6f else 1f
             ) {
                 viewModel.changePlayingToIndex(absoluteIndex)

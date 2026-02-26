@@ -105,17 +105,17 @@ class MusicPlayerManagerImpl(
                         if (_playerState.value.currentSong?.isManual == true) {
                             controller?.removeMediaItem(lastPlayedIndex)
                         }
-
+                        val newIndex = currentMediaItemIndex
                         // If user has selected place in queue
                         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
                             val manualCount = _playerState.value.manualItemCount
                             val firstManualIndex = _playerState.value.firstManualIndex
-                            if (manualCount > 0 && firstManualIndex != null) {
+                            if (manualCount > 0 && firstManualIndex != null && firstManualIndex != newIndex) {
 
-                                val adjustedIndex = if (currentMediaItemIndex > firstManualIndex) {
-                                    currentMediaItemIndex - manualCount + 1
+                                val adjustedIndex = if (newIndex > firstManualIndex) {
+                                    newIndex - manualCount + 1
                                 } else {
-                                    currentMediaItemIndex + 1
+                                    newIndex + 1
                                 }
 
                                 controller?.moveMediaItems(
@@ -126,7 +126,7 @@ class MusicPlayerManagerImpl(
                             }
 
                         }
-                        val newIndex = currentMediaItemIndex
+
                         val song = mediaItem?.toSong()
 
 

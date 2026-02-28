@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.example.project.features.musicPlayer.ui.SongItem
+import org.example.project.ui.theme.appColors
 
 @Composable
 fun SearchScreen(searchViewModel: SearchViewModel) {
@@ -153,7 +154,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(suggestion)
+                            Text(suggestion, color = appColors.textPrimary)
                         }
                     }
 

@@ -31,6 +31,7 @@ uiText = "1.10.2"
 room = "2.8.4"
 sqlite = "2.6.2"
 ksp = "2.3.0"
+animationCore = "1.10.3"
 
 
 [libraries]
@@ -92,6 +93,7 @@ compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 sqlite-bundled = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
+androidx-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

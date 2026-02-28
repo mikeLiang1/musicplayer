@@ -20,8 +20,6 @@ interface MusicPlayerManager {
 
     suspend fun setQueue(songs: List<Song>, autoPlay: Boolean, startPosition: Long? = null, startIndex: Int)
 
-    fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int)
-
     fun stop()
 
     fun seekTo(seconds: Long)
@@ -35,6 +33,8 @@ interface MusicPlayerManager {
     fun shuffle()
 
     fun addToQueue(song: Song)
+
+    fun cycleFlowMode()
 
     fun onAppEnteredForeground()
 

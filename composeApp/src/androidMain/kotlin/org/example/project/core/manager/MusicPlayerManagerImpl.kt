@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.helper.toSong
+import org.example.project.core.model.FlowMode
 import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 import org.example.project.core.repository.SavedDataRepository
@@ -258,24 +259,6 @@ class MusicPlayerManagerImpl(
         }
     }
 
-
-    // Replace before and af
-    override fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int) {
-        val controller = controller ?: return
-        val originalCurrentIndex = controller.currentMediaItemIndex  // capture before any changes
-
-        // Replace after first (indices unaffected)
-        val upcoming = songs.drop(newIndex + 1)
-        controller.removeMediaItems(originalCurrentIndex + 1, controller.mediaItemCount)
-        controller.addMediaItems(originalCurrentIndex + 1, upcoming.map { it.toMediaItem() })
-
-        // Replace before (shifts current index but current item unaffected)
-        val played = songs.subList(0, newIndex)
-        controller.removeMediaItems(0, originalCurrentIndex)
-        controller.addMediaItems(0, played.map { it.toMediaItem() })
-        _playerState.update { it.copy(currentIndex = newIndex) }
-    }
-
     override fun pause() {
         controller?.pause()
     }
@@ -367,6 +350,20 @@ class MusicPlayerManagerImpl(
         )
     }
 
+    // TODO: I think need to save and set?
+    override fun cycleFlowMode() {
+        val next = when (_playerState.value.flowMode) {
+            FlowMode.STOP_AT_END -> FlowMode.REPEAT_ALL
+            FlowMode.REPEAT_ALL -> FlowMode.INFINITE
+            FlowMode.INFINITE -> FlowMode.STOP_AT_END
+        }
+
+        controller?.repeatMode = next.toMedia3RepeatMode()
+
+        _playerState.update { it.copy(flowMode = next) }
+
+    }
+
     override fun onAppEnteredForeground() {
         Log.d("Logging", "app entered foregiroynd")
         isAppInForeground = true
@@ -395,5 +392,11 @@ class MusicPlayerManagerImpl(
         positionUpdateJob?.cancel()
         positionUpdateJob = null
         _currentPosition.value = controller?.currentPosition ?: 0L
+    }
+
+    private fun FlowMode.toMedia3RepeatMode() = when (this) {
+        FlowMode.STOP_AT_END -> Player.REPEAT_MODE_OFF
+        FlowMode.REPEAT_ALL -> Player.REPEAT_MODE_ALL
+        FlowMode.INFINITE -> Player.REPEAT_MODE_OFF // handled manually
     }
 }

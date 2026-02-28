@@ -71,6 +71,10 @@ class MusicPlayerViewModel constructor(
         musicPlayerManager.shuffle()
     }
 
+    fun cycleFlowMode() {
+        musicPlayerManager.cycleFlowMode()
+    }
+
 }
 
 data class MusicPlayerUiState(

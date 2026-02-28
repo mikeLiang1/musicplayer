@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,7 +48,7 @@ fun SongItem(
         if (isCurrentlyPlaying)
             MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
         else
-            if (song.isManual) Color.Green.copy(alpha = 0.1f) else Color.Transparent
+            if (song.isManual) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Unspecified
 
     val titleColor =
         if (isCurrentlyPlaying)
@@ -131,7 +132,33 @@ fun SongItemPreview() {
                 artist = "Unknown",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L
-            ), isCurrentlyPlaying = true, onMenuClicked = {}) { }
+            ), isCurrentlyPlaying = true, onMenuClicked = {}, onClick = {}
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        SongItem(
+            song = Song(
+                url = "item.url",
+                title = "title",
+                artist = "Unknown",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+            isCurrentlyPlaying = false, onMenuClicked = {},
+        onClick = {})
+
+        SongItem(
+            song = Song(
+                url = "item.url",
+                title = "title",
+                artist = "Unknown",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L,
+                isManual = true
+            ),
+            isCurrentlyPlaying = false, onMenuClicked = {},
+            onClick = {})
     }
 }
 

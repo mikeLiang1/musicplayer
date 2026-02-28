@@ -1,7 +1,9 @@
 package org.example.project.features.musicPlayer.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -24,14 +28,17 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.ShuffleOn
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,11 +54,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.google.common.math.LinearTransformation.horizontal
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import org.example.project.core.helper.formatTime
+import org.example.project.core.model.FlowMode
 import org.example.project.core.model.Song
 
 @Composable
@@ -105,11 +118,13 @@ fun MusicPlayerScreen(
             // Player controls
             PlayerControls(
                 isPlaying = state.isPlaying,
-                isShuffle = state.isShuffled,
+                isShuffled = state.isShuffled,
+                flowMode = state.flowMode,
                 onPlayPauseClick = viewModel::onPlayPauseClicked,
                 onNextClick = viewModel::onNextClicked,
                 onPreviousClick = viewModel::onPreviousClicked,
-                onShuffleClicked = viewModel::changeShuffleOption
+                onShuffleClicked = viewModel::changeShuffleOption,
+                onFlowClicked = viewModel::cycleFlowMode
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -124,22 +139,51 @@ fun MusicPlayerScreen(
 fun PlayerControls(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
-    isShuffle: Boolean,
+    isShuffled: Boolean,
+    flowMode: FlowMode,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
-    onShuffleClicked: () -> Unit
+    onShuffleClicked: () -> Unit,
+    onFlowClicked: () -> Unit
 ) {
+    var showFlowChip by remember { mutableStateOf(false) }
+    var isFirstLaunch by remember { mutableStateOf(true) }
+
+    LaunchedEffect(flowMode) {
+        if (isFirstLaunch) {
+            isFirstLaunch = false
+            return@LaunchedEffect
+        }
+        showFlowChip = true
+        delay(2000)
+        showFlowChip = false
+    }
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onShuffleClicked) {
-            Icon(
-                imageVector = if (!isShuffle) Icons.Filled.Shuffle else Icons.Filled.ShuffleOn,
-                contentDescription = "Shuffle"
-            )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = modifier
+        ) {
+            IconButton(onClick = onShuffleClicked) {
+                Icon(
+                    imageVector = Icons.Default.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = if (isShuffled) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                )
+                if (isShuffled) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-4).dp)
+                            .size(4.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                }
+            }
         }
 
         IconButton(onClick = onPreviousClick) {
@@ -151,7 +195,11 @@ fun PlayerControls(
 
         FilledIconButton(
             onClick = onPlayPauseClick,
-            modifier = Modifier.size(64.dp)
+            modifier = Modifier.size(64.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -166,7 +214,33 @@ fun PlayerControls(
                 contentDescription = "Next"
             )
         }
+        Box(contentAlignment = Alignment.Center) {
+            if (showFlowChip) {
+                Popup(
+                    alignment = Alignment.BottomCenter,
+                    offset = IntOffset(0, -120)
+                ) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(flowMode.label) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceBright,
+                        ),
+                        border = null
+                    )
+                }
+            }
+            IconButton(onClick = onFlowClicked) {
+                Icon(
+                    imageVector = flowMode.icon,
+                    contentDescription = "Flow",
+                    tint = if (flowMode != FlowMode.STOP_AT_END) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                )
+            }
+        }
+
     }
+
 }
 
 @Composable
@@ -363,7 +437,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
         }
     }
 
-    LazyColumn(state = listState) {
+    LazyColumn(state = listState, horizontalAlignment = Alignment.CenterHorizontally) {
         if (!uiState.showHistory && playerState.currentIndex > 0) {
             item {
                 Surface(
@@ -372,8 +446,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                     },
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
-                    tonalElevation = 4.dp,
-                    modifier = Modifier.padding(horizontal = 48.dp)
+                    tonalElevation = 4.dp
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),

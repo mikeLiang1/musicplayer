@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -18,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -33,6 +36,7 @@ import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
+import org.example.project.ui.theme.appColors
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -53,6 +57,8 @@ fun DashboardNavigation() {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            containerColor = appColors.backgroundPrimary,
+            contentColor = appColors.textPrimary,
             bottomBar = {
                 Column {
                     MusicPlayerBar(viewModel = musicPlayerViewModel)
@@ -92,8 +98,10 @@ fun DashboardNavigation() {
             )
         ) {
             Surface(
+                // padding at top to immitate bottomsheet
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background // Or any opaque color
+                color = appColors.backgroundPrimary,
+                contentColor = appColors.textPrimary
             ) {
                 MusicPlayerScreen(
                     viewModel = musicPlayerViewModel,

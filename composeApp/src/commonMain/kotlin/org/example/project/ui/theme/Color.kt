@@ -1,41 +1,110 @@
-package com.example.budget.ui.theme
+package org.example.project.ui.theme
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
-val Violet40  = Color(0xFF6B5AE0)  // light primary
-val Violet50  = Color(0xFF7C6AF7)  // main accent
-val Violet80  = Color(0xFFBDB2FF)  // dark primary (lighter for dark bg)
-val Violet20  = Color(0xFF3D2EAD)  // dark primary container
+@Immutable
+data class AppColors(
+    // ── Backgrounds ──────────────────────────────────
+    val backgroundPrimary: Color,
+    val backgroundSecondary: Color,
+    val backgroundElevated: Color,
+    val backgroundSurface: Color,
 
-// Secondary — muted lavender
-val Lavender40 = Color(0xFF8B7FCB)
-val Lavender80 = Color(0xFFCDC5F7)
-val Lavender20 = Color(0xFF2D265C)
+    // ── Text ─────────────────────────────────────────
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val textDim: Color,
 
-// Tertiary — soft rose
-val Rose40 = Color(0xFFBF5A7A)
-val Rose80 = Color(0xFFF0A8BC)
-val Rose20 = Color(0xFF4A1A2E)
+    // ── Accent (Violet) ───────────────────────────────
+    val accentPrimary: Color,
+    val accentDark: Color,
+    val accentContainer: Color,
+    val onAccent: Color,
+    val onAccentContainer: Color,
 
-// Neutrals — dark
-val Grey98  = Color(0xFFF8F8FF)   // near white with a cold tint
-val Grey95  = Color(0xFFF0F0FA)
-val Grey20  = Color(0xFF2A2A38)   // surface dark
-val Grey15  = Color(0xFF1C1C26)   // surface container dark
-val Grey10  = Color(0xFF13131A)   // background dark
-val Grey08  = Color(0xFF0A0A0F)   // darkest bg
+    // ── Tertiary (Rose) ───────────────────────────────
+    val rose: Color,
+    val roseContainer: Color,
+    val onRose: Color,
 
-// On-colors
-val White    = Color(0xFFFFFFFF)
-val Black    = Color(0xFF000000)
-val DarkInk  = Color(0xFF0F0F18)  // on primary dark
+    // ── Icons ─────────────────────────────────────────
+    val iconPrimary: Color,
+    val iconSecondary: Color,
+    val iconMuted: Color,
+    val iconActive: Color,
 
-// Error
-val ErrorLight = Color(0xFFBA1A1A)
-val ErrorDark  = Color(0xFFFFB4AB)
-val OnErrorLight = White
-val OnErrorDark  = Color(0xFF690005)
-val ErrorContainerLight = Color(0xFFFFDAD6)
-val ErrorContainerDark  = Color(0xFF93000A)
-val OnErrorContainerLight = Color(0xFF410002)
-val OnErrorContainerDark  = Color(0xFFFFDAD6)
+    // ── Functional ────────────────────────────────────
+    val divider: Color,
+    val dividerSubtle: Color,
+    val error: Color,
+    val onError: Color,
+)
+
+// ── Dark ─────────────────────────────────────────────
+val DarkAppColors = AppColors(
+    backgroundPrimary = Color(0xFF0A0A0F),
+    backgroundSecondary = Color(0xFF13131A),
+    backgroundElevated = Color(0xFF1C1C26),
+    backgroundSurface = Color(0xFF2A2A38),
+
+    textPrimary = Color(0xFFF0F0FA),
+    textSecondary = Color(0xFFCAC4D8),
+    textMuted = Color(0xFF948FA8),
+    textDim = Color(0xFF4A4A5E),
+
+    accentPrimary = Color(0xFF9D8FFF),
+    accentDark = Color(0xFF6B5AE0),
+    accentContainer = Color(0xFF3D2EAD),
+    onAccent = Color(0xFF0F0F18),
+    onAccentContainer = Color(0xFF9D8FFF),
+
+    rose = Color(0xFFF0A8BC),
+    roseContainer = Color(0xFF4A1A2E),
+    onRose = Color(0xFF3A0A1E),
+
+    iconPrimary = Color(0xFFF0F0FA),
+    iconSecondary = Color(0xFFCAC4D8),
+    iconMuted = Color(0xFF948FA8),
+    iconActive = Color(0xFF9D8FFF),
+
+    divider = Color(0xFF2A2A38),
+    dividerSubtle = Color(0x0FFFFFFF),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+)
+
+// ── Light ────────────────────────────────────────────
+val LightAppColors = AppColors(
+    backgroundPrimary = Color(0xFFF8F8FF),
+    backgroundSecondary = Color(0xFFFFFFFF),
+    backgroundElevated = Color(0xFFEEEEF8),
+    backgroundSurface = Color(0xFFE4E4F0),
+
+    textPrimary = Color(0xFF1A1A2A),
+    textSecondary = Color(0xFF4A4560),
+    textMuted = Color(0xFF7A7490),
+    textDim = Color(0xFFAAAAAC),
+
+    accentPrimary = Color(0xFF6B5AE0),
+    accentDark = Color(0xFF3D2EAD),
+    accentContainer = Color(0xFFE8E0FF),
+    onAccent = Color(0xFFFFFFFF),
+    onAccentContainer = Color(0xFF1A0080),
+
+    rose = Color(0xFFBF5A7A),
+    roseContainer = Color(0xFFFFD9E4),
+    onRose = Color(0xFFFFFFFF),
+
+    iconPrimary = Color(0xFF1A1A2A),
+    iconSecondary = Color(0xFF4A4560),
+    iconMuted = Color(0xFF7A7490),
+    iconActive = Color(0xFF6B5AE0),
+
+    divider = Color(0xFFE4E4F0),
+    dividerSubtle = Color(0x0F000000),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+)
+

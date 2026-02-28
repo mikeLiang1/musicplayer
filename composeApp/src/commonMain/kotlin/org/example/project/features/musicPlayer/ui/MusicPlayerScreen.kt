@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -56,16 +57,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.google.common.math.LinearTransformation.horizontal
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.FlowMode
 import org.example.project.core.model.Song
+import org.example.project.ui.theme.appColors
 
 @Composable
 fun MusicPlayerScreen(
@@ -80,6 +80,7 @@ fun MusicPlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 16.dp)
         ) {
@@ -172,7 +173,7 @@ fun PlayerControls(
                 Icon(
                     imageVector = Icons.Default.Shuffle,
                     contentDescription = "Shuffle",
-                    tint = if (isShuffled) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    tint = if (isShuffled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (isShuffled) {
                     Box(
@@ -189,7 +190,8 @@ fun PlayerControls(
         IconButton(onClick = onPreviousClick) {
             Icon(
                 imageVector = Icons.Filled.SkipPrevious,
-                contentDescription = "Previous"
+                contentDescription = "Previous",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -211,7 +213,8 @@ fun PlayerControls(
         IconButton(onClick = onNextClick) {
             Icon(
                 imageVector = Icons.Filled.SkipNext,
-                contentDescription = "Next"
+                contentDescription = "Next",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Box(contentAlignment = Alignment.Center) {
@@ -222,9 +225,9 @@ fun PlayerControls(
                 ) {
                     SuggestionChip(
                         onClick = {},
-                        label = { Text(flowMode.label) },
+                        label = { Text(flowMode.label, color = MaterialTheme.colorScheme.onBackground) },
                         colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceBright,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         ),
                         border = null
                     )
@@ -234,7 +237,7 @@ fun PlayerControls(
                 Icon(
                     imageVector = flowMode.icon,
                     contentDescription = "Flow",
-                    tint = if (flowMode != FlowMode.STOP_AT_END) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    tint = if (flowMode != FlowMode.STOP_AT_END) appColors.iconActive else appColors.iconPrimary
                 )
             }
         }
@@ -294,11 +297,13 @@ fun ProgressSlider(
         ) {
             Text(
                 text = formatTime(currentPosition),
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
             Text(
                 text = formatTime(duration),
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
             )
         }
     }
@@ -327,7 +332,8 @@ fun SongInfo(
                 text = song.title,
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = song.artist,
@@ -348,7 +354,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     // 1. We manually track where the list should start visually.
     // Initialize it to the current index so it starts correctly.
-    var visibleStartIndex by remember { mutableIntStateOf(playerState.currentIndex + 1) }
+    var visibleStartIndex by rememberSaveable { mutableIntStateOf(playerState.currentIndex + 1) }
 
 
     LaunchedEffect(Unit) {
@@ -444,7 +450,7 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                     onClick = {
                         viewModel.scrollWhenHistoryOpened()
                     },
-                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
                     tonalElevation = 4.dp
                 ) {
@@ -456,11 +462,13 @@ private fun QueueSection(viewModel: MusicPlayerViewModel) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowUp,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.outline
                         )
                         Text(
                             text = "${playerState.currentIndex} previous songs",
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
                         )
                     }
                 }

@@ -5,6 +5,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import com.example.budget.navigation.NavigationState
 import org.example.project.navigation.Navigator
 import org.example.project.ui.theme.appColors
@@ -17,7 +18,7 @@ fun BottomNavigationBar(
     navigator: Navigator
 ) {
     NavigationBar(
-        containerColor = appColors.backgroundElevated
+        containerColor = appColors.backgroundPrimary
     ) {
         dashboardTopLevelDestinations.forEach { (route, bottomNavItem) ->
 

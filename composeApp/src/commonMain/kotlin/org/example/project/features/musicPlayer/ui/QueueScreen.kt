@@ -30,7 +30,7 @@ import kotlinx.coroutines.CancellationException
 import org.example.project.ui.theme.appColors
 
 @Composable
-private fun QueueSection(viewModel: MusicPlayerViewModel) {
+fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()

@@ -7,22 +7,17 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,10 +57,8 @@ fun DashboardNavigation() {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = appColors.backgroundPrimary,
-            contentColor = appColors.textPrimary,
             bottomBar = {
                 Column {
-                    MusicPlayerBar(viewModel = musicPlayerViewModel)
                     if (isBottomBarVisible) {
                         BottomNavigationBar(
                             navigationState = navigationState,
@@ -75,21 +68,33 @@ fun DashboardNavigation() {
                 }
             },
         ) { innerPadding ->
-            val entryProvider = entryProvider<NavKey> {
-                entry<Route.DashboardRoutes.Home> { HomeScreen() }
-                entry<Route.DashboardRoutes.Profile> { Text("Profile") }
-                entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
-            }
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)) {
 
-            NavDisplay(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding),
-                entries = navigationState.toEntries(entryProvider),
-                onBack = { navigator.goBack() }
-            )
+
+                val entryProvider = entryProvider<NavKey> {
+                    entry<Route.DashboardRoutes.Home> { HomeScreen() }
+                    entry<Route.DashboardRoutes.Profile> { Text("Profile") }
+                    entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
+                }
+
+                NavDisplay(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    entries = navigationState.toEntries(entryProvider),
+                    onBack = { navigator.goBack() }
+                )
+                MusicPlayerBar(
+                    viewModel = musicPlayerViewModel, Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(12.dp)
+                )
+            }
         }
+
         AnimatedVisibility(
             visible = isFullScreenVisible,
             enter = slideInVertically(

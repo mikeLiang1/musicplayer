@@ -30,7 +30,7 @@ enum class FlowMode(val label: String, val icon: ImageVector) {
         icon = Icons.Rounded.Repeat,
     ),
     INFINITE(
-        label = "Autoplay on",
+        label = "Autoplay",
         icon = Icons.Default.AllInclusive,
     )
 }

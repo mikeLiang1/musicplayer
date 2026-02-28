@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,14 +15,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
@@ -69,43 +71,60 @@ fun MusicPlayerScreen(
     BackHandler { navigateBack() }
 
     val state by viewModel.playerState.collectAsStateWithLifecycle()
+    val pagerState = rememberPagerState(pageCount = { 2 })
 
     state.currentSong?.let { song ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
 
         ) {
-            PlayerHeader(
-                navigateBack, modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            )
-
-            CoverImage(
-                data = song.thumbnailUrl,
-                size = 320.dp,
-                shape = RoundedCornerShape(32.dp),
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-
-            SongDetails(
-                song = song,
-                viewModel = viewModel,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp)
-            )
-
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { page ->
+                when (page) {
+                    0 -> SongScreen(song, navigateBack = navigateBack, viewModel = viewModel)
+                    1 -> QueueSection(viewModel)
+                }
+            }
 
             PlayerControls(
                 state = state, viewModel = viewModel,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            FooterButtons(viewModel = viewModel)
+            FooterButtons(viewModel = viewModel, modifier = Modifier.padding(vertical = 16.dp))
         }
+    }
+}
+
+@Composable
+private fun SongScreen(song: Song, navigateBack: () -> Unit, viewModel: MusicPlayerViewModel) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+    ) {
+        PlayerHeader(
+            navigateBack, modifier = Modifier.fillMaxWidth()
+        )
+
+        CoverImage(
+            data = song.thumbnailUrl,
+            size = 320.dp,
+            shape = RoundedCornerShape(32.dp),
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        SongDetails(
+            song = song,
+            viewModel = viewModel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp)
+        )
     }
 }
 
@@ -160,9 +179,7 @@ private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: M
 @Composable
 private fun SongInfoRow(title: String, artist: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -336,9 +353,7 @@ private fun ProgressSlider(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+        modifier = modifier.fillMaxWidth()
     ) {
         Slider(
             value = sliderPosition,
@@ -381,22 +396,19 @@ private fun FooterButtons(
     ) {
         IconButton(onClick = viewModel::onQueueClicked) {
             Icon(
-                imageVector = Icons.Filled.KeyboardArrowDown,
-                contentDescription = "Close",
+                imageVector = Icons.Filled.MusicNote,
+                contentDescription = "Song screen",
                 tint = appColors.iconSecondary
             )
+            Text("Now playing")
         }
-        Text(
-            text = "Playing from TODO:",
-            style = MaterialTheme.typography.labelSmall,
-            color = appColors.textMuted
-        )
         IconButton(onClick = { }) {
             Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = "More",
+                imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                contentDescription = "Queue",
                 tint = appColors.iconSecondary
             )
+            Text("Queue")
         }
     }
 }

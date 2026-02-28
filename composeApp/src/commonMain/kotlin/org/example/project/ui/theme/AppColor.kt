@@ -44,37 +44,36 @@ data class AppColors(
 
 // ── Dark ─────────────────────────────────────────────
 val DarkAppColors = AppColors(
-    backgroundPrimary = Color(0xFF0A0A0F),
-    backgroundSecondary = Color(0xFF13131A),
-    backgroundElevated = Color(0xFF1C1C26),
-    backgroundSurface = Color(0xFF2A2A38),
+    backgroundPrimary   = Color(0xFF0D0B14),  // was 0A0A0F, more purple
+    backgroundSecondary = Color(0xFF151220),  // was 13131A, more purple
+    backgroundElevated  = Color(0xFF1E1A2E),  // was 1C1C26, more purple
+    backgroundSurface   = Color(0xFF2A2440),  // was 2A2A38, more purple
 
-    textPrimary = Color(0xFFF0F0FA),
-    textSecondary = Color(0xFFCAC4D8),
-    textMuted = Color(0xFF948FA8),
-    textDim = Color(0xFF4A4A5E),
+    textPrimary         = Color(0xFFF0F0FA),
+    textSecondary       = Color(0xFFCAC4D8),
+    textMuted           = Color(0xFF948FA8),
+    textDim             = Color(0xFF4A4560),  // was 4A4A5E, slight purple shift
 
-    accentPrimary = Color(0xFF9D8FFF),
-    accentDark = Color(0xFF6B5AE0),
-    accentContainer = Color(0xFF3D2EAD),
-    onAccent = Color(0xFF0F0F18),
-    onAccentContainer = Color(0xFF9D8FFF),
+    accentPrimary       = Color(0xFF9D8FFF),
+    accentDark          = Color(0xFF6B5AE0),
+    accentContainer     = Color(0xFF3D2EAD),
+    onAccent            = Color(0xFF0F0F18),
+    onAccentContainer   = Color(0xFF9D8FFF),
 
-    rose = Color(0xFFF0A8BC),
-    roseContainer = Color(0xFF4A1A2E),
-    onRose = Color(0xFF3A0A1E),
+    rose                = Color(0xFFF0A8BC),
+    roseContainer       = Color(0xFF4A1A2E),
+    onRose              = Color(0xFF3A0A1E),
 
-    iconPrimary = Color(0xFFF0F0FA),
-    iconSecondary = Color(0xFFCAC4D8),
-    iconMuted = Color(0xFF948FA8),
-    iconActive = Color(0xFF9D8FFF),
+    iconPrimary         = Color(0xFFF0F0FA),
+    iconSecondary       = Color(0xFFCAC4D8),
+    iconMuted           = Color(0xFF948FA8),
+    iconActive          = Color(0xFF9D8FFF),
 
-    divider = Color(0xFF2A2A38),
-    dividerSubtle = Color(0x0FFFFFFF),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
+    divider             = Color(0xFF2A2440),
+    dividerSubtle       = Color(0x12B0A8FF),  // purple tinted subtle divider
+    error               = Color(0xFFFFB4AB),
+    onError             = Color(0xFF690005),
 )
-
 // ── Light ────────────────────────────────────────────
 val LightAppColors = AppColors(
     backgroundPrimary = Color(0xFFF8F8FF),

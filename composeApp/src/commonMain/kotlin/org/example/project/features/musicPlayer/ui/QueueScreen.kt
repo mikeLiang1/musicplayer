@@ -2,6 +2,7 @@ package org.example.project.features.musicPlayer.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -127,14 +128,14 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
         }
     }
 
-    LazyColumn(state = listState, horizontalAlignment = Alignment.CenterHorizontally) {
+    LazyColumn(state = listState, horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
         if (!uiState.showHistory && playerState.currentIndex > 0) {
             item {
                 Surface(
                     onClick = {
                         viewModel.scrollWhenHistoryOpened()
                     },
-                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    color = appColors.backgroundElevated,
                     shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
                     tonalElevation = 4.dp
                 ) {
@@ -147,12 +148,12 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
                             imageVector = Icons.Default.KeyboardArrowUp,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                            tint = appColors.iconSecondary
                         )
                         Text(
                             text = "${playerState.currentIndex} previous songs",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
+                            color = appColors.textMuted
                         )
                     }
                 }

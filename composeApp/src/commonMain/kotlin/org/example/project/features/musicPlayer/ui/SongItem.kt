@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
+import org.example.project.ui.theme.appColors
 
 @Composable
 fun SongItem(
@@ -42,22 +43,15 @@ fun SongItem(
     onMenuClicked: () -> Unit,
     onClick: () -> Unit
 ) {
-    val backgroundColor =
-        if (isCurrentlyPlaying)
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-        else
-            if (song.isManual) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Unspecified
-
-    val titleColor =
-        if (isCurrentlyPlaying)
-            MaterialTheme.colorScheme.primary
-        else
-            MaterialTheme.colorScheme.onSurface
-
+    val backgroundColor = when {
+        isCurrentlyPlaying -> appColors.accentContainer.copy(alpha = 0.3f)
+        song.isManual -> appColors.accentContainer.copy(alpha = 0.15f)
+        else -> Color.Transparent
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(backgroundColor, RoundedCornerShape(8.dp))
+            .background(backgroundColor)
             .clickable { onClick() }
             .alpha(alpha)
             .padding(8.dp),
@@ -76,7 +70,7 @@ fun SongItem(
                 Icon(
                     imageVector = Icons.Filled.GraphicEq,
                     contentDescription = "Currently playing",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = appColors.iconActive,
                     modifier = Modifier.size(24.dp) // Adjust icon size as needed
                 )
             }
@@ -91,12 +85,13 @@ fun SongItem(
                 text = song.title,
                 maxLines = 1,
                 fontWeight = FontWeight.Bold,
-                color = titleColor
+                color = if (isCurrentlyPlaying) appColors.accentPrimary else appColors.textPrimary
             )
-
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${song.artist} • ${formatTime(song.duration)}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = appColors.textSecondary
             )
         }
 
@@ -105,7 +100,8 @@ fun SongItem(
         ) {
             Icon(
                 imageVector = Icons.Filled.MoreVert,
-                contentDescription = "SongMenu"
+                contentDescription = "SongMenu",
+                tint = appColors.iconSecondary
             )
         }
     }

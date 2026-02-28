@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.FlowMode
 import org.example.project.core.model.PlayerState
@@ -84,7 +87,8 @@ fun MusicPlayerScreen(
         ) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                userScrollEnabled = false
             ) { page ->
                 when (page) {
                     0 -> SongScreen(song, navigateBack = navigateBack, viewModel = viewModel)
@@ -92,12 +96,14 @@ fun MusicPlayerScreen(
                 }
             }
 
+            Spacer(Modifier.height(24.dp))
+
             PlayerControls(
                 state = state, viewModel = viewModel,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            FooterButtons(viewModel = viewModel, modifier = Modifier.padding(vertical = 16.dp))
+            FooterButtons(modifier = Modifier.padding(vertical = 16.dp), pagerState = pagerState)
         }
     }
 }
@@ -105,7 +111,10 @@ fun MusicPlayerScreen(
 @Composable
 private fun SongScreen(song: Song, navigateBack: () -> Unit, viewModel: MusicPlayerViewModel) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
     ) {
         PlayerHeader(
             navigateBack, modifier = Modifier.fillMaxWidth()
@@ -387,28 +396,45 @@ private fun ProgressSlider(
 
 @Composable
 private fun FooterButtons(
-    modifier: Modifier = Modifier, viewModel: MusicPlayerViewModel,
+    modifier: Modifier = Modifier,
+    pagerState: PagerState
 ) {
+    val scope = rememberCoroutineScope()
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = viewModel::onQueueClicked) {
-            Icon(
-                imageVector = Icons.Filled.MusicNote,
-                contentDescription = "Song screen",
-                tint = appColors.iconSecondary
-            )
-            Text("Now playing")
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            IconButton(onClick = {
+                scope.launch {
+                    pagerState.animateScrollToPage(0)
+                }
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.MusicNote,
+                    contentDescription = "Song screen",
+                    tint = if (pagerState.currentPage == 0) appColors.iconActive else appColors.iconSecondary
+                )
+            }
+            Text("Now playing", color = appColors.textPrimary)
         }
-        IconButton(onClick = { }) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.QueueMusic,
-                contentDescription = "Queue",
-                tint = appColors.iconSecondary
-            )
-            Text("Queue")
+        Spacer(modifier = Modifier.width(36.dp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(1)
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                    contentDescription = "Queue",
+                    tint = if (pagerState.currentPage == 1) appColors.iconActive else appColors.iconSecondary
+                )
+            }
+            Text("Queue", color = appColors.textPrimary)
         }
     }
 }

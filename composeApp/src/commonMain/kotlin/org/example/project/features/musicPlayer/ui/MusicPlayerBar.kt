@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -73,12 +74,14 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                color = appColors.textPrimary
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = song.artist,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = appColors.textSecondary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -95,7 +98,8 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
-                                contentDescription = "Previous"
+                                contentDescription = "Previous",
+                                tint = appColors.iconPrimary
                             )
                         }
                         // Play/Pause button
@@ -108,7 +112,8 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                                 } else {
                                     Icons.Filled.PlayArrow
                                 },
-                                contentDescription = if (state.isPlaying) "Pause" else "Play"
+                                contentDescription = if (state.isPlaying) "Pause" else "Play",
+                                tint = appColors.iconPrimary
                             )
                         }
 
@@ -118,7 +123,8 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
-                                contentDescription = "Next"
+                                contentDescription = "Next",
+                                tint = appColors.iconPrimary
                             )
                         }
                     }

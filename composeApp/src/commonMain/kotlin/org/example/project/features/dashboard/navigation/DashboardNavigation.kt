@@ -109,7 +109,7 @@ fun DashboardNavigation() {
             Surface(
                 // padding at top to immitate bottomsheet
                 modifier = Modifier.fillMaxSize(),
-                color = appColors.backgroundPrimary,
+                color = appColors.backgroundSecondary,
             ) {
                 MusicPlayerScreen(
                     viewModel = musicPlayerViewModel,

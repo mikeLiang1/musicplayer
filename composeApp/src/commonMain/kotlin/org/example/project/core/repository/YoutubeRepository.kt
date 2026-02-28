@@ -64,7 +64,7 @@ class YouTubeRepository {
                         url = item.url,
                         title = item.name,
                         artist = item.uploaderName ?: "Unknown",
-                        thumbnailUrl = item.thumbnails.firstOrNull()?.url,
+                        thumbnailUrl = item.thumbnails.maxByOrNull { it.width * it.height }?.url,
                         duration = item.duration * 1000
                     )
                 }
@@ -89,7 +89,7 @@ class YouTubeRepository {
                         url = item.url,
                         title = item.name,
                         artist = item.uploaderName ?: "Unknown",
-                        thumbnailUrl = item.thumbnails.firstOrNull()?.url,
+                        thumbnailUrl = item.thumbnails.maxByOrNull { it.width * it.height }?.url,
                         duration = item.duration * 1000
                     )
                 }
@@ -118,7 +118,7 @@ class YouTubeRepository {
                     url = item.url,
                     title = item.name,
                     artist = item.uploaderName ?: "Unknown",
-                    thumbnailUrl = item.thumbnails.firstOrNull()?.url,
+                    thumbnailUrl = item.thumbnails.maxByOrNull { it.width * it.height }?.url,
                     duration = item.duration * 1000
                 )
             } ?: listOf()
@@ -142,7 +142,7 @@ class YouTubeRepository {
                     url = item.url,
                     title = item.name,
                     artist = item.uploaderName ?: "Unknown",
-                    thumbnailUrl = item.thumbnails.firstOrNull()?.url,
+                    thumbnailUrl = item.thumbnails.maxByOrNull { it.width * it.height }?.url,
                     duration = item.duration * 1000
                 )
             }

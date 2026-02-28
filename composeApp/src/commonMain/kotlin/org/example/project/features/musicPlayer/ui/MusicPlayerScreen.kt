@@ -11,20 +11,19 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
@@ -34,37 +33,32 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.FlowMode
+import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
+import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -78,80 +72,136 @@ fun MusicPlayerScreen(
 
     state.currentSong?.let { song ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.systemBars)
-                .padding(horizontal = 16.dp)
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+
         ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                IconButton(
-                    onClick = { navigateBack() }) {
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = "Close"
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = {
-
-                }
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Menu,
-                        contentDescription = "Menu"
-                    )
-                }
-            }
-            // Current song info
-            SongInfo(song = song)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Progress slider
-            MusicPlayerProgressSlider(
-                viewModel,
-                duration = song.duration
+            PlayerHeader(
+                navigateBack, modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            CoverImage(
+                data = song.thumbnailUrl,
+                size = 320.dp,
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
 
-            // Player controls
+
+            SongDetails(
+                song = song,
+                viewModel = viewModel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+            )
+
+
             PlayerControls(
-                isPlaying = state.isPlaying,
-                isShuffled = state.isShuffled,
-                flowMode = state.flowMode,
-                onPlayPauseClick = viewModel::onPlayPauseClicked,
-                onNextClick = viewModel::onNextClicked,
-                onPreviousClick = viewModel::onPreviousClicked,
-                onShuffleClicked = viewModel::changeShuffleOption,
-                onFlowClicked = viewModel::cycleFlowMode
+                state = state, viewModel = viewModel,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            QueueSection(viewModel = viewModel)
-
+            FooterButtons(viewModel = viewModel)
         }
     }
 }
 
 @Composable
-fun PlayerControls(
-    modifier: Modifier = Modifier,
-    isPlaying: Boolean,
-    isShuffled: Boolean,
-    flowMode: FlowMode,
-    onPlayPauseClick: () -> Unit,
-    onNextClick: () -> Unit,
-    onPreviousClick: () -> Unit,
-    onShuffleClicked: () -> Unit,
-    onFlowClicked: () -> Unit
+private fun PlayerHeader(navigateBack: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { navigateBack() }) {
+            Icon(
+                imageVector = Icons.Filled.KeyboardArrowDown,
+                contentDescription = "Close",
+                tint = appColors.iconSecondary
+            )
+        }
+        Text(
+            text = "Playing from TODO:",
+            style = MaterialTheme.typography.labelSmall,
+            color = appColors.textMuted
+        )
+        IconButton(onClick = { }) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = "More",
+                tint = appColors.iconSecondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        SongInfoRow(song.title, song.artist)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        MusicPlayerProgressSlider(
+            viewModel,
+            duration = song.duration
+        )
+
+    }
+}
+
+@Composable
+private fun SongInfoRow(title: String, artist: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = appColors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = artist,
+                style = MaterialTheme.typography.bodyMedium,
+                color = appColors.textSecondary
+            )
+        }
+        IconButton(onClick = { }) {
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = "Favorite",
+                tint = appColors.rose,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerControls(
+    state: PlayerState,
+    viewModel: MusicPlayerViewModel,
+    modifier: Modifier = Modifier
 ) {
     var showFlowChip by remember { mutableStateOf(false) }
     var isFirstLaunch by remember { mutableStateOf(true) }
 
-    LaunchedEffect(flowMode) {
+    LaunchedEffect(state.flowMode) {
         if (isFirstLaunch) {
             isFirstLaunch = false
             return@LaunchedEffect
@@ -167,15 +217,16 @@ fun PlayerControls(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = modifier
+            modifier = Modifier
         ) {
-            IconButton(onClick = onShuffleClicked) {
+            IconButton(onClick = viewModel::changeShuffleOption) {
                 Icon(
                     imageVector = Icons.Default.Shuffle,
                     contentDescription = "Shuffle",
-                    tint = if (isShuffled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (state.isShuffled) appColors.iconActive else appColors.iconSecondary
                 )
-                if (isShuffled) {
+
+                if (state.isShuffled) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -187,36 +238,37 @@ fun PlayerControls(
             }
         }
 
-        IconButton(onClick = onPreviousClick) {
+        IconButton(onClick = viewModel::onPreviousClicked) {
             Icon(
                 imageVector = Icons.Filled.SkipPrevious,
                 contentDescription = "Previous",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = appColors.iconSecondary
             )
         }
 
         FilledIconButton(
-            onClick = onPlayPauseClick,
+            onClick = viewModel::onPlayPauseClicked,
             modifier = Modifier.size(64.dp),
             colors = IconButtonDefaults.filledIconButtonColors(
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = appColors.iconActive,
+                contentColor = appColors.onAccent
             )
-
         ) {
             Icon(
-                imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                contentDescription = if (isPlaying) "Pause" else "Play",
+                imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (state.isPlaying) "Pause" else "Play",
                 modifier = Modifier.size(32.dp)
             )
         }
 
-        IconButton(onClick = onNextClick) {
+        IconButton(onClick = viewModel::onNextClicked) {
             Icon(
                 imageVector = Icons.Filled.SkipNext,
                 contentDescription = "Next",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = appColors.iconSecondary
             )
         }
+
         Box(contentAlignment = Alignment.Center) {
             if (showFlowChip) {
                 Popup(
@@ -225,29 +277,34 @@ fun PlayerControls(
                 ) {
                     SuggestionChip(
                         onClick = {},
-                        label = { Text(flowMode.label, color = MaterialTheme.colorScheme.onBackground) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
+                        label = { Text(state.flowMode.label, color = appColors.textPrimary, fontSize = 12.sp) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(containerColor = appColors.backgroundElevated),
                         border = null
                     )
                 }
             }
-            IconButton(onClick = onFlowClicked) {
+            IconButton(onClick = viewModel::cycleFlowMode) {
                 Icon(
-                    imageVector = flowMode.icon,
+                    imageVector = state.flowMode.icon,
                     contentDescription = "Flow",
-                    tint = if (flowMode != FlowMode.STOP_AT_END) appColors.iconActive else appColors.iconPrimary
+                    tint = if (state.flowMode != FlowMode.STOP_AT_END) appColors.iconActive else appColors.iconSecondary
                 )
+                if (state.flowMode != FlowMode.STOP_AT_END) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-4).dp)
+                            .size(4.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                }
             }
         }
-
     }
-
 }
 
 @Composable
-fun MusicPlayerProgressSlider(
+private fun MusicPlayerProgressSlider(
     viewModel: MusicPlayerViewModel,
     duration: Long,
     modifier: Modifier = Modifier
@@ -263,7 +320,7 @@ fun MusicPlayerProgressSlider(
 }
 
 @Composable
-fun ProgressSlider(
+private fun ProgressSlider(
     currentPosition: Long,
     duration: Long,
     onSeek: (Long) -> Unit,
@@ -278,7 +335,11 @@ fun ProgressSlider(
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
         Slider(
             value = sliderPosition,
             onValueChange = {
@@ -298,201 +359,44 @@ fun ProgressSlider(
             Text(
                 text = formatTime(currentPosition),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                color = appColors.textMuted
             )
             Text(
                 text = formatTime(duration),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                color = appColors.textMuted
             )
         }
     }
 }
 
 @Composable
-fun SongInfo(
-    song: Song,
-    modifier: Modifier = Modifier
+private fun FooterButtons(
+    modifier: Modifier = Modifier, viewModel: MusicPlayerViewModel,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
-
     ) {
-        AsyncImage(
-            model = song.thumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            contentScale = ContentScale.Crop
+        IconButton(onClick = viewModel::onQueueClicked) {
+            Icon(
+                imageVector = Icons.Filled.KeyboardArrowDown,
+                contentDescription = "Close",
+                tint = appColors.iconSecondary
+            )
+        }
+        Text(
+            text = "Playing from TODO:",
+            style = MaterialTheme.typography.labelSmall,
+            color = appColors.textMuted
         )
-
-        Column {
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        IconButton(onClick = { }) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = "More",
+                tint = appColors.iconSecondary
             )
         }
-    }
-}
-
-// Composable - much simpler now
-@Composable
-private fun QueueSection(viewModel: MusicPlayerViewModel) {
-
-    val playerState by viewModel.playerState.collectAsStateWithLifecycle()
-    val listState = rememberLazyListState()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // 1. We manually track where the list should start visually.
-    // Initialize it to the current index so it starts correctly.
-    var visibleStartIndex by rememberSaveable { mutableIntStateOf(playerState.currentIndex + 1) }
-
-
-    LaunchedEffect(Unit) {
-        viewModel.effect.collect { effect ->
-            when (effect) {
-                is MusicPlayerEffect.ScrollUp -> {
-                    // Force the next composition to stay (since when chip removed, first song will be at index 0)
-                    listState.requestScrollToItem(playerState.currentIndex - 1)
-                    // Make full list available
-                    viewModel.changeHistory(true)
-                    visibleStartIndex = 0
-
-                    // scroll to 2.5 items
-                    val targetIndex = (playerState.currentIndex - 2).coerceAtLeast(0)
-                    val itemHeight = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
-                    try {
-                        listState.animateScrollToItem(targetIndex, -itemHeight / 2)
-                    } catch (e: CancellationException) {
-                        // Swallow to avoid bugs
-                    }
-                }
-            }
-        }
-    }
-
-
-    // 2. Derive the list based on our manual 'visibleStartIndex' (LAGGING STATE)
-    // rather than the live 'playerState.currentIndex' (REAL STATE).
-    // TODO: maybe not use queue directly ?
-    val visibleSongs =
-        remember(uiState.showHistory, visibleStartIndex, playerState.manualItemCount, playerState.isShuffled) {
-            if (uiState.showHistory) {
-                playerState.queue
-            } else {
-                playerState.queue.drop(playerState.currentIndex.coerceIn(0, playerState.queue.size))
-            }
-        }
-
-    // When current index changes (i.e new song selected)
-    LaunchedEffect(playerState.currentIndex) {
-        val relativeIndex =
-            if (playerState.manualItemCount > 0) 0 else playerState.currentIndex - visibleStartIndex
-        if (uiState.showHistory) {
-            try {
-                // SHow history true means we have the whole list, so we can
-                // directly scroll to the current index
-                listState.animateScrollToItem(relativeIndex)
-            } finally {
-                withFrameNanos { }
-                // updates starting position
-                visibleStartIndex = playerState.currentIndex
-
-                // updates visible song list
-                viewModel.changeHistory(false)
-            }
-            // TODO: We can remove animate scroll to item and let songItem.animateItem choose the animation potenietally
-        } else {
-            // CASE: We are moving to the NEXT song (Index 5 -> 6)
-            if (playerState.currentIndex > visibleStartIndex) {
-
-                try {
-                    // Animate while list still has old content
-                    listState.animateScrollToItem(relativeIndex + 1)
-                } finally {
-                    // Then update list structure
-                    withFrameNanos { }
-                    visibleStartIndex = playerState.currentIndex
-                }
-
-            }
-            // CASE: We are moving to a PREVIOUS song (Index 6 -> 5)
-            else if (playerState.currentIndex < visibleStartIndex) {
-                val index = if (playerState.currentIndex == 0) 0 else 1
-                // Expand list to include previous songs
-                visibleStartIndex = playerState.currentIndex
-
-                withFrameNanos { }
-
-                try {
-                    // Now animate up to the new current song
-                    listState.animateScrollToItem(index)
-                } catch (e: CancellationException) {
-
-                }
-            }
-        }
-    }
-
-    LazyColumn(state = listState, horizontalAlignment = Alignment.CenterHorizontally) {
-        if (!uiState.showHistory && playerState.currentIndex > 0) {
-            item {
-                Surface(
-                    onClick = {
-                        viewModel.scrollWhenHistoryOpened()
-                    },
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
-                    tonalElevation = 4.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowUp,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = "${playerState.currentIndex} previous songs",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-            }
-        }
-
-        itemsIndexed(
-            items = visibleSongs,
-            key = { _, song -> song.uniqueId }
-        ) { index, song ->
-
-            val absoluteIndex = if (uiState.showHistory) index else visibleStartIndex + index
-            val isPreviousSong = absoluteIndex < playerState.currentIndex
-
-            SongItem(
-                modifier = Modifier.animateItem(),
-                song = song,
-                isCurrentlyPlaying = absoluteIndex == playerState.currentIndex,
-                onMenuClicked = { viewModel.onMenuClicked(song) },
-                alpha = if (isPreviousSong) 0.6f else 1f
-            ) {
-                viewModel.changePlayingToIndex(absoluteIndex)
-            }
-        }
-
     }
 }

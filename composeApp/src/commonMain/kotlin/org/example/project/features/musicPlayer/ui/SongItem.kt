@@ -25,15 +25,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
+import org.example.project.ui.component.CoverImage
 
 @Composable
 fun SongItem(
@@ -71,14 +69,7 @@ fun SongItem(
             modifier = Modifier.size(50.dp) // Match the size of the image
         ) {
             // 2. Draw the Image first (bottom layer)
-            AsyncImage(
-                model = song.thumbnailUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize() // Fills the 50.dp box
-                    .clip(RoundedCornerShape(4.dp)),
-                contentScale = ContentScale.Crop
-            )
+            CoverImage(song.thumbnailUrl, modifier = modifier.fillMaxSize(), shape = RoundedCornerShape(4.dp))
 
             // 3. Draw the Icon second (top layer)
             if (isCurrentlyPlaying) {
@@ -117,7 +108,6 @@ fun SongItem(
                 contentDescription = "SongMenu"
             )
         }
-
     }
 }
 
@@ -146,7 +136,7 @@ fun SongItemPreview() {
                 duration = 3000L
             ),
             isCurrentlyPlaying = false, onMenuClicked = {},
-        onClick = {})
+            onClick = {})
 
         SongItem(
             song = Song(

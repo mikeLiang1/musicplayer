@@ -12,7 +12,7 @@ Now playing row → surfaceContainer (#1C1C26)
 
 Icons
 
-Active/accent icons (repeat on, shuffle on) → primary (#9D8FFF)
+Active/accent icons (repeat on, shuffle on) → iconprimary (#9D8FFF)
 Default inactive icons → onSurfaceVariant (#CAC4D8)
 Dimmed/disabled icons → outline (#948FA8)
 

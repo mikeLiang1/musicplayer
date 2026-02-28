@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
@@ -25,14 +24,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import coil3.compose.AsyncImage
+import org.example.project.ui.component.CoverImage
+import org.example.project.ui.theme.appColors
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -45,7 +43,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .background(appColors.backgroundSecondary)
                 .clickable { viewModel.setFullScreen(true) }
         ) {
 
@@ -63,15 +61,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Thumbnail
-                    AsyncImage(
-                        model = song.thumbnailUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+                    CoverImage(song.thumbnailUrl, size = 48.dp, shape = RoundedCornerShape(4.dp))
 
                     // Song details
                     Column(

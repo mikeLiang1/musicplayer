@@ -17,13 +17,13 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.size.Size
 import kotlinx.serialization.Serializable
 
 @Composable
 fun CoverImage(
     data: Any?,
     modifier: Modifier = Modifier,
-    imageModifier: Modifier = Modifier,
     size: Dp = Dp.Unspecified,
     shape: Shape = MaterialTheme.shapes.small,
     icon: VectorPainter = rememberVectorPainter(Icons.Sharp.Refresh),
@@ -39,10 +39,10 @@ fun CoverImage(
     AsyncImage(
         model = request,
         contentDescription = null,
-        contentScale = ContentScale.FillBounds,
+        contentScale = ContentScale.Crop,
         placeholder = icon,
         error = icon,
-        modifier = imageModifier
+        modifier = modifier
             .size(size)
             .clip(shape)
     )

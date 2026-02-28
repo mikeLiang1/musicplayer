@@ -75,6 +75,8 @@ class MusicPlayerViewModel constructor(
         musicPlayerManager.cycleFlowMode()
     }
 
+    fun onQueueClicked() {}
+
 }
 
 data class MusicPlayerUiState(

@@ -85,7 +85,11 @@ fun SongItem(
                 text = song.title,
                 maxLines = 1,
                 fontWeight = FontWeight.SemiBold,
-                color = if (isCurrentlyPlaying) appColors.accentPrimary else appColors.textPrimary
+                color = when {
+                    isCurrentlyPlaying -> appColors.accentPrimary
+                    song.isManual -> appColors.accentPrimary.copy(alpha = 0.7f)
+                    else -> appColors.textPrimary
+                }
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(

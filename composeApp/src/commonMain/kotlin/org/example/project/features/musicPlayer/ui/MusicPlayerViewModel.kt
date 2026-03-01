@@ -54,11 +54,20 @@ class MusicPlayerViewModel constructor(
     }
 
     fun changePlayingToIndex(index: Int) {
+        _uiState.update { it.copy(showHistory = false) }
         musicPlayerManager.seekToIndex(index)
     }
 
     fun changeHistory(value: Boolean) {
         _uiState.update { it.copy(showHistory = value) }
+    }
+
+    fun onHistoryPillClicked() {
+        if (uiState.value.showHistory) {
+            changeHistory(false)
+        } else {
+            scrollWhenHistoryOpened()
+        }
     }
 
     fun scrollWhenHistoryOpened() {

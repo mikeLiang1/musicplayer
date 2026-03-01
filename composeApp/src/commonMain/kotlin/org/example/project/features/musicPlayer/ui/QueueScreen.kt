@@ -1,15 +1,22 @@
 package org.example.project.features.musicPlayer.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,7 +90,8 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
         remember(
             uiState.showHistory,
             playerState.isShuffled,
-            queueUpdateKey
+            queueUpdateKey,
+            playerState.manualItemCount
         ) {
             if (uiState.showHistory) {
                 playerState.queue
@@ -92,7 +100,7 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
             }
         }
 
-    LaunchedEffect(playerState.currentIndex, playerState.manualItemCount) {
+    LaunchedEffect(playerState.currentIndex, playerState.manualItemCount, uiState.showHistory) {
         if (!uiState.showHistory) {
             try {
                 withFrameNanos { }
@@ -116,38 +124,55 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
 
         // ── Pinned current song ──────────────────────────
         playerState.currentSong?.let { currentSong ->
-            CurrentSongRow(song = currentSong)
+            CurrentSongRow(song = currentSong, isPlaying = playerState.isPlaying)
+
+            val sectionLabel = remember(listState.firstVisibleItemIndex, uiState.showHistory) {
+                when {
+                    uiState.showHistory && listState.firstVisibleItemIndex < playerState.currentIndex -> "History"
+                    uiState.showHistory && listState.firstVisibleItemIndex == playerState.currentIndex -> "Current"
+                    visibleSongs.getOrNull(listState.firstVisibleItemIndex)?.isManual == true -> "Queued"
+                    else -> "Next up"
+                }
+            }
 
             // Next up divider
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = appColors.divider
-                )
-                Text(
-                    text = "Next up",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = appColors.textDim,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 0.14.sp
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = appColors.divider
-                )
+            AnimatedContent(
+                targetState = sectionLabel,
+                transitionSpec = {
+                    fadeIn() + slideInVertically { -it } togetherWith
+                            fadeOut() + slideOutVertically { it }
+                }
+            ) { label ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = appColors.divider
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium, // was labelSmall
+                        color = appColors.textMuted, // was textDim — more visible
+                        fontFamily = FontFamily.Monospace
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = appColors.divider
+                    )
+                }
             }
         }
 
         // ── Scrollable queue ─────────────────────────────
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             itemsIndexed(
                 items = visibleSongs,
@@ -164,7 +189,6 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
                     alpha = if (isPreviousSong) 0.45f else 1f,
 //                    showQueuedBadge = song.isManual
                 ) {
-                    viewModel.changeHistory(false)
                     viewModel.changePlayingToIndex(absoluteIndex)
                 }
             }
@@ -178,11 +202,11 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
 }
 
 @Composable
-private fun CurrentSongRow(song: Song) {
+private fun CurrentSongRow(song: Song, isPlaying: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(appColors.accentContainer.copy(alpha = 0.12f))
+            .background(appColors.accentContainer.copy(alpha = 0.3f))
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -202,7 +226,7 @@ private fun CurrentSongRow(song: Song) {
                     .background(Color.Black.copy(alpha = 0.45f)),
                 contentAlignment = Alignment.Center
             ) {
-                EqualizerBars()
+                EqualizerBars(isPlaying)
             }
         }
 
@@ -241,7 +265,7 @@ private fun CurrentSongRow(song: Song) {
 }
 
 @Composable
-private fun EqualizerBars() {
+private fun EqualizerBars(isPlaying: Boolean) {
     val infiniteTransition = rememberInfiniteTransition(label = "eq")
     val bars = listOf(0.3f, 0.7f, 1f, 0.5f)
 
@@ -263,10 +287,13 @@ private fun EqualizerBars() {
                 ),
                 label = "bar$i"
             )
+
+            val height = if (isPlaying) scale else base * 0.3f
+
             Box(
                 modifier = Modifier
                     .width(3.dp)
-                    .fillMaxHeight(scale)
+                    .fillMaxHeight(height)
                     .clip(RoundedCornerShape(2.dp))
                     .background(appColors.accentPrimary)
             )

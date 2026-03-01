@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
@@ -39,12 +38,13 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
@@ -52,7 +52,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,7 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,11 +66,8 @@ import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.example.project.core.helper.formatTime
 import org.example.project.core.model.FlowMode
 import org.example.project.core.model.PlayerState
-import org.example.project.core.model.Song
-import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -84,6 +79,9 @@ fun MusicPlayerScreen(
 
     val state by viewModel.playerState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 2 })
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
 
     state.currentSong?.let { song ->
         Column(
@@ -98,7 +96,8 @@ fun MusicPlayerScreen(
                 navigateBack = navigateBack,
                 pagerState = pagerState,
                 playerState = state,
-                onHistoryClick = viewModel::scrollWhenHistoryOpened
+                showHistory = uiState.showHistory,
+                onHistoryClick = viewModel::onHistoryPillClicked
             )
 
             HorizontalPager(
@@ -107,46 +106,27 @@ fun MusicPlayerScreen(
                 userScrollEnabled = false
             ) { page ->
                 when (page) {
-                    0 -> SongScreen(song, navigateBack = navigateBack, viewModel = viewModel)
+                    0 -> SongScreen(song, viewModel = viewModel)
                     1 -> QueueSection(viewModel)
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
 
-            PlayerControls(
-                state = state, viewModel = viewModel,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                HorizontalDivider(
+                    color = appColors.dividerSubtle,
+                    thickness = 1.dp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-            FooterButtons(modifier = Modifier.padding(vertical = 16.dp), pagerState = pagerState)
+                PlayerControls(
+                    state = state, viewModel = viewModel,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                FooterButtons(modifier = Modifier.padding(vertical = 16.dp), pagerState = pagerState)
+            }
         }
-    }
-}
-
-@Composable
-private fun SongScreen(song: Song, navigateBack: () -> Unit, viewModel: MusicPlayerViewModel) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-
-        CoverImage(
-            data = song.thumbnailUrl,
-            size = 320.dp,
-            shape = RoundedCornerShape(32.dp),
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        SongDetails(
-            song = song,
-            viewModel = viewModel,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp)
-        )
     }
 }
 
@@ -156,6 +136,7 @@ private fun PlayerHeader(
     pagerState: PagerState,
     playerState: PlayerState,
     onHistoryClick: () -> Unit,
+    showHistory: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -190,7 +171,7 @@ private fun PlayerHeader(
                     exit = fadeOut() + shrinkVertically()
                 ) {
                     Surface(
-                        onClick = onHistoryClick,
+                        onClick = onHistoryClick, // viewModel handles toggle logic
                         color = appColors.backgroundElevated,
                         shape = RoundedCornerShape(99.dp),
                         border = BorderStroke(1.dp, appColors.divider)
@@ -201,13 +182,13 @@ private fun PlayerHeader(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.ExpandLess,
+                                imageVector = if (showHistory) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = appColors.iconMuted
                             )
                             Text(
-                                text = "${playerState.currentIndex} previous songs",
+                                text = if (showHistory) "Hide history" else "${playerState.currentIndex} previous songs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = appColors.textMuted,
                                 fontFamily = FontFamily.Monospace
@@ -223,58 +204,6 @@ private fun PlayerHeader(
                 imageVector = Icons.Filled.MoreVert,
                 contentDescription = "More",
                 tint = appColors.iconSecondary
-            )
-        }
-    }
-}
-
-@Composable
-private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        SongInfoRow(song.title, song.artist)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        MusicPlayerProgressSlider(
-            viewModel,
-            duration = song.duration
-        )
-
-    }
-}
-
-@Composable
-private fun SongInfoRow(title: String, artist: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = appColors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = artist,
-                style = MaterialTheme.typography.bodyMedium,
-                color = appColors.textSecondary
-            )
-        }
-        IconButton(onClick = { }) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Favorite",
-                tint = appColors.rose,
-                modifier = Modifier.size(28.dp)
             )
         }
     }
@@ -390,72 +319,6 @@ private fun PlayerControls(
         }
     }
 }
-
-@Composable
-private fun MusicPlayerProgressSlider(
-    viewModel: MusicPlayerViewModel,
-    duration: Long,
-    modifier: Modifier = Modifier
-) {
-    val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
-
-    ProgressSlider(
-        currentPosition = currentPosition,
-        duration = duration,
-        onSeek = viewModel::onSeekTo,
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun ProgressSlider(
-    currentPosition: Long,
-    duration: Long,
-    onSeek: (Long) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var sliderPosition by remember { mutableFloatStateOf(0f) }
-    var isSliding by remember { mutableStateOf(false) }
-
-    LaunchedEffect(currentPosition) {
-        if (!isSliding && duration > 0) {
-            sliderPosition = currentPosition.toFloat() / duration.toFloat()
-        }
-    }
-
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Slider(
-            value = sliderPosition,
-            onValueChange = {
-                isSliding = true
-                sliderPosition = it
-            },
-            onValueChangeFinished = {
-                isSliding = false
-                onSeek((sliderPosition * duration).toLong())
-            }
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = formatTime(currentPosition),
-                style = MaterialTheme.typography.bodySmall,
-                color = appColors.textMuted
-            )
-            Text(
-                text = formatTime(duration),
-                style = MaterialTheme.typography.bodySmall,
-                color = appColors.textMuted
-            )
-        }
-    }
-}
-
 
 @Composable
 private fun FooterButtons(

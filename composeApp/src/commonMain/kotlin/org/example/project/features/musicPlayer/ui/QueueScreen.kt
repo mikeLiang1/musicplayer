@@ -1,17 +1,11 @@
 package org.example.project.features.musicPlayer.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,12 +23,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -121,46 +113,6 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-
-        // ── Pinned history pill ──────────────────────────
-        AnimatedVisibility(
-            visible = !uiState.showHistory && playerState.currentIndex > 0,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Surface(
-                    onClick = { viewModel.scrollWhenHistoryOpened() },
-                    color = appColors.backgroundElevated,
-                    shape = RoundedCornerShape(99.dp),
-                    border = BorderStroke(1.dp, appColors.divider)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ExpandLess,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = appColors.iconMuted
-                        )
-                        Text(
-                            text = "${playerState.currentIndex} previous songs",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = appColors.textMuted,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-            }
-        }
 
         // ── Pinned current song ──────────────────────────
         playerState.currentSong?.let { currentSong ->

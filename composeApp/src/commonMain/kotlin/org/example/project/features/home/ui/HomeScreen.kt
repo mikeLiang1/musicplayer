@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.example.project.ui.theme.appColors
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -21,6 +22,6 @@ fun HomeScreen(homeViewModel: HomeViewModel = koinViewModel()) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Home screen")
+        Text("Home screen", color = appColors.textPrimary)
     }
 }

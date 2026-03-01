@@ -84,14 +84,14 @@ fun SongItem(
             Text(
                 text = song.title,
                 maxLines = 1,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = if (isCurrentlyPlaying) appColors.accentPrimary else appColors.textPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${song.artist} • ${formatTime(song.duration)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = appColors.textSecondary
+                color = appColors.textMuted
             )
         }
 

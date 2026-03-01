@@ -309,6 +309,7 @@ class MusicPlayerManagerImpl(
             controller.addMediaItems(
                 currentIndex + manual.size + 1,
                 shuffled.map { it.toMediaItem() })
+            _playerState.update { it.copy(isShuffled = true) }
             ioScope.launch {
                 savedDataRepository.saveOriginalQueue(queue)
                 savedDataRepository.saveIsShuffled(true)

@@ -64,17 +64,18 @@ class MusicPlayerViewModel constructor(
 
     fun onHistoryPillClicked() {
         if (uiState.value.showHistory) {
-            changeHistory(false)
+            viewModelScope.launch {
+                _uiState.update { it.copy(showHistory = false) }
+                _effect.emit(MusicPlayerEffect.ScrollToFirst)
+            }
         } else {
-            scrollWhenHistoryOpened()
+            viewModelScope.launch {
+                _uiState.update { it.copy(showHistory = true) }
+                _effect.emit(MusicPlayerEffect.ScrollUp)
+            }
         }
     }
 
-    fun scrollWhenHistoryOpened() {
-        viewModelScope.launch {
-            _effect.emit(MusicPlayerEffect.ScrollUp)
-        }
-    }
 
     fun changeShuffleOption() {
         musicPlayerManager.shuffle()
@@ -95,5 +96,6 @@ data class MusicPlayerUiState(
 
 sealed interface MusicPlayerEffect {
     data object ScrollUp : MusicPlayerEffect
+    data object ScrollToFirst : MusicPlayerEffect
 }
 

@@ -45,7 +45,7 @@ fun SongItem(
 ) {
     val backgroundColor = when {
         isCurrentlyPlaying -> appColors.accentContainer.copy(alpha = 0.3f)
-        song.isManual -> appColors.accentContainer.copy(alpha = 0.15f)
+        song.isManual -> appColors.rose.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
     Row(
@@ -87,7 +87,6 @@ fun SongItem(
                 fontWeight = FontWeight.SemiBold,
                 color = when {
                     isCurrentlyPlaying -> appColors.accentPrimary
-                    song.isManual -> appColors.accentPrimary.copy(alpha = 0.7f)
                     else -> appColors.textPrimary
                 }
             )

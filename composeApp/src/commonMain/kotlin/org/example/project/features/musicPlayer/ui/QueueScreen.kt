@@ -1,6 +1,8 @@
 package org.example.project.features.musicPlayer.ui
 
+import android.R.attr.scaleY
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,12 +49,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.FlowMode
@@ -72,9 +79,9 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is MusicPlayerEffect.ScrollUp -> {
+                MusicPlayerEffect.ScrollUp -> {
                     listState.requestScrollToItem(playerState.currentIndex)
-                    viewModel.changeHistory(true)
+                    queueUpdateKey++
                     val targetIndex = (playerState.currentIndex - 2).coerceAtLeast(0)
                     val itemHeight = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
                     try {
@@ -82,13 +89,17 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
                     } catch (e: CancellationException) {
                     }
                 }
+
+                MusicPlayerEffect.ScrollToFirst -> {
+                    queueUpdateKey++
+                    listState.animateScrollToItem(0)
+                }
             }
         }
     }
 
     val visibleSongs =
         remember(
-            uiState.showHistory,
             playerState.isShuffled,
             queueUpdateKey,
             playerState.manualItemCount
@@ -100,24 +111,27 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
             }
         }
 
-    LaunchedEffect(playerState.currentIndex, playerState.manualItemCount, uiState.showHistory) {
-        if (!uiState.showHistory) {
-            try {
-                withFrameNanos { }
-                withFrameNanos { }
-                queueUpdateKey++ // recompute list with new data
-                withFrameNanos { } // wait for recomposition with new list
-                listState.animateScrollToItem(0)
-            } catch (e: CancellationException) {
-            }
-            // This way didnt work for previous song, in that case needed to call queue update key first
+    // Animation when song changes or manual queue addded
+    LaunchedEffect(playerState.currentIndex, playerState.manualItemCount) {
+
+        try {
+            withFrameNanos { }
+            withFrameNanos { }
+            queueUpdateKey++ // recompute list with new data
+            withFrameNanos { } // wait for recomposition with new list
+            listState.animateScrollToItem(0)
+        } catch (e: CancellationException) {
+        }
+
+        // This way didnt work for previous song, in that case needed to call queue update key first
 //            try {
 //                listState.animateScrollToItem(0)
 //
 //            } finally {
 //                queueUpdateKey++
 //            }
-        }
+
+
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -266,8 +280,8 @@ private fun CurrentSongRow(song: Song, isPlaying: Boolean) {
 
 @Composable
 private fun EqualizerBars(isPlaying: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition(label = "eq")
     val bars = listOf(0.3f, 0.7f, 1f, 0.5f)
+    val lifecycle = LocalLifecycleOwner.current
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -275,26 +289,42 @@ private fun EqualizerBars(isPlaying: Boolean) {
         modifier = Modifier.height(20.dp)
     ) {
         bars.forEachIndexed { i, base ->
-            val scale by infiniteTransition.animateFloat(
-                initialValue = base * 0.3f,
-                targetValue = base,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(
-                        durationMillis = 500 + i * 80,
-                        easing = FastOutSlowInEasing
-                    ),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "bar$i"
-            )
+            val scale = remember { Animatable(base * 0.3f) }
 
-            val height = if (isPlaying) scale else base * 0.3f
+            LaunchedEffect(isPlaying) {
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    if (isPlaying) {
+                        while (true) {
+                            scale.animateTo(
+                                base,
+                                animationSpec = tween(
+                                    durationMillis = 500 + i * 80,
+                                    easing = FastOutSlowInEasing
+                                )
+                            )
+                            scale.animateTo(
+                                base * 0.3f,
+                                animationSpec = tween(
+                                    durationMillis = 500 + i * 80,
+                                    easing = FastOutSlowInEasing
+                                )
+                            )
+                        }
+                    } else {
+                        scale.stop()
+                    }
+                }
+            }
 
             Box(
                 modifier = Modifier
                     .width(3.dp)
-                    .fillMaxHeight(height)
+                    .height(20.dp)
                     .clip(RoundedCornerShape(2.dp))
+                    .graphicsLayer {
+                        scaleY = scale.value
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                    }
                     .background(appColors.accentPrimary)
             )
         }

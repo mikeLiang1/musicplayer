@@ -138,7 +138,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                         .fillMaxWidth()
                         .height(2.dp),
                     color = appColors.accentDark,
-                    trackColor = appColors.iconPrimary,
+                    trackColor = appColors.backgroundSurface,
                 )
             }
         }

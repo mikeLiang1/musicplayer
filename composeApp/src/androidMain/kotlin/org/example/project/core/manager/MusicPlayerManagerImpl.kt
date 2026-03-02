@@ -292,51 +292,78 @@ class MusicPlayerManagerImpl(
 
     override fun shuffle() {
         val controller = controller ?: return
-        val currentIndex = _playerState.value.currentIndex
-        val queue = _playerState.value.queue
+        val currentState = _playerState.value
+        val currentIndex = currentState.currentIndex
+        val queue = currentState.queue
         val queueLength = queue.size
-        val isShuffled = _playerState.value.isShuffled
+        val isShuffled = currentState.isShuffled
 
-        // Shuffle queue
         if (!isShuffled) {
+            // --- SHUFFLE ON ---
+            // Save the current state as the original reference
             _playerState.update { it.copy(originalQueue = queue, isShuffled = true) }
+
+            // Partition items AFTER the current index
             val (manual, upcoming) = (currentIndex + 1 until queueLength)
                 .map { queue[it] }
                 .partition { it.isManual }
 
             val shuffled = upcoming.shuffled()
-            controller.removeMediaItems(currentIndex + manual.size + 1, queueLength)
+
+            // Surgical Update: Remove everything after current song
+            controller.removeMediaItems(currentIndex + 1, controller.mediaItemCount)
+            // Add back: Manual (Play Next) items first, then the shuffled remaining items
             controller.addMediaItems(
-                currentIndex + manual.size + 1,
-                shuffled.map { it.toMediaItem() })
-            _playerState.update { it.copy(isShuffled = true) }
+                currentIndex + 1,
+                (manual + shuffled).map { it.toMediaItem() }
+            )
+
             ioScope.launch {
                 savedDataRepository.saveOriginalQueue(queue)
                 savedDataRepository.saveIsShuffled(true)
             }
-        }
-        // Unshuffle queue
-        else {
-            val originalQueue = _playerState.value.originalQueue
-            val currentSongId = _playerState.value.currentSong?.uniqueId ?: return
-            val newIndex = originalQueue.indexOfFirst { it.uniqueId == currentSongId }
-            if (newIndex == -1) return
+        } else {
+            // --- SHUFFLE OFF (UNSHUFFLE) ---
+            val originalQueue = currentState.originalQueue
+            val currentSongId = currentState.currentSong?.uniqueId ?: return
+            val newIndexInOriginal = originalQueue.indexOfFirst { it.uniqueId == currentSongId }
 
-            val manualSongs = queue.subList(currentIndex + 1, queueLength).filter { it.isManual }
+            if (newIndexInOriginal == -1) return
 
-            val played = originalQueue.subList(0, newIndex + 1)
-            val upcoming = originalQueue.subList(newIndex + 1, originalQueue.size)
-                .filter { !it.isManual }
+            // 1. Identify Manual items currently in the upcoming queue (after current index)
+            val currentManualSongs = queue.subList(currentIndex + 1, queueLength).filter { it.isManual }
+            val manualIds = currentManualSongs.map { it.uniqueId }.toSet()
 
+            // 2. Prepare restored components, filtering out manual IDs to avoid duplicates
+            // We remove currentManualSongs from the original sequence because they'll be
+            // re-inserted immediately after the current song.
+            val playedRestored = originalQueue.subList(0, newIndexInOriginal)
+                .filter { it.uniqueId !in manualIds }
+
+            val upcomingRestored = originalQueue.subList(newIndexInOriginal + 1, originalQueue.size)
+                .filter { it.uniqueId !in manualIds && !it.isManual }
+
+            // 3. Surgical Queue Restoration in MediaController
+            // Step A: Remove everything before the current song
             controller.removeMediaItems(0, currentIndex)
-            controller.addMediaItems(0, played.dropLast(1).map { it.toMediaItem() })
 
-            controller.removeMediaItems(newIndex + 1, controller.mediaItemCount)
-            controller.addMediaItems(newIndex + 1, (manualSongs + upcoming).map { it.toMediaItem() })
+            // Step B: Insert the restored history (prefix)
+            // Now the current song is shifted to index: playedRestored.size
+            controller.addMediaItems(0, playedRestored.map { it.toMediaItem() })
 
-            _playerState.update { it.copy(currentIndex = newIndex, isShuffled = false) }
+            val newCurrentIndex = playedRestored.size
+
+            // Step C: Clear everything after the current song and add upcoming items
+            controller.removeMediaItems(newCurrentIndex + 1, controller.mediaItemCount)
+            controller.addMediaItems(
+                newCurrentIndex + 1,
+                (currentManualSongs + upcomingRestored).map { it.toMediaItem() }
+            )
+
+            // 4. Update state
+            _playerState.update { it.copy(currentIndex = newCurrentIndex, isShuffled = false) }
             ioScope.launch {
-                savedDataRepository.saveIndex(index = newIndex)
+                savedDataRepository.saveIndex(index = newCurrentIndex)
                 savedDataRepository.saveIsShuffled(false)
             }
         }

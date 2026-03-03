@@ -3,6 +3,7 @@ package org.example.project.core.manager
 import kotlinx.coroutines.flow.StateFlow
 import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
+import org.example.project.features.musicPlayer.ui.BucketCrossing
 
 interface MusicPlayerManager {
 
@@ -34,9 +35,12 @@ interface MusicPlayerManager {
 
     fun addToQueue(song: Song)
 
+    fun moveSong(queue: List<Song>)
+
     fun cycleFlowMode()
 
     fun onAppEnteredForeground()
 
     fun onAppEnteredBackground()
+
 }

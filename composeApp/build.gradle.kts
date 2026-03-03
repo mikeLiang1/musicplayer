@@ -87,6 +87,7 @@ kotlin {
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
             implementation("io.github.theapache64:rebugger:1.0.0-rc03")
+            implementation(libs.reorderable)
 
             implementation(libs.androidx.animation.core)
         }

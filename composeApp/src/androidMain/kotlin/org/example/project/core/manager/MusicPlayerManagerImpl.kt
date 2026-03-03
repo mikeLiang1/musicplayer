@@ -27,6 +27,8 @@ import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.service.MediaService
+import org.example.project.features.musicPlayer.ui.BucketCrossing
+import org.schabi.newpipe.extractor.timeago.patterns.it
 import java.util.UUID
 
 
@@ -375,6 +377,15 @@ class MusicPlayerManagerImpl(
         controller?.addMediaItem(
             insertIndex,
             song.copy(uniqueId = UUID.randomUUID().toString(), isManual = true).toMediaItem()
+        )
+    }
+
+    override fun moveSong(queue: List<Song>) {
+        val currentIndex = _playerState.value.currentIndex
+        controller?.removeMediaItems(currentIndex + 1, controller?.mediaItemCount ?: return)
+        controller?.addMediaItems(
+            currentIndex + 1,
+            queue.drop(currentIndex + 1).map { it.toMediaItem() }
         )
     }
 

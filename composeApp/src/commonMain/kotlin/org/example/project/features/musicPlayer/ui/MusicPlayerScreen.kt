@@ -29,6 +29,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
@@ -96,8 +99,9 @@ fun MusicPlayerScreen(
                 navigateBack = navigateBack,
                 pagerState = pagerState,
                 playerState = state,
-                showHistory = uiState.showHistory,
-                onHistoryClick = viewModel::onHistoryPillClicked
+                uiState = uiState,
+                onHistoryClick = viewModel::onHistoryPillClicked,
+                onEditQueueClicked = viewModel::onEditQueueClicked
             )
 
             HorizontalPager(
@@ -132,12 +136,13 @@ fun MusicPlayerScreen(
 
 @Composable
 private fun PlayerHeader(
+    modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     pagerState: PagerState,
     playerState: PlayerState,
+    uiState: MusicPlayerUiState,
     onHistoryClick: () -> Unit,
-    showHistory: Boolean,
-    modifier: Modifier = Modifier
+    onEditQueueClicked: () -> Unit
 ) {
     Row(
         modifier = modifier,
@@ -182,13 +187,13 @@ private fun PlayerHeader(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = if (showHistory) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
+                                imageVector = if (uiState.showHistory) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = appColors.iconMuted
                             )
                             Text(
-                                text = if (showHistory) "Hide history" else "${playerState.currentIndex} previous songs",
+                                text = if (uiState.showHistory) "Hide history" else "${playerState.currentIndex} previous songs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = appColors.textMuted,
                                 fontFamily = FontFamily.Monospace
@@ -198,13 +203,23 @@ private fun PlayerHeader(
                 }
             }
         }
-
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = "More",
-                tint = appColors.iconSecondary
-            )
+        if (pagerState.currentPage == 0) {
+            IconButton(onClick = {}) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = "More",
+                    tint = appColors.iconSecondary
+                )
+            }
+        }
+        else {
+            IconButton(onClick = onEditQueueClicked) {
+                Icon(
+                    imageVector = if (!uiState.isEditingQueue) Icons.Filled.Edit else Icons.Filled.Check,
+                    contentDescription = "Edit queue",
+                    tint = appColors.iconSecondary
+                )
+            }
         }
     }
 }

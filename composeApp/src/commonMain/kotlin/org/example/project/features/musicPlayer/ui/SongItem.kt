@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,9 +38,11 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun SongItem(
     modifier: Modifier = Modifier,
+    dragHandleModifier: Modifier = Modifier,
     song: Song,
     isCurrentlyPlaying: Boolean = false,
-    alpha: Float = 1f,
+    isPreviousSong: Boolean = false,
+    isEditable: Boolean = false,
     onMenuClicked: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -48,15 +51,28 @@ fun SongItem(
         song.isManual -> appColors.rose.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(backgroundColor)
             .clickable { onClick() }
-            .alpha(alpha)
+            .alpha(if (isPreviousSong) 0.45f else 1f)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
+        if (isEditable) {
+            Icon(
+                imageVector = Icons.Default.Reorder, // The "hamburger" or "drag" handle
+                contentDescription = "Drag to reorder",
+                tint = appColors.iconSecondary,
+                modifier = Modifier
+                    .padding(end = 16.dp)
+                    .then(dragHandleModifier)
+            )
+        }
+
         Box(
             // 1. Center all children within the Box
             contentAlignment = Alignment.Center,

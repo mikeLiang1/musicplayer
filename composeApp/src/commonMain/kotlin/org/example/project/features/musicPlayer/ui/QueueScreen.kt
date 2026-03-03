@@ -1,13 +1,9 @@
 package org.example.project.features.musicPlayer.ui
 
-import android.R.attr.scaleY
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,8 +35,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,6 +61,8 @@ import org.example.project.core.model.FlowMode
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun QueueSection(viewModel: MusicPlayerViewModel) {
@@ -72,6 +70,19 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
+        // from and to are ReorderableItem objects. .index is what you need.
+        viewModel.onMove(from.index, to.index)
+    }
+
+    LaunchedEffect(reorderableState.isAnyItemDragging) {
+        if (!reorderableState.isAnyItemDragging) {
+            // drag just ended
+            Log.d("logging", "ondragend")
+            viewModel.onDragEnd()
+        }
+    }
 
     var queueUpdateKey by remember { mutableIntStateOf(0) }
 
@@ -100,26 +111,30 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
 
     val visibleSongs =
         remember(
+            uiState.isEditingQueue,
+            uiState.editingQueue,
             playerState.isShuffled,
             queueUpdateKey,
             playerState.manualItemCount
         ) {
+            val activeQueue = if (uiState.isEditingQueue) uiState.editingQueue else playerState.queue
+
             if (uiState.showHistory) {
-                playerState.queue
+                activeQueue
             } else {
-                playerState.queue.drop((playerState.currentIndex + 1).coerceIn(0, playerState.queue.size))
+                activeQueue.drop((playerState.currentIndex + 1).coerceIn(0, activeQueue.size))
             }
         }
 
     // Animation when song changes or manual queue addded
     LaunchedEffect(playerState.currentIndex, playerState.manualItemCount) {
-
+        val index = if(uiState.showHistory) playerState.currentIndex else 0
         try {
             withFrameNanos { }
             withFrameNanos { }
             queueUpdateKey++ // recompute list with new data
             withFrameNanos { } // wait for recomposition with new list
-            listState.animateScrollToItem(0)
+            listState.animateScrollToItem(index)
         } catch (e: CancellationException) {
         }
 
@@ -140,46 +155,12 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
         playerState.currentSong?.let { currentSong ->
             CurrentSongRow(song = currentSong, isPlaying = playerState.isPlaying)
 
-            val sectionLabel = remember(listState.firstVisibleItemIndex, uiState.showHistory) {
-                when {
-                    uiState.showHistory && listState.firstVisibleItemIndex < playerState.currentIndex -> "History"
-                    uiState.showHistory && listState.firstVisibleItemIndex == playerState.currentIndex -> "Current"
-                    visibleSongs.getOrNull(listState.firstVisibleItemIndex)?.isManual == true -> "Queued"
-                    else -> "Next up"
-                }
-            }
-
-            // Next up divider
-            AnimatedContent(
-                targetState = sectionLabel,
-                transitionSpec = {
-                    fadeIn() + slideInVertically { -it } togetherWith
-                            fadeOut() + slideOutVertically { it }
-                }
-            ) { label ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = appColors.divider
-                    )
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelMedium, // was labelSmall
-                        color = appColors.textMuted, // was textDim — more visible
-                        fontFamily = FontFamily.Monospace
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = appColors.divider
-                    )
-                }
-            }
+            SongBucket(
+                listState = listState,
+                showHistory = uiState.showHistory,
+                currentIndex = playerState.currentIndex,
+                visibleSongs = visibleSongs
+            )
         }
 
         // ── Scrollable queue ─────────────────────────────
@@ -192,18 +173,23 @@ fun QueueSection(viewModel: MusicPlayerViewModel) {
                 items = visibleSongs,
                 key = { _, song -> song.uniqueId }
             ) { index, song ->
-                val absoluteIndex = if (uiState.showHistory) index else playerState.currentIndex + 1 + index
-                val isPreviousSong = absoluteIndex < playerState.currentIndex
+                ReorderableItem(reorderableState, key = song.uniqueId) {
+                    val absoluteIndex = if (uiState.showHistory) index else playerState.currentIndex + 1 + index
+                    val isPreviousSong = absoluteIndex < playerState.currentIndex
+                    val isCurrent = absoluteIndex == playerState.currentIndex
 
-                SongItem(
-                    modifier = Modifier.animateItem(),
-                    song = song,
-                    isCurrentlyPlaying = absoluteIndex == playerState.currentIndex, // current is pinned above, never in list
-                    onMenuClicked = { viewModel.onMenuClicked(song) },
-                    alpha = if (isPreviousSong) 0.45f else 1f,
-//                    showQueuedBadge = song.isManual
-                ) {
-                    viewModel.changePlayingToIndex(absoluteIndex)
+                    SongItem(
+                        modifier = Modifier.animateItem(),
+                        song = song,
+                        isCurrentlyPlaying = isCurrent,
+                        onMenuClicked = { viewModel.onMenuClicked(song) },
+                        isPreviousSong = isPreviousSong,
+                        isEditable = !isCurrent && uiState.isEditingQueue,
+                        dragHandleModifier = Modifier.draggableHandle()
+                        //                    showQueuedBadge = song.isManual
+                    ) {
+                        viewModel.changePlayingToIndex(absoluteIndex)
+                    }
                 }
             }
 
@@ -275,6 +261,53 @@ private fun CurrentSongRow(song: Song, isPlaying: Boolean) {
             tint = appColors.iconMuted,
             modifier = Modifier.size(18.dp)
         )
+    }
+}
+
+@Composable
+private fun SongBucket(listState: LazyListState, showHistory: Boolean, currentIndex: Int, visibleSongs: List<Song>) {
+    val sectionLabel by remember(visibleSongs) {
+        derivedStateOf {
+            val index = listState.firstVisibleItemIndex
+            when {
+                showHistory && index < currentIndex -> "History"
+                showHistory && index == currentIndex -> "Current"
+                visibleSongs.getOrNull(index)?.isManual == true -> "Queued"
+                else -> "Next up"
+            }
+        }
+    }
+
+    // Next up divider
+    AnimatedContent(
+        targetState = sectionLabel,
+        transitionSpec = {
+            fadeIn() + slideInVertically { -it } togetherWith
+                    fadeOut() + slideOutVertically { it }
+        }
+    ) { label ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            HorizontalDivider(
+                modifier = Modifier.weight(1f),
+                color = appColors.divider
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium, // was labelSmall
+                color = appColors.textMuted, // was textDim — more visible
+                fontFamily = FontFamily.Monospace
+            )
+            HorizontalDivider(
+                modifier = Modifier.weight(1f),
+                color = appColors.divider
+            )
+        }
     }
 }
 

@@ -75,7 +75,7 @@ import org.example.project.ui.theme.appColors
 
 @Composable
 fun MusicPlayerScreen(
-    viewModel: MusicPlayerViewModel,
+    viewModel: MusicPlayerViewModelRefactored,
     navigateBack: () -> Unit
 ) {
     BackHandler { navigateBack() }
@@ -227,7 +227,7 @@ private fun PlayerHeader(
 @Composable
 private fun PlayerControls(
     state: PlayerState,
-    viewModel: MusicPlayerViewModel,
+    viewModel: MusicPlayerViewModelRefactored,
     modifier: Modifier = Modifier
 ) {
     var showFlowChip by remember { mutableStateOf(false) }
@@ -315,7 +315,7 @@ private fun PlayerControls(
                     )
                 }
             }
-            IconButton(onClick = viewModel::cycleFlowMode) {
+            IconButton(onClick = viewModel::toggleRepeatMode) {
                 Icon(
                     imageVector = state.flowMode.icon,
                     contentDescription = "Flow",

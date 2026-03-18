@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
-import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
+import org.example.project.features.musicPlayer.ui.MusicPlayerViewModelRefactored
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
@@ -51,7 +51,7 @@ fun DashboardNavigation() {
 
     val isBottomBarVisible = navigationState.topLevelRoute in dashboardTopLevelDestinations.keys
 
-    val musicPlayerViewModel = koinViewModel<MusicPlayerViewModel>()
+    val musicPlayerViewModel = koinViewModel<MusicPlayerViewModelRefactored>()
     val isFullScreenVisible by remember {
         musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
     }.collectAsStateWithLifecycle(initialValue = false)

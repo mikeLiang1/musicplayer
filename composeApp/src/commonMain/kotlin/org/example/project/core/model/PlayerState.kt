@@ -17,7 +17,8 @@ data class PlayerState(
     val isShuffled: Boolean = false,
     val manualItemCount: Int = 0,
     val firstManualIndex: Int? = null,
-    val flowMode: FlowMode = FlowMode.STOP_AT_END
+    val flowMode: FlowMode = FlowMode.STOP_AT_END,
+    val durationMs: Long = 0L
 )
 
 enum class FlowMode(val label: String, val icon: ImageVector) {

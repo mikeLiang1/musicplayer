@@ -1,9 +1,10 @@
 package org.example.project.core.manager
 
 import kotlinx.coroutines.flow.StateFlow
+import org.example.project.core.helper.toMediaItem
 import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
-import org.example.project.features.musicPlayer.ui.BucketCrossing
+import org.schabi.newpipe.extractor.timeago.patterns.it
 
 interface MusicPlayerManager {
 
@@ -13,31 +14,26 @@ interface MusicPlayerManager {
 
     fun initialise()
 
-    suspend fun prepare(song: Song, autoPlay: Boolean = true, startPosition: Long? = null)
-
     fun pause()
 
     fun play()
 
-    suspend fun setQueue(songs: List<Song>, autoPlay: Boolean, startPosition: Long? = null, startIndex: Int)
+    /**
+     * Sets the playlist for playback.
+     * @param songs List of songs to play
+     * @param startIndex Index in the list to start playback from
+     * @param positionMs Position in milliseconds within the starting song
+     */
+    fun setPlaylist(songs: List<Song>, startIndex: Int, positionMs: Long, autoPlay: Boolean)
+
+    fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int)
+
 
     fun stop()
 
-    fun seekTo(seconds: Long)
+    fun seekTo(positionMs: Long)
 
-    fun skipToNext()
-
-    fun skipToPrevious()
-
-    fun seekToIndex(index: Int)
-
-    fun shuffle()
-
-    fun addToQueue(song: Song)
-
-    fun moveSong(queue: List<Song>)
-
-    fun cycleFlowMode()
+    fun release()
 
     fun onAppEnteredForeground()
 

@@ -17,6 +17,8 @@ val androidModule = module {
     single<RoomDatabase.Builder<MusicDatabase>> {
         getDatabaseBuilder(get())
     }
+
+    // Updated MusicPlayerManagerImpl with SavedDataRepository for position restoration
     single<MusicPlayerManager> {
         MusicPlayerManagerImpl(get(), get())
     }

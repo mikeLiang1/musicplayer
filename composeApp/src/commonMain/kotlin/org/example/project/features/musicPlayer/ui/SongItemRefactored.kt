@@ -37,7 +37,7 @@ import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
-fun SongItem(
+fun SongItemRefactored(
     modifier: Modifier = Modifier,
     dragHandleModifier: Modifier = Modifier,
     song: Song,
@@ -123,62 +123,88 @@ fun SongItem(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "Remove",
+                    contentDescription = "Remove song",
                     tint = appColors.iconSecondary
                 )
             }
-        }
-
-        IconButton(
-            onClick = { onMenuClicked() }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = "SongMenu",
-                tint = appColors.iconSecondary
-            )
+        } else {
+            IconButton(
+                onClick = { onMenuClicked() }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = "Song menu",
+                    tint = appColors.iconSecondary
+                )
+            }
         }
     }
 }
 
 @Preview
 @Composable
-fun SongItemPreview() {
+fun SongItemRefactoredPreview() {
     Surface {
-        SongItem(
+        SongItemRefactored(
             song = Song(
                 url = "item.url",
-                title = "title",
-                artist = "Unknown",
+                title = "Currently Playing Song",
+                artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L
-            ), isCurrentlyPlaying = true, onMenuClicked = {}, onClick = {}
+            ),
+            isCurrentlyPlaying = true,
+            onMenuClicked = {},
+            onClick = {}
         )
 
         Spacer(Modifier.height(12.dp))
 
-        SongItem(
+        SongItemRefactored(
             song = Song(
                 url = "item.url",
-                title = "title",
-                artist = "Unknown",
-                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L
-            ),
-            isCurrentlyPlaying = false, onMenuClicked = {},
-            onClick = {})
-
-        SongItem(
-            song = Song(
-                url = "item.url",
-                title = "title",
-                artist = "Unknown",
+                title = "Manual Queue Song",
+                artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L,
                 isManual = true
             ),
-            isCurrentlyPlaying = false, onMenuClicked = {},
-            onClick = {})
+            showRemoveButton = true,
+            onMenuClicked = {},
+            onRemoveClicked = {},
+            onClick = {}
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        SongItemRefactored(
+            song = Song(
+                url = "item.url",
+                title = "Normal Queue Song",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+            isEditable = true,
+            showRemoveButton = true,
+            onMenuClicked = {},
+            onRemoveClicked = {},
+            onClick = {}
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        SongItemRefactored(
+            song = Song(
+                url = "item.url",
+                title = "History Song",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+            isPreviousSong = true,
+            onMenuClicked = {},
+            onClick = {}
+        )
     }
 }
-

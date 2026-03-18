@@ -45,7 +45,7 @@ import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
-fun SongScreen(song: Song, viewModel: MusicPlayerViewModel) {
+fun SongScreen(song: Song, viewModel: MusicPlayerViewModelRefactored) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -72,7 +72,7 @@ fun SongScreen(song: Song, viewModel: MusicPlayerViewModel) {
 
 
 @Composable
-private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
+private fun SongDetails(song: Song, viewModel: MusicPlayerViewModelRefactored, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -126,7 +126,7 @@ private fun SongInfoRow(title: String, artist: String) {
 
 @Composable
 private fun MusicPlayerProgressSlider(
-    viewModel: MusicPlayerViewModel,
+    viewModel: MusicPlayerViewModelRefactored,
     duration: Long,
     modifier: Modifier = Modifier
 ) {

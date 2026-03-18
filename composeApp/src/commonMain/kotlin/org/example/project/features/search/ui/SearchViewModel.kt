@@ -17,13 +17,15 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
+import org.example.project.core.manager.QueueManager
 import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class SearchViewModel constructor(
     private val repository: YouTubeRepository,
-    private val musicPlayerManager: MusicPlayerManager
+    private val musicPlayerManager: MusicPlayerManager,
+    private val queueManager: QueueManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -96,12 +98,18 @@ class SearchViewModel constructor(
     fun onSongClicked(song: Song) {
         viewModelScope.launch {
             val relatedSongs = repository.getPlaylistRadio(song.url)
-            musicPlayerManager.setQueue(relatedSongs, autoPlay = true, startIndex = 0)
+            musicPlayerManager.setPlaylist(
+                relatedSongs,
+                startIndex = 0,
+                positionMs = 0,
+                autoPlay = true
+            )
+            queueManager.setBaseQueue(relatedSongs)
         }
     }
 
     fun openSongMenu(song: Song) {
-        musicPlayerManager.addToQueue(song)
+        queueManager.addToManualQueue(song)
     }
 }
 

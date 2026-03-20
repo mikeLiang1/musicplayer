@@ -9,5 +9,7 @@ data class PlaybackStateEntity(
     val currentSongId: String? = null,
     val positionMs: Long = 0,
     val currentIndex: Int? = null,
-    val isShuffled: Boolean = false
+    val isShuffled: Boolean = false,
+    val repeatMode: String? = null,
+    val currentManualSongId: String? = null
 )

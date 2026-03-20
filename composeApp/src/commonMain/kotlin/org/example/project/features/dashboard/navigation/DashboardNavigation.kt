@@ -7,12 +7,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,7 +28,7 @@ import com.example.budget.navigation.toEntries
 import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
-import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
+import org.example.project.features.musicPlayer.ui.MusicPlayerScreenRefactored
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModelRefactored
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
@@ -70,9 +67,11 @@ fun DashboardNavigation() {
                 }
             },
         ) { innerPadding ->
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
 
 
                 val entryProvider = entryProvider<NavKey> {
@@ -112,7 +111,7 @@ fun DashboardNavigation() {
                 modifier = Modifier.fillMaxSize(),
                 color = appColors.backgroundSecondary,
             ) {
-                MusicPlayerScreen(
+                MusicPlayerScreenRefactored(
                     viewModel = musicPlayerViewModel,
                     navigateBack = { musicPlayerViewModel.setFullScreen(false) }
                 )

@@ -51,7 +51,6 @@ fun SongItem(
 ) {
     val backgroundColor = when {
         isCurrentlyPlaying -> appColors.accentContainer.copy(alpha = 0.3f)
-        song.isManual -> appColors.rose.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
 
@@ -174,8 +173,7 @@ fun SongItemPreview() {
                 title = "title",
                 artist = "Unknown",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L,
-                isManual = true
+                duration = 3000L
             ),
             isCurrentlyPlaying = false, onMenuClicked = {},
             onClick = {})

@@ -10,6 +10,5 @@ data class Song(
     val title: String,
     val artist: String,
     val thumbnailUrl: String?,
-    val duration: Long,
-    val isManual: Boolean = false
+    val duration: Long
 )

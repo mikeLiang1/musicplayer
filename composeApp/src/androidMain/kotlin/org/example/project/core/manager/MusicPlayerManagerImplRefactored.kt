@@ -111,22 +111,26 @@ class MusicPlayerManagerImpl(
         Log.d("Logging", "restoring playback items = ${controller?.mediaItemCount}")
         if (controller?.mediaItemCount == 0) {
             coroutineScope.launch {
-                val lastState = savedDataRepository.getPlaybackState()
-                lastState?.let {
-                    val queue = lastState.queue
-                    val song = lastState.queue.find { song ->
-                        song.uniqueId == lastState.currentSongId
-                    }
-                    val currentPosition = lastState.positionMs
-                    val index = lastState.index ?: 0
-                    song?.let {
+                val queueState = savedDataRepository.getQueueState()
+                queueState?.let { state ->
+                    // Reconstruct playback queue from QueueState
+                    // Current song is either currentManualSong or baseQueue[currentBaseIndex]
+                    val currentSong = state.currentManualSong ?: state.baseQueue.getOrNull(state.currentBaseIndex)
+
+                    val playbackQueue = listOfNotNull(currentSong) +
+                        state.manualQueue +
+                        state.baseQueue.drop(state.currentBaseIndex + 1)
+
+                    // For now, we'll just restore the base queue starting from current index
+                    // Position restoration would need additional persistence
+                    currentSong?.let {
                         setPlaylist(
-                            queue,
+                            playbackQueue,
                             autoPlay = false,
-                            positionMs = currentPosition,
-                            startIndex = index
+                            positionMs = 0L, // Position not persisted in QueueState
+                            startIndex = 0  // Current song is always first in playbackQueue
                         )
-                        _currentPosition.value = currentPosition
+                        _currentPosition.value = 0L
                     }
                 }
             }
@@ -135,7 +139,6 @@ class MusicPlayerManagerImpl(
 
     override fun setPlaylist(songs: List<Song>, startIndex: Int, positionMs: Long, autoPlay: Boolean) {
         val mediaItems = songs.map { it.toMediaItem() }
-        _playerState.update { it.copy(currentIndex = 0, currentSong = songs[startIndex]) }
         controller?.apply {
             setMediaItems(mediaItems, startIndex, positionMs)
             prepare()
@@ -160,7 +163,6 @@ class MusicPlayerManagerImpl(
             val mediaItems = songs.map { it.toMediaItem() }
             val wasPlaying = controller.isPlaying
             controller.setMediaItems(mediaItems, newIndex, 0L)
-            _playerState.update { it.copy(currentIndex = newIndex, currentSong = songs.getOrNull(newIndex)) }
             return
         }
 
@@ -174,8 +176,6 @@ class MusicPlayerManagerImpl(
         val played = songs.subList(0, newIndex)
         controller.removeMediaItems(0, originalCurrentIndex)
         controller.addMediaItems(0, played.map { it.toMediaItem() })
-
-        _playerState.update { it.copy(currentIndex = newIndex) }
     }
 
 

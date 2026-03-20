@@ -59,4 +59,34 @@ interface PlaybackDao {
 
     @Query("UPDATE PlaybackStateEntity SET isShuffled = :isShuffled WHERE id = 0")
     suspend fun updateIsShuffled(isShuffled: Boolean)
+
+    // --- New methods for QueueState persistence ---
+
+    @Transaction
+    suspend fun saveAllQueues(entities: List<QueueEntity>) {
+        // Clear all queue types first
+        clearAllQueues()
+        insertQueue(entities)
+    }
+
+    @Query("DELETE FROM QueueEntity WHERE type IN ('base', 'manual', 'shuffle_snapshot', 'current_manual')")
+    suspend fun clearAllQueues()
+
+    @Query("SELECT * FROM QueueEntity WHERE type = :type ORDER BY orderIndex ASC")
+    suspend fun getQueueByType(type: String): List<QueueEntity>
+
+    @Query("""
+        UPDATE PlaybackStateEntity
+        SET currentIndex = :currentIndex,
+            isShuffled = :isShuffled,
+            repeatMode = :repeatMode,
+            currentManualSongId = :currentManualSongId
+        WHERE id = 0
+    """)
+    suspend fun updatePlaybackState(
+        currentIndex: Int?,
+        isShuffled: Boolean,
+        repeatMode: String?,
+        currentManualSongId: String?
+    )
 }

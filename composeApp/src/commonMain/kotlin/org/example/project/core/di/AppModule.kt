@@ -29,7 +29,7 @@ val appModule = module {
 //    viewModel { MusicPlayerViewModel(get(), get()) }
 
     // New MusicPlayerViewModel with QueueManager support
-    viewModel { MusicPlayerViewModelRefactored(get(), get(), get()) }
+    viewModel { MusicPlayerViewModelRefactored(get(), get(), get(), get()) }
 
     single<MusicDatabase> {
         getRoomDatabase(get())

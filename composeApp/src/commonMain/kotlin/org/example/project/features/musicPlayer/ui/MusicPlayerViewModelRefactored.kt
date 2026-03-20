@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -19,14 +20,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.manager.RepeatMode
 import org.example.project.core.model.Song
+import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 
 class MusicPlayerViewModelRefactored constructor(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
-    private val queueManager: QueueManager
+    private val queueManager: QueueManager,
+    private val savedDataRepository: SavedDataRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MusicPlayerUiState())
@@ -55,21 +59,43 @@ class MusicPlayerViewModelRefactored constructor(
         ui.editingQueue ?: live
     }.stateIn(viewModelScope, SharingStarted.Eagerly, playerQueue.value)
 
+    // Shuffle and repeat state from QueueManager
+    val isShuffled: StateFlow<Boolean> = queueManager.queueState
+        .map { it.isShuffled }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val repeatMode: StateFlow<RepeatMode> = queueManager.queueState
+        .map { it.repeatMode }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, RepeatMode.OFF)
+
     init {
+        var lastCurrentId: String? = null
 
         // Sync queue changes to music player
         queueManager.resolvedQueue
             .onEach { resolvedQueue ->
                 val playbackQueue = queueManager.getPlaybackQueue()
-                val currentSong = queueManager.getCurrentSong()
+                if (playbackQueue.isEmpty()) return@onEach
+
+                val currentSong = resolvedQueue.current
+                val currentId = currentSong?.uniqueId
                 val startIndex = playbackQueue.indexOfFirst { it.uniqueId == currentSong?.uniqueId }.coerceAtLeast(0)
 
-                // Only update if there are songs to play
-                if (playbackQueue.isNotEmpty()) {
-//                    musicPlayerManager.setPlaylist(playbackQueue, startIndex, 0L)
-                    musicPlayerManager.replaceFullQueueKeepingCurrentSong(songs = playbackQueue, startIndex)
+                if (currentId != lastCurrentId) {
+                    // Song changed — full rebuild with new start position
+                    lastCurrentId = currentId
+                    musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = true)
+                } else {
+                    // Same song, queue order changed — surgical update
+                    musicPlayerManager.replaceFullQueueKeepingCurrentSong(playbackQueue, newIndex = startIndex)
                 }
             }
+            .launchIn(viewModelScope)
+
+        // Debounced save of queue state
+        queueManager.queueState
+            .debounce(500)
+            .onEach { state -> savedDataRepository.saveQueueState(state) }
             .launchIn(viewModelScope)
     }
 
@@ -156,31 +182,23 @@ class MusicPlayerViewModelRefactored constructor(
 
     fun onMove(fromKey: String, toKey: String) {
         val current = _uiState.value.editingQueue ?: return
-
-        // Combine manual and upcoming songs for drag-and-drop
         val future = (current.manual + current.upcoming).toMutableList()
+        val manualCount = current.manual.size
 
         val fromIndex = future.indexOfFirst { it.uniqueId == fromKey }.takeIf { it != -1 } ?: return
         val toIndex = future.indexOfFirst { it.uniqueId == toKey }.takeIf { it != -1 } ?: return
 
         val item = future.removeAt(fromIndex)
+        future.add(toIndex, item)
 
-        // Determine if we're moving between queues
-        val wasManual = item.isManual
-        val willBeManual = toIndex < current.manual.size
-
-        val updatedItem = if (wasManual != willBeManual) {
-            // Moving between queues - update isManual flag
-            item.copy(isManual = willBeManual)
-        } else {
-            // Moving within same queue
-            item
+        // Determine new manual/normal split based on position
+        // Songs at indices 0 until manualCount are manual, rest are normal
+        // But the count may shift if a song crossed the boundary
+        val newManualCount = when {
+            fromIndex < manualCount && toIndex >= manualCount -> manualCount - 1  // manual → normal
+            fromIndex >= manualCount && toIndex < manualCount -> manualCount + 1  // normal → manual
+            else -> manualCount  // same section
         }
-
-        future.add(toIndex, updatedItem)
-
-        // Recount from the final list state
-        val newManualCount = future.count { it.isManual }
 
         _uiState.update {
             it.copy(
@@ -194,46 +212,12 @@ class MusicPlayerViewModelRefactored constructor(
 
     fun onDragEnd() {
         val editing = _uiState.value.editingQueue ?: return
-
-        // Apply the edited queue back to QueueManager
-        viewModelScope.launch {
-            // Get current queue state
-            val state = queueManager.queueState.value
-            val currentBaseIndex = state.currentBaseIndex
-
-            // We need to reconstruct the dual-queue structure from the edited flat queue
-            // The edited queue contains: history + current + manual + upcoming
-
-            // For now, we'll take a simplified approach:
-            // 1. Keep the current song as is
-            // 2. Rebuild base queue from history + current + upcoming (non-manual songs)
-            // 3. Rebuild manual queue from manual songs
-
-            // Extract songs from edited queue
-            val historySongs = editing.history
-            val currentSong = editing.current
-            val manualSongs = editing.manual
-            val upcomingSongs = editing.upcoming
-
-            // Reconstruct base queue (history + current + upcoming non-manual songs)
-            val baseQueueSongs = historySongs + listOfNotNull(currentSong) + upcomingSongs
-
-            // Set the new base queue
-            queueManager.setBaseQueue(baseQueueSongs, historySongs.size)
-
-            // Add manual songs back to manual queue
-            manualSongs.forEach { song ->
-                queueManager.addToManualQueue(song)
-            }
-
-            // Exit editing mode
-            _uiState.update {
-                it.copy(
-                    editingQueue = null,
-                    isEditingQueue = false
-                )
-            }
-        }
+        queueManager.replaceQueuesPreservingState(
+            baseQueue = editing.history + listOfNotNull(editing.current) + editing.upcoming,
+            manualQueue = editing.manual,
+            currentBaseIndex = editing.history.size
+        )
+        _uiState.update { it.copy(editingQueue = null, isEditingQueue = false) }
     }
 
     // ── Queue Management ──────────────────────────────

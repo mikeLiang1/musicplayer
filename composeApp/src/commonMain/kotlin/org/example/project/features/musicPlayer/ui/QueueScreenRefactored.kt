@@ -20,7 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LastPage
+import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.helper.formatTime
-import org.example.project.core.model.FlowMode
+import org.example.project.core.manager.RepeatMode
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
@@ -59,6 +62,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
+    val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle()
 
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.onMove(from.key as String, to.key as String)
@@ -137,6 +141,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                             song = song,
                             isPreviousSong = true,
                             isEditable = false,
+                            isManual = false,
                             dragHandleModifier = Modifier,
                             onMenuClicked = { viewModel.onMenuClicked(song) },
                         ) { viewModel.changePlayingToSong(song) }
@@ -153,6 +158,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                             song = current,
                             isCurrentlyPlaying = true,
                             isEditable = false,
+                            isManual = false,
                             dragHandleModifier = Modifier,
                             onMenuClicked = { viewModel.onMenuClicked(current) }
                         ) { /* can't tap current to change, already playing */ }
@@ -172,6 +178,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                             song = song,
                             isEditable = uiState.isEditingQueue,
                             showRemoveButton = true,
+                            isManual = true,  // section determines this
                             dragHandleModifier = Modifier.draggableHandle(),
                             onMenuClicked = { viewModel.onMenuClicked(song) },
                             onRemoveClicked = { viewModel.removeSong(song) }
@@ -192,6 +199,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                             song = song,
                             isEditable = uiState.isEditingQueue,
                             showRemoveButton = true,
+                            isManual = false,
                             dragHandleModifier = Modifier.draggableHandle(),
                             onMenuClicked = { viewModel.onMenuClicked(song) },
                             onRemoveClicked = { viewModel.removeSong(song) }
@@ -200,9 +208,9 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                 }
             }
 
-            // ── Flow mode footer ─────────────────────────
-            item(key = "footer_flow_mode") {
-                FlowModeFooter(flowMode = playerState.flowMode)
+            // ── Repeat mode footer ───────────────────────
+            item(key = "footer_repeat_mode") {
+                RepeatModeFooter(repeatMode = repeatMode)
             }
         }
     }
@@ -351,7 +359,7 @@ private fun EqualizerBars(isPlaying: Boolean) {
 }
 
 @Composable
-private fun FlowModeFooter(flowMode: FlowMode) {
+private fun RepeatModeFooter(repeatMode: RepeatMode) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -367,7 +375,11 @@ private fun FlowModeFooter(flowMode: FlowMode) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = flowMode.icon,
+                imageVector = when (repeatMode) {
+                    RepeatMode.OFF -> Icons.Rounded.Repeat
+                    RepeatMode.ALL -> Icons.Filled.AllInclusive
+                    RepeatMode.ONE -> Icons.AutoMirrored.Filled.LastPage
+                },
                 contentDescription = null,
                 tint = appColors.accentPrimary,
                 modifier = Modifier.size(14.dp)
@@ -375,16 +387,20 @@ private fun FlowModeFooter(flowMode: FlowMode) {
         }
         Column {
             Text(
-                text = flowMode.label,
+                text = when (repeatMode) {
+                    RepeatMode.OFF -> "Stop at end"
+                    RepeatMode.ALL -> "Repeat all"
+                    RepeatMode.ONE -> "Infinite"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = appColors.textMuted
             )
             Text(
-                text = when (flowMode) {
-                    FlowMode.STOP_AT_END -> "Playback stops after last song"
-                    FlowMode.REPEAT_ALL -> "Will loop back to start"
-                    FlowMode.INFINITE -> "Finding similar songs…"
+                text = when (repeatMode) {
+                    RepeatMode.OFF -> "Playback stops after last song"
+                    RepeatMode.ALL -> "Will loop back to start"
+                    RepeatMode.ONE -> "Finding similar songs…"
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = appColors.textDim

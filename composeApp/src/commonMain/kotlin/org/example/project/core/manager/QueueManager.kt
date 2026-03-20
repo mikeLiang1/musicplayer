@@ -23,6 +23,7 @@ data class QueueState(
     val baseQueue: List<Song> = emptyList(),         // the normal playlist
     val manualQueue: List<Song> = emptyList(),       // user-added "play next" songs
     val currentBaseIndex: Int = 0,                        // index in baseQueue
+    val currentManualSong: Song? = null,             // currently playing manual song, if any
     val isShuffled: Boolean = false,
     val preShuffleBaseQueue: List<Song>? = null,     // snapshot before shuffle
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
@@ -87,36 +88,40 @@ class QueueManager {
      */
     fun playNext() {
         _queueState.update { state ->
-            val manualQueue = state.manualQueue.toMutableList()
-            val baseQueue = state.baseQueue
-            var currentBaseIndex = state.currentBaseIndex
-            val repeatMode = state.repeatMode
-
-            if (manualQueue.isNotEmpty()) {
-                // Play from manual queue
-                manualQueue.removeAt(0)
-                // currentBaseIndex stays the same
-            } else if (baseQueue.isNotEmpty()) {
-                // Play from base queue
-                when (repeatMode) {
-                    RepeatMode.ONE -> {
-                        // Stay on same song
+            if (state.currentManualSong != null) {
+                // Just finished a manual song — check if more manual songs remain
+                if (state.manualQueue.isNotEmpty()) {
+                    val nextManual = state.manualQueue.first()
+                    state.copy(
+                        manualQueue = state.manualQueue.drop(1),
+                        currentManualSong = nextManual
+                    )
+                } else {
+                    // No more manual songs — advance base queue
+                    val newIndex = when (state.repeatMode) {
+                        RepeatMode.ONE -> state.currentBaseIndex
+                        RepeatMode.ALL -> (state.currentBaseIndex + 1) % state.baseQueue.size
+                        RepeatMode.OFF -> (state.currentBaseIndex + 1).coerceAtMost(state.baseQueue.lastIndex)
                     }
-                    RepeatMode.ALL -> {
-                        currentBaseIndex = (currentBaseIndex + 1) % baseQueue.size
-                    }
-                    RepeatMode.OFF -> {
-                        if (currentBaseIndex < baseQueue.lastIndex) {
-                            currentBaseIndex++
-                        }
-                    }
+                    state.copy(currentBaseIndex = newIndex, currentManualSong = null)
                 }
+            } else if (state.manualQueue.isNotEmpty()) {
+                // Currently on a base queue song, manual songs are next
+                val nextManual = state.manualQueue.first()
+                state.copy(
+                    manualQueue = state.manualQueue.drop(1),
+                    currentManualSong = nextManual
+                )
+            } else {
+                // No manual songs — advance base queue
+                val newIndex = when (state.repeatMode) {
+                    RepeatMode.ONE -> state.currentBaseIndex
+                    RepeatMode.ALL -> (state.currentBaseIndex + 1) % state.baseQueue.size
+                    RepeatMode.OFF -> if (state.currentBaseIndex < state.baseQueue.lastIndex)
+                        state.currentBaseIndex + 1 else state.currentBaseIndex
+                }
+                state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
-
-            state.copy(
-                manualQueue = manualQueue,
-                currentBaseIndex = currentBaseIndex
-            )
         }
         updateResolvedQueue()
     }
@@ -127,15 +132,16 @@ class QueueManager {
      */
     fun playPrevious() {
         _queueState.update { state ->
-            val baseQueue = state.baseQueue
-            if (baseQueue.isEmpty()) return@update state
-
-            val newIndex = when (state.repeatMode) {
-                RepeatMode.ONE -> state.currentBaseIndex
-                else -> (state.currentBaseIndex - 1).coerceAtLeast(0)
+            if (state.currentManualSong != null) {
+                // If playing a manual song, go back to the base queue current song
+                state.copy(currentManualSong = null)
+            } else {
+                val newIndex = when (state.repeatMode) {
+                    RepeatMode.ONE -> state.currentBaseIndex
+                    else -> (state.currentBaseIndex - 1).coerceAtLeast(0)
+                }
+                state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
-
-            state.copy(currentBaseIndex = newIndex)
         }
         updateResolvedQueue()
     }
@@ -160,19 +166,12 @@ class QueueManager {
      */
     fun selectManualSong(index: Int) {
         _queueState.update { state ->
-            val manualQueue = state.manualQueue.toMutableList()
-            if (index !in manualQueue.indices) return@update state
-
-            // Remove songs before the selected index
-            repeat(index) {
-                manualQueue.removeAt(0)
-            }
-
-            // Play the selected song (it's now at index 0)
-            manualQueue.removeAt(0)
-
-            state.copy(manualQueue = manualQueue)
-            // currentBaseIndex stays the same
+            if (index !in state.manualQueue.indices) return@update state
+            val selectedSong = state.manualQueue[index]
+            state.copy(
+                manualQueue = state.manualQueue.drop(index + 1),  // remove selected and all before it
+                currentManualSong = selectedSong
+            )
         }
         updateResolvedQueue()
     }
@@ -377,6 +376,7 @@ class QueueManager {
         val state = _queueState.value
         return when {
             state.manualQueue.isNotEmpty() -> true
+            state.currentManualSong != null -> true  // can go back to base queue
             state.repeatMode == RepeatMode.ONE -> true
             state.repeatMode == RepeatMode.ALL -> state.baseQueue.isNotEmpty()
             else -> state.currentBaseIndex < state.baseQueue.lastIndex
@@ -401,8 +401,8 @@ class QueueManager {
         val baseQueue = state.baseQueue
         val currentIndex = state.currentBaseIndex
 
+        val current = state.currentManualSong ?: baseQueue.getOrNull(currentIndex)
         val history = baseQueue.take(currentIndex)
-        val current = baseQueue.getOrNull(currentIndex)
         val manualUpNext = state.manualQueue
         val normalUpNext = baseQueue.drop(currentIndex + 1)
 
@@ -429,5 +429,28 @@ class QueueManager {
      */
     fun getCurrentSong(): Song? {
         return _resolvedQueue.value.current
+    }
+
+    /**
+     * Replaces queues while preserving shuffle/repeat state.
+     */
+    fun replaceQueuesPreservingState(baseQueue: List<Song>, manualQueue: List<Song>, currentBaseIndex: Int) {
+        _queueState.update { state ->
+            state.copy(
+                baseQueue = baseQueue,
+                manualQueue = manualQueue,
+                currentBaseIndex = currentBaseIndex
+                // isShuffled, preShuffleBaseQueue, repeatMode all preserved
+            )
+        }
+        updateResolvedQueue()
+    }
+
+    /**
+     * Restores state from persistence.
+     */
+    fun restoreState(state: QueueState) {
+        _queueState.value = state
+        updateResolvedQueue()
     }
 }

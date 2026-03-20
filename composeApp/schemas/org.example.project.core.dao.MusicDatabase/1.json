@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "aaab556aa32db63db4f3dbbd8cbe86bf",
+    "identityHash": "03967008d784f489535605b5575314bb",
     "entities": [
       {
         "tableName": "QueueEntity",
@@ -77,7 +77,7 @@
       },
       {
         "tableName": "PlaybackStateEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `currentSongId` TEXT, `positionMs` INTEGER NOT NULL, `currentIndex` INTEGER, `isShuffled` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `currentSongId` TEXT, `positionMs` INTEGER NOT NULL, `currentIndex` INTEGER, `isShuffled` INTEGER NOT NULL, `repeatMode` TEXT, `currentManualSongId` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -106,6 +106,16 @@
             "columnName": "isShuffled",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "repeatMode",
+            "columnName": "repeatMode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "currentManualSongId",
+            "columnName": "currentManualSongId",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -118,7 +128,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aaab556aa32db63db4f3dbbd8cbe86bf')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '03967008d784f489535605b5575314bb')"
     ]
   }
 }

@@ -45,13 +45,14 @@ fun SongItemRefactored(
     isPreviousSong: Boolean = false,
     isEditable: Boolean = false,
     showRemoveButton: Boolean = false,
+    isManual: Boolean = false,
     onMenuClicked: () -> Unit = {},
     onRemoveClicked: () -> Unit = {},
     onClick: () -> Unit
 ) {
     val backgroundColor = when {
         isCurrentlyPlaying -> appColors.accentContainer.copy(alpha = 0.3f)
-        song.isManual -> appColors.rose.copy(alpha = 0.1f)
+        isManual -> appColors.rose.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
 
@@ -167,7 +168,6 @@ fun SongItemRefactoredPreview() {
                 artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L,
-                isManual = true
             ),
             showRemoveButton = true,
             onMenuClicked = {},

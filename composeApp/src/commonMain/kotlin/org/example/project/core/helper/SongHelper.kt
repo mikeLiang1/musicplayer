@@ -12,9 +12,6 @@ fun Song.toMediaItem(): MediaItem {
         .setArtist(artist)
         .setArtworkUri(thumbnailUrl?.toUri())
         .setDurationMs(duration)
-        .setExtras(Bundle().apply {
-            putBoolean("isManual", isManual)
-        })
         .build()
     return MediaItem.Builder()
         .setMediaId(uniqueId)
@@ -31,11 +28,7 @@ fun MediaItem.toSong(): Song {
         artist = mediaMetadata.artist?.toString() ?: "Unknown",
         thumbnailUrl = mediaMetadata.artworkUri?.toString(),
         duration = mediaMetadata.durationMs ?: 0L,
-        uniqueId = mediaId,
-        isManual = mediaMetadata.extras?.getBoolean("isManual") ?: false
+        uniqueId = mediaId
     )
 }
 
-fun MediaItem.isManual(): Boolean {
-    return mediaMetadata.extras?.getBoolean("isManual") ?: false
-}

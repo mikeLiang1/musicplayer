@@ -7,6 +7,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.example.project.core.dao.MusicDatabase
+import org.example.project.core.manager.QueueState
+import org.example.project.core.manager.RepeatMode
 import org.example.project.core.model.PlaybackState
 import org.example.project.core.model.Song
 import org.example.project.core.model.entity.PlaybackStateEntity
@@ -29,6 +31,7 @@ class SavedDataRepository(
     }
 
     // The Main UI Flow: Combines Queue and State into one object
+    // TODO: Remove or update for migration from old queue types ("current", "original") to new ones ("base", "manual", "shuffle_snapshot")
     suspend fun getPlaybackState(): PlaybackState? {
         val stateEntity = dao.getPlaybackStateOnce() ?: return null
         val queue = dao.getQueueOnce().map { it.toDomain() }
@@ -78,6 +81,51 @@ class SavedDataRepository(
         dao.saveFullOriginalQueue(entities)
     }
 
+    suspend fun saveQueueState(state: QueueState) {
+        // Save base queue with type "base"
+        val baseEntities = state.baseQueue.mapIndexed { index, song -> song.toEntity(index, "base") }
+        // Save manual queue with type "manual"
+        val manualEntities = state.manualQueue.mapIndexed { index, song -> song.toEntity(index, "manual") }
+        // Save current manual song with type "current_manual" if present
+        val currentManualEntity = state.currentManualSong?.toEntity(0, "current_manual")
+        // Save shuffle snapshot with type "shuffle_snapshot" if present
+        val snapshotEntities = state.preShuffleBaseQueue?.mapIndexed { index, song -> song.toEntity(index, "shuffle_snapshot") } ?: emptyList()
+
+        val allEntities = baseEntities + manualEntities + snapshotEntities + listOfNotNull(currentManualEntity)
+        dao.saveAllQueues(allEntities)
+        dao.updatePlaybackState(
+            currentIndex = state.currentBaseIndex,
+            isShuffled = state.isShuffled,
+            repeatMode = state.repeatMode.name,
+            currentManualSongId = state.currentManualSong?.uniqueId
+        )
+    }
+
+    suspend fun getQueueState(): QueueState? {
+        val stateEntity = dao.getPlaybackStateOnce() ?: return null
+        val baseQueue = dao.getQueueByType("base").map { it.toDomain() }
+        val manualQueue = dao.getQueueByType("manual").map { it.toDomain() }
+        val currentManualSongs = dao.getQueueByType("current_manual").map { it.toDomain() }
+        val shuffleSnapshot = dao.getQueueByType("shuffle_snapshot").map { it.toDomain() }
+
+        // currentManualSongs should have 0 or 1 element
+        val currentManualSong = currentManualSongs.firstOrNull() ?: stateEntity.currentManualSongId?.let { id ->
+            // Fallback: try to find by ID in manual or base queue (for backward compatibility)
+            manualQueue.find { it.uniqueId == id } ?: baseQueue.find { it.uniqueId == id }
+        }
+
+        return QueueState(
+            baseQueue = baseQueue,
+            manualQueue = manualQueue,
+            currentBaseIndex = stateEntity.currentIndex ?: 0,
+            currentManualSong = currentManualSong,
+            isShuffled = stateEntity.isShuffled,
+            preShuffleBaseQueue = shuffleSnapshot.ifEmpty { null },
+            preShuffleBaseIndex = if (stateEntity.isShuffled) stateEntity.currentIndex else null,
+            repeatMode = RepeatMode.valueOf(stateEntity.repeatMode ?: "OFF")
+        )
+    }
+
 }
 
 // Mappers
@@ -87,8 +135,7 @@ fun QueueEntity.toDomain() = Song(
     title = title,
     artist = artist,
     thumbnailUrl = thumbnailUrl,
-    duration = duration,
-    isManual = isManual
+    duration = duration
 )
 
 fun Song.toEntity(index: Int, type: String) = QueueEntity(
@@ -100,5 +147,5 @@ fun Song.toEntity(index: Int, type: String) = QueueEntity(
     orderIndex = index,
     type = type,
     uniqueId = uniqueId,
-    isManual = isManual
+    isManual = false  // Ignored for backward compatibility
 )

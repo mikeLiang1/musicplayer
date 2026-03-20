@@ -87,7 +87,8 @@ class MediaService : MediaLibraryService() {
             }
         })
 
-        mediaSession = MediaLibrarySession.Builder(this, player, PlayerCallback())
+        val forwardingPlayer = QueueForwardingPlayer(player, queueManager)
+        mediaSession = MediaLibrarySession.Builder(this, forwardingPlayer, PlayerCallback())
             .build()
     }
 

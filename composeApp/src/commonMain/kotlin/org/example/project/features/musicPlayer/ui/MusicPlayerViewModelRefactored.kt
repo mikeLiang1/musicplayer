@@ -42,14 +42,14 @@ class MusicPlayerViewModelRefactored constructor(
     val playerState = musicPlayerManager.playerState
     val currentPosition = musicPlayerManager.currentPosition
 
-    // Projection from QueueManager's resolved queue
-    val playerQueue: StateFlow<PlayerQueue> = queueManager.resolvedQueue
-        .map { resolvedQueue ->
+    // Projection from QueueManager's state
+    val playerQueue: StateFlow<PlayerQueue> = queueManager.queueState
+        .map { state ->
             PlayerQueue(
-                history = resolvedQueue.history,
-                current = resolvedQueue.current,
-                manual = resolvedQueue.manualUpNext,
-                upcoming = resolvedQueue.normalUpNext
+                history = state.history,
+                current = state.current,
+                manual = state.manualUpNext,
+                upcoming = state.normalUpNext
             )
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlayerQueue())
@@ -72,19 +72,19 @@ class MusicPlayerViewModelRefactored constructor(
         var lastCurrentId: String? = null
 
         // Sync queue changes to music player
-        queueManager.resolvedQueue
-            .onEach { resolvedQueue ->
-                val playbackQueue = queueManager.getPlaybackQueue()
+        queueManager.queueState
+            .onEach { state ->
+                val playbackQueue = state.playbackQueue
                 if (playbackQueue.isEmpty()) return@onEach
 
-                val currentSong = resolvedQueue.current
+                val currentSong = state.current
                 val currentId = currentSong?.uniqueId
                 val startIndex = playbackQueue.indexOfFirst { it.uniqueId == currentSong?.uniqueId }.coerceAtLeast(0)
 
                 if (currentId != lastCurrentId) {
                     // Song changed — full rebuild with new start position
                     lastCurrentId = currentId
-                    musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = true)
+                    musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = false)
                 } else {
                     // Same song, queue order changed — surgical update
                     musicPlayerManager.replaceFullQueueKeepingCurrentSong(playbackQueue, newIndex = startIndex)
@@ -138,27 +138,29 @@ class MusicPlayerViewModelRefactored constructor(
     }
 
     fun changePlayingToSong(song: Song) {
-        val resolvedQueue = queueManager.resolvedQueue.value
+        val state = queueManager.queueState.value
+
+        _uiState.update { it.copy(showHistory = false) }
 
         // Check if song is in history
-        val historyIndex = resolvedQueue.history.indexOfFirst { it.uniqueId == song.uniqueId }
+        val historyIndex = state.history.indexOfFirst { it.uniqueId == song.uniqueId }
         if (historyIndex != -1) {
             queueManager.selectHistorySong(historyIndex)
             return
         }
 
         // Check if song is in manual queue
-        val manualIndex = resolvedQueue.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
+        val manualIndex = state.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
         if (manualIndex != -1) {
             queueManager.selectManualSong(manualIndex)
             return
         }
 
         // Check if song is in normal upcoming queue
-        val normalIndex = resolvedQueue.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
+        val normalIndex = state.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
         if (normalIndex != -1) {
             // Convert to absolute index in base queue
-            val currentIndex = queueManager.queueState.value.currentBaseIndex
+            val currentIndex = state.currentBaseIndex
             queueManager.selectNormalSong(currentIndex + 1 + normalIndex)
             return
         }
@@ -223,19 +225,19 @@ class MusicPlayerViewModelRefactored constructor(
     // ── Queue Management ──────────────────────────────
 
     fun removeSong(song: Song) {
-        val resolvedQueue = queueManager.resolvedQueue.value
+        val state = queueManager.queueState.value
 
         // Check if song is in manual queue
-        val manualIndex = resolvedQueue.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
+        val manualIndex = state.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
         if (manualIndex != -1) {
             queueManager.removeManualSong(manualIndex)
             return
         }
 
         // Check if song is in normal upcoming queue
-        val normalIndex = resolvedQueue.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
+        val normalIndex = state.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
         if (normalIndex != -1) {
-            val currentIndex = queueManager.queueState.value.currentBaseIndex
+            val currentIndex = state.currentBaseIndex
             queueManager.removeNormalSong(currentIndex + 1 + normalIndex)
             return
         }

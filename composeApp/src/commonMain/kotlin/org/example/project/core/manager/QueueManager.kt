@@ -28,17 +28,24 @@ data class QueueState(
     val preShuffleBaseQueue: List<Song>? = null,     // snapshot before shuffle
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
     val repeatMode: RepeatMode = RepeatMode.OFF
-)
+) {
+    // Computed properties for UI consumption (formerly in ResolvedQueue)
+    val history: List<Song>
+        get() = baseQueue.take(currentBaseIndex)
 
-/**
- * Resolved view of the queue for UI consumption.
- */
-data class ResolvedQueue(
-    val history: List<Song> = emptyList(),
-    val current: Song? = null,
-    val manualUpNext: List<Song> = emptyList(),
-    val normalUpNext: List<Song> = emptyList()
-)
+    val current: Song?
+        get() = currentManualSong ?: baseQueue.getOrNull(currentBaseIndex)
+
+    val manualUpNext: List<Song>
+        get() = manualQueue
+
+    val normalUpNext: List<Song>
+        get() = baseQueue.drop(currentBaseIndex + 1)
+
+    // Flat playback queue
+    val playbackQueue: List<Song>
+        get() = listOfNotNull(current) + manualUpNext + normalUpNext
+}
 
 /**
  * Manages dual-queue architecture with separate manual and normal queues.
@@ -48,15 +55,6 @@ class QueueManager {
 
     private val _queueState = MutableStateFlow(QueueState())
     val queueState: StateFlow<QueueState> = _queueState.asStateFlow()
-
-    private val _resolvedQueue = MutableStateFlow(ResolvedQueue())
-    val resolvedQueue: StateFlow<ResolvedQueue> = _resolvedQueue.asStateFlow()
-
-    init {
-        // Update resolved queue whenever state changes
-        _queueState.value = _queueState.value
-        updateResolvedQueue()
-    }
 
     // ── Queue Setup ──────────────────────────────────────────────────────────
 
@@ -76,7 +74,6 @@ class QueueManager {
                 preShuffleBaseIndex = null
             )
         }
-        updateResolvedQueue()
     }
 
     // ── Playback Navigation ─────────────────────────────────────────────────
@@ -123,7 +120,6 @@ class QueueManager {
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -143,7 +139,6 @@ class QueueManager {
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
         }
-        updateResolvedQueue()
     }
 
     // ── Queue Manipulation ──────────────────────────────────────────────────
@@ -157,7 +152,6 @@ class QueueManager {
         _queueState.update { state ->
             state.copy(manualQueue = state.manualQueue + queueSong)
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -173,7 +167,6 @@ class QueueManager {
                 currentManualSong = selectedSong
             )
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -188,7 +181,6 @@ class QueueManager {
 
             state.copy(currentBaseIndex = index)
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -202,7 +194,6 @@ class QueueManager {
 
             state.copy(currentBaseIndex = index)
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -216,7 +207,6 @@ class QueueManager {
             manualQueue.removeAt(index)
             state.copy(manualQueue = manualQueue)
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -242,7 +232,6 @@ class QueueManager {
                 currentBaseIndex = newCurrentIndex
             )
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -301,7 +290,6 @@ class QueueManager {
                 manualQueue = manualQueue
             )
         }
-        updateResolvedQueue()
     }
 
     // ── Shuffle & Repeat ────────────────────────────────────────────────────
@@ -325,7 +313,6 @@ class QueueManager {
                 preShuffleBaseIndex = state.currentBaseIndex
             )
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -349,7 +336,6 @@ class QueueManager {
                 preShuffleBaseIndex = null
             )
         }
-        updateResolvedQueue()
     }
 
     /**
@@ -364,7 +350,6 @@ class QueueManager {
             }
             state.copy(repeatMode = nextMode)
         }
-        updateResolvedQueue()
     }
 
     // ── Query Methods ───────────────────────────────────────────────────────
@@ -396,39 +381,20 @@ class QueueManager {
 
     // ── Internal Helpers ───────────────────────────────────────────────────
 
-    private fun updateResolvedQueue() {
-        val state = _queueState.value
-        val baseQueue = state.baseQueue
-        val currentIndex = state.currentBaseIndex
-
-        val current = state.currentManualSong ?: baseQueue.getOrNull(currentIndex)
-        val history = baseQueue.take(currentIndex)
-        val manualUpNext = state.manualQueue
-        val normalUpNext = baseQueue.drop(currentIndex + 1)
-
-        _resolvedQueue.value = ResolvedQueue(
-            history = history,
-            current = current,
-            manualUpNext = manualUpNext,
-            normalUpNext = normalUpNext
-        )
-    }
-
     // ── Utility Methods ────────────────────────────────────────────────────
 
     /**
      * Gets the flat list of songs for playback (current + manualUpNext + normalUpNext).
      */
     fun getPlaybackQueue(): List<Song> {
-        val resolved = _resolvedQueue.value
-        return listOfNotNull(resolved.current) + resolved.manualUpNext + resolved.normalUpNext
+        return _queueState.value.playbackQueue
     }
 
     /**
      * Gets the current song for playback.
      */
     fun getCurrentSong(): Song? {
-        return _resolvedQueue.value.current
+        return _queueState.value.current
     }
 
     /**
@@ -443,14 +409,6 @@ class QueueManager {
                 // isShuffled, preShuffleBaseQueue, repeatMode all preserved
             )
         }
-        updateResolvedQueue()
     }
 
-    /**
-     * Restores state from persistence.
-     */
-    fun restoreState(state: QueueState) {
-        _queueState.value = state
-        updateResolvedQueue()
-    }
 }

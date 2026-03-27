@@ -3,7 +3,6 @@ package org.example.project.core.manager
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -22,7 +21,6 @@ import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.service.MediaService
-import org.schabi.newpipe.extractor.timeago.patterns.it
 
 /**
  * Android implementation of MusicPlayerManager that wraps ExoPlayer.
@@ -106,6 +104,7 @@ class MusicPlayerManagerImpl(
         }, MoreExecutors.directExecutor())
     }
 
+    // TODO: Restore not working
     private fun restorePlaybackState() {
         // Only if theres 0 items, we attempt to restore state. This can happen if we clear app, and restart, but this manager wasnt killed
         Log.d("Logging", "restoring playback items = ${controller?.mediaItemCount}")
@@ -140,9 +139,9 @@ class MusicPlayerManagerImpl(
     override fun setPlaylist(songs: List<Song>, startIndex: Int, positionMs: Long, autoPlay: Boolean) {
         val mediaItems = songs.map { it.toMediaItem() }
         controller?.apply {
+            playWhenReady = if(isPlaying) true else autoPlay
             setMediaItems(mediaItems, startIndex, positionMs)
             prepare()
-            playWhenReady = autoPlay
         }
         Log.d("logging", "set playlist")
     }
@@ -151,20 +150,6 @@ class MusicPlayerManagerImpl(
         val controller = controller ?: return
         val originalCurrentIndex = controller.currentMediaItemIndex  // capture before any changes
         Log.d("logging", "replacequeue running")
-
-        // Check if we're changing to a different song
-        val currentSongInController = controller.currentMediaItem
-        val newSong = songs.getOrNull(newIndex)?.toMediaItem()
-        val isChangingSong = currentSongInController == null || newSong == null ||
-                             currentSongInController.mediaId != newSong.mediaId
-
-        if (isChangingSong) {
-            // We're changing songs, so we should rebuild the entire queue
-            val mediaItems = songs.map { it.toMediaItem() }
-            val wasPlaying = controller.isPlaying
-            controller.setMediaItems(mediaItems, newIndex, 0L)
-            return
-        }
 
         // Original logic for when current song stays the same
         // Replace after first (indices unaffected)

@@ -110,13 +110,7 @@ fun MusicPlayerScreenRefactored(
             modifier = Modifier.weight(1f),
         ) { page ->
             when (page) {
-                0 -> NowPlayingScreen(
-                    currentSong = playerQueue.current,
-                    isPlaying = state.isPlaying,
-                    currentPosition = viewModel.currentPosition,
-                    onSeekTo = viewModel::onSeekTo,
-                    onPlayPauseClicked = viewModel::onPlayPauseClicked
-                )
+                0 -> SongScreen(song = playerQueue.current, viewModel = viewModel)
 
                 1 -> QueueSectionRefactored(viewModel = viewModel)
             }
@@ -253,114 +247,6 @@ private fun PageIndicator(
             style = MaterialTheme.typography.labelMedium,
             color = if (isSelected) appColors.accentPrimary else appColors.textMuted,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-    }
-}
-
-@Composable
-private fun HistoryPill(
-    showHistory: Boolean,
-    historyCount: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = appColors.backgroundSecondary,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = if (showHistory) "Hide history" else "Show history ($historyCount)",
-                style = MaterialTheme.typography.labelMedium,
-                color = appColors.textMuted
-            )
-            Icon(
-                imageVector = if (showHistory) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                contentDescription = null,
-                tint = appColors.iconSecondary,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun NowPlayingScreen(
-    currentSong: Song?,
-    isPlaying: Boolean,
-    currentPosition: StateFlow<Long>,
-    onSeekTo: (Long) -> Unit,
-    onPlayPauseClicked: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Album art
-        Box(
-            modifier = Modifier
-                .size(300.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(appColors.backgroundSecondary)
-        ) {
-            currentSong?.let { song ->
-                CoverImage(
-                    data = song.thumbnailUrl,
-                    modifier = Modifier.fillMaxSize(),
-                    shape = RoundedCornerShape(16.dp)
-                )
-            } ?: run {
-                Icon(
-                    imageVector = Icons.Filled.MusicNote,
-                    contentDescription = "No song playing",
-                    tint = appColors.iconSecondary,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .align(Alignment.Center)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Song info
-        currentSong?.let { song ->
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = appColors.textPrimary,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.bodyLarge,
-                color = appColors.textMuted,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Progress bar would go here
-        // For now, just show a placeholder
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .height(4.dp)
-                .background(appColors.divider)
         )
     }
 }

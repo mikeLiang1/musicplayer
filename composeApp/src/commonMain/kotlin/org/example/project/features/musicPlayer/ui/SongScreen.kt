@@ -45,28 +45,30 @@ import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
-fun SongScreen(song: Song, viewModel: MusicPlayerViewModelRefactored) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-
-        CoverImage(
-            data = song.thumbnailUrl,
-            size = 320.dp,
-            shape = RoundedCornerShape(32.dp),
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        SongDetails(
-            song = song,
-            viewModel = viewModel,
+fun SongScreen(song: Song?, viewModel: MusicPlayerViewModelRefactored) {
+    song?.let {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp)
-        )
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+
+            CoverImage(
+                data = song.thumbnailUrl,
+                size = 320.dp,
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            SongDetails(
+                song = song,
+                viewModel = viewModel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+            )
+        }
     }
 }
 

@@ -3,6 +3,7 @@ package org.example.project.core.service
 import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
@@ -79,10 +80,16 @@ class MediaService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) {
-                    // When a song ends, advance to the next song in the queue
-                    serviceScope.launch {
-                        queueManager.playNext()
-                    }
+                    // TODO: I think this is called when playlist ends
+//                    serviceScope.launch {
+//                        queueManager.playNext()
+//                    }
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                    queueManager.playNext()
                 }
             }
         })

@@ -198,7 +198,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                             modifier = Modifier.animateItem(),
                             song = song,
                             isEditable = uiState.isEditingQueue,
-                            showRemoveButton = true,
+                            showRemoveButton = false,
                             isManual = false,
                             dragHandleModifier = Modifier.draggableHandle(),
                             onMenuClicked = { viewModel.onMenuClicked(song) },

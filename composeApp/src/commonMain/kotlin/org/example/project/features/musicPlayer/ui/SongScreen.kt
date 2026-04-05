@@ -1,18 +1,24 @@
 package org.example.project.features.musicPlayer.ui
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,14 +41,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
+import kotlin.math.roundToInt
 
 @Composable
 fun SongScreen(song: Song?, viewModel: MusicPlayerViewModelRefactored) {
@@ -152,6 +161,15 @@ private fun ProgressSlider(
     var sliderPosition by remember { mutableFloatStateOf(0f) }
     var isSliding by remember { mutableStateOf(false) }
 
+    val thumbSize by animateDpAsState(
+        targetValue = if (isSliding) 20.dp else 14.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "thumbSize"
+    )
+
     LaunchedEffect(currentPosition) {
         if (!isSliding && duration > 0) {
             sliderPosition = currentPosition.toFloat() / duration.toFloat()
@@ -159,59 +177,62 @@ private fun ProgressSlider(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(28.dp), // tall touch target
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 16.dp)
+                .height(28.dp)
         ) {
-            // Track
+            val trackWidth = constraints.maxWidth.toFloat()
+            val thumbSizePx = with(LocalDensity.current) { thumbSize.toPx() }
+            val thumbOffset = (sliderPosition * trackWidth - thumbSizePx / 2).coerceAtLeast(0f)
+            val fillWidth = (sliderPosition * trackWidth).coerceIn(0f, trackWidth)
+
+            // Track background with tap to seek
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(appColors.backgroundSurface)
-            )
-
-            // Fill + thumb
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart
+                    .height(20.dp)
+                    .align(Alignment.Center)
+                    .pointerInput(duration) {
+                        detectTapGestures { offset ->
+                            sliderPosition = (offset.x / trackWidth).coerceIn(0f, 1f)
+                            onSeek((sliderPosition * duration).toLong())
+                        }
+                    }
             ) {
-                // Filled portion
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(sliderPosition)
+                        .fillMaxWidth()
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(appColors.accentDark, appColors.accentPrimary)
-                            )
-                        )
+                        .background(appColors.backgroundSurface)
+                        .align(Alignment.Center)
                 )
-
-                // Thumb dot
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(sliderPosition)
-                        .wrapContentWidth(Alignment.End)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .shadow(4.dp, CircleShape)
-                            .background(appColors.iconPrimary, CircleShape)
-                    )
-                }
             }
 
-            // Invisible drag surface
+            // Filled portion
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .width(with(LocalDensity.current) { fillWidth.toDp() })
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(appColors.accentDark, appColors.accentPrimary)
+                        )
+                    )
+                    .align(Alignment.CenterStart)
+            )
+
+            // Thumb
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(thumbOffset.roundToInt(), 0) }
+                    .size(thumbSize)
+                    .shadow(4.dp, CircleShape)
+                    .background(appColors.iconPrimary, CircleShape)
+                    .align(Alignment.CenterStart)
                     .pointerInput(duration) {
                         detectHorizontalDragGestures(
                             onDragStart = { isSliding = true },
@@ -220,16 +241,10 @@ private fun ProgressSlider(
                                 onSeek((sliderPosition * duration).toLong())
                             },
                             onHorizontalDrag = { _, dragAmount ->
-                                val delta = dragAmount / size.width
+                                val delta = dragAmount / trackWidth
                                 sliderPosition = (sliderPosition + delta).coerceIn(0f, 1f)
                             }
                         )
-                    }
-                    .pointerInput(duration) {
-                        detectTapGestures { offset ->
-                            sliderPosition = (offset.x / size.width).coerceIn(0f, 1f)
-                            onSeek((sliderPosition * duration).toLong())
-                        }
                     }
             )
         }
@@ -241,7 +256,7 @@ private fun ProgressSlider(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = formatTime(currentPosition),
+                text = formatTime(if (isSliding) (sliderPosition * duration).toLong() else currentPosition),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
                 color = appColors.textMuted

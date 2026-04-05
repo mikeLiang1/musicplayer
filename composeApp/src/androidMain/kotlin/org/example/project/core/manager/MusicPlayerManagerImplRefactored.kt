@@ -44,14 +44,10 @@ class MusicPlayerManagerImpl(
 
     private var isAppInForeground = true
 
-    private var hasRestoredPosition = false
 
     override fun initialise() {
         if (controller == null || controller?.isConnected == false) {
             initializeController()
-        } else {
-            // DOnt need to check if controller initialised because we check if media items == 0 inside restore playbackState
-            restorePlaybackState()
         }
     }
 
@@ -78,9 +74,6 @@ class MusicPlayerManagerImpl(
 
                     override fun onPlaybackStateChanged(state: Int) {
                         when (state) {
-                            Player.STATE_ENDED -> {
-                                stopPositionUpdates()
-                            }
                             Player.STATE_BUFFERING -> {
                                 // Show loading state if needed
                             }
@@ -91,51 +84,21 @@ class MusicPlayerManagerImpl(
                         }
                     }
 
-                    override fun onPositionDiscontinuity(
-                        oldPosition: Player.PositionInfo,
-                        newPosition: Player.PositionInfo,
-                        reason: Int
-                    ) {
-                        // Update position on seek
-                        _currentPosition.value = newPosition.positionMs
-                    }
+//                    override fun onPositionDiscontinuity(
+//                        oldPosition: Player.PositionInfo,
+//                        newPosition: Player.PositionInfo,
+//                        reason: Int
+//                    ) {
+//                        // Update position on seek
+//                        _currentPosition.value = newPosition.positionMs
+//                    }
                 })
             }
         }, MoreExecutors.directExecutor())
     }
 
-    // TODO: Restore not working
-    private fun restorePlaybackState() {
-        // Only if theres 0 items, we attempt to restore state. This can happen if we clear app, and restart, but this manager wasnt killed
-        Log.d("Logging", "restoring playback items = ${controller?.mediaItemCount}")
-        if (controller?.mediaItemCount == 0) {
-            coroutineScope.launch {
-                val queueState = savedDataRepository.getQueueState()
-                queueState?.let { state ->
-                    // Reconstruct playback queue from QueueState
-                    // Current song is either currentManualSong or baseQueue[currentBaseIndex]
-                    val currentSong = state.currentManualSong ?: state.baseQueue.getOrNull(state.currentBaseIndex)
-
-                    val playbackQueue = listOfNotNull(currentSong) +
-                        state.manualQueue +
-                        state.baseQueue.drop(state.currentBaseIndex + 1)
-
-                    // For now, we'll just restore the base queue starting from current index
-                    // Position restoration would need additional persistence
-                    currentSong?.let {
-                        setPlaylist(
-                            playbackQueue,
-                            autoPlay = false,
-                            positionMs = 0L, // Position not persisted in QueueState
-                            startIndex = 0  // Current song is always first in playbackQueue
-                        )
-                        _currentPosition.value = 0L
-                    }
-                }
-            }
-        }
-    }
-
+    // Queue restoration is now handled by QueueManager via ViewModel
+    // This method is kept for potential position restoration in the future
     override fun setPlaylist(songs: List<Song>, startIndex: Int, positionMs: Long, autoPlay: Boolean) {
         val mediaItems = songs.map { it.toMediaItem() }
         controller?.apply {
@@ -143,7 +106,8 @@ class MusicPlayerManagerImpl(
             setMediaItems(mediaItems, startIndex, positionMs)
             prepare()
         }
-        Log.d("logging", "set playlist")
+        _currentPosition.value = positionMs
+        Log.d("logging", "set playlist with position ${_currentPosition.value}")
     }
 
     override fun replaceFullQueueKeepingCurrentSong(songs: List<Song>, newIndex: Int) {
@@ -162,7 +126,6 @@ class MusicPlayerManagerImpl(
         controller.removeMediaItems(0, originalCurrentIndex)
         controller.addMediaItems(0, played.map { it.toMediaItem() })
     }
-
 
 
     override fun play() {
@@ -201,7 +164,6 @@ class MusicPlayerManagerImpl(
     }
 
     private fun startPositionUpdates() {
-        stopPositionUpdates()
         positionUpdateJob = coroutineScope.launch {
             while (true) {
                 controller?.currentPosition?.let { position ->

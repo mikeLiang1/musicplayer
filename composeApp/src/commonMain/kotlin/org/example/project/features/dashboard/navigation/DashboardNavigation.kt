@@ -87,7 +87,8 @@ fun DashboardNavigation() {
                     onBack = { navigator.goBack() }
                 )
                 MusicPlayerBar(
-                    viewModel = musicPlayerViewModel, Modifier
+                    viewModel = musicPlayerViewModel,
+                    modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .padding(12.dp)

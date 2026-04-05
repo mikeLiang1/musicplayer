@@ -23,6 +23,7 @@ class SavedDataRepository(
     private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     init {
+        Log.d("logging", "saved data init")
         scope.launch {
             if (dao.getPlaybackStateOnce() == null) {
                 dao.upsertPlaybackState(PlaybackStateEntity(id = 0))
@@ -50,6 +51,11 @@ class SavedDataRepository(
     suspend fun savePosition(position: Long) {
         Log.d("Logging", "saved position : $position")
         dao.updatePosition(position)
+    }
+
+    suspend fun getPosition(): Long? {
+        val stateEntity = dao.getPlaybackStateOnce() ?: return null
+        return stateEntity.positionMs
     }
 
     suspend fun saveCurrentSongIdAndIndex(songId: String, index: Int) {
@@ -89,9 +95,12 @@ class SavedDataRepository(
         // Save current manual song with type "current_manual" if present
         val currentManualEntity = state.currentManualSong?.toEntity(0, "current_manual")
         // Save shuffle snapshot with type "shuffle_snapshot" if present
-        val snapshotEntities = state.preShuffleBaseQueue?.mapIndexed { index, song -> song.toEntity(index, "shuffle_snapshot") } ?: emptyList()
+        val snapshotEntities =
+            state.preShuffleBaseQueue?.mapIndexed { index, song -> song.toEntity(index, "shuffle_snapshot") }
+                ?: emptyList()
 
         val allEntities = baseEntities + manualEntities + snapshotEntities + listOfNotNull(currentManualEntity)
+
         dao.saveAllQueues(allEntities)
         dao.updatePlaybackState(
             currentIndex = state.currentBaseIndex,
@@ -114,7 +123,8 @@ class SavedDataRepository(
             manualQueue.find { it.uniqueId == id } ?: baseQueue.find { it.uniqueId == id }
         }
 
-        return QueueState(
+
+        val queueState = QueueState(
             baseQueue = baseQueue,
             manualQueue = manualQueue,
             currentBaseIndex = stateEntity.currentIndex ?: 0,
@@ -124,6 +134,9 @@ class SavedDataRepository(
             preShuffleBaseIndex = if (stateEntity.isShuffled) stateEntity.currentIndex else null,
             repeatMode = RepeatMode.valueOf(stateEntity.repeatMode ?: "OFF")
         )
+
+        Log.d("logging", "queuestate = $queueState")
+        return queueState
     }
 
 }

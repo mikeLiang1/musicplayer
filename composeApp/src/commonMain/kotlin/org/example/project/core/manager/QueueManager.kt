@@ -1,5 +1,6 @@
 package org.example.project.core.manager
 
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,6 +53,10 @@ data class QueueState(
  * Pure Kotlin with no platform dependencies.
  */
 class QueueManager {
+
+    init {
+        Log.d("logging", "queue manager int")
+    }
 
     private val _queueState = MutableStateFlow(QueueState())
     val queueState: StateFlow<QueueState> = _queueState.asStateFlow()
@@ -409,6 +414,15 @@ class QueueManager {
                 // isShuffled, preShuffleBaseQueue, repeatMode all preserved
             )
         }
+    }
+
+    /**
+     * Restores queue state from persistence.
+     * Should be called during app initialization.
+     */
+    fun restoreState(state: QueueState) {
+        Log.d("logging", "queuestate restored $state")
+        _queueState.value = state
     }
 
 }

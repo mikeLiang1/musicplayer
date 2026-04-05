@@ -1,5 +1,6 @@
 package org.example.project.features.musicPlayer.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -68,35 +68,65 @@ class MusicPlayerViewModelRefactored constructor(
         .map { it.repeatMode }
         .stateIn(viewModelScope, SharingStarted.Eagerly, RepeatMode.OFF)
 
+    private var lastCurrentId: String? = null
+
     init {
-        var lastCurrentId: String? = null
+        Log.d("logging", "viewmodel int")
 
-        // Sync queue changes to music player
-        queueManager.queueState
-            .onEach { state ->
-                val playbackQueue = state.playbackQueue
-                if (playbackQueue.isEmpty()) return@onEach
+        viewModelScope.launch {
+            restorePlaybackState()
 
-                val currentSong = state.current
-                val currentId = currentSong?.uniqueId
-                val startIndex = playbackQueue.indexOfFirst { it.uniqueId == currentSong?.uniqueId }.coerceAtLeast(0)
+            // 2. Set up observers AFTER restoration completes
+            // Sync queue changes to music player (for future changes)
+            queueManager.queueState
+                .onEach { state ->
+                    val playbackQueue = state.playbackQueue
+                    if (playbackQueue.isEmpty()) return@onEach
 
-                if (currentId != lastCurrentId) {
-                    // Song changed — full rebuild with new start position
-                    lastCurrentId = currentId
-                    musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = false)
-                } else {
-                    // Same song, queue order changed — surgical update
-                    musicPlayerManager.replaceFullQueueKeepingCurrentSong(playbackQueue, newIndex = startIndex)
+                    val currentSong = state.current
+                    val currentId = currentSong?.uniqueId
+                    val startIndex = playbackQueue.indexOfFirst { it.uniqueId == currentSong?.uniqueId }.coerceAtLeast(0)
+
+                    if (currentId != lastCurrentId) {
+                        // Song changed — full rebuild with new start position
+                        lastCurrentId = currentId
+                        musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = false)
+                    } else {
+                        // Same song, queue order changed — surgical update
+                        musicPlayerManager.replaceFullQueueKeepingCurrentSong(playbackQueue, newIndex = startIndex)
+                    }
                 }
-            }
-            .launchIn(viewModelScope)
+                .launchIn(viewModelScope)
 
-        // Debounced save of queue state
-        queueManager.queueState
-            .debounce(500)
-            .onEach { state -> savedDataRepository.saveQueueState(state) }
-            .launchIn(viewModelScope)
+            // Debounced save of queue state
+            queueManager.queueState
+                .debounce(500)
+                .onEach { state -> savedDataRepository.saveQueueState(state) }
+                .launchIn(viewModelScope)
+        }
+    }
+
+    private suspend fun restorePlaybackState() {
+        // 1. Restore state first (blocking in this coroutine)
+        val savedState = savedDataRepository.getQueueState()
+        savedState?.let { state ->
+            val positionMs = savedDataRepository.getPosition() ?: 0L
+            val playbackQueue = state.playbackQueue
+            if (playbackQueue.isNotEmpty()) {
+
+                musicPlayerManager.setPlaylist(
+                    playbackQueue,
+                    startIndex = 0,
+                    positionMs = positionMs,
+                    autoPlay = false
+                )
+                Log.d("logging", "Restored playback position: $positionMs ms")
+            }
+
+            queueManager.restoreState(state)
+            Log.d("logging", "Restored queue state: $state")
+            lastCurrentId = state.current?.uniqueId
+        } ?: Log.d("logging", "No saved queue state found")
     }
 
     // ── Playback ──────────────────────────────────────
@@ -107,7 +137,7 @@ class MusicPlayerViewModelRefactored constructor(
 
     fun onNextClicked() = queueManager.playNext()
     fun onPreviousClicked() = queueManager.playPrevious()
-    fun onSeekTo(seconds: Long) = musicPlayerManager.seekTo(seconds * 1000)
+    fun onSeekTo(seconds: Long) = musicPlayerManager.seekTo(seconds)
 
     fun changeShuffleOption() {
         val state = queueManager.queueState.value
@@ -245,11 +275,6 @@ class MusicPlayerViewModelRefactored constructor(
         // Song not found or is in history/current (can't remove those)
     }
 
-    fun setQueue(songs: List<Song>, startIndex: Int = 0) {
-        queueManager.setBaseQueue(songs, startIndex)
-    }
-
-    // ── App Lifecycle ────────────────────────────────────
 }
 
 data class MusicPlayerUiState(

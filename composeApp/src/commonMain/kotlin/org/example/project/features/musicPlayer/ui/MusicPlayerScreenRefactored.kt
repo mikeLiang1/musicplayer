@@ -229,29 +229,6 @@ private fun PlayerHeader(
 }
 
 @Composable
-private fun PageIndicator(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) appColors.accentContainer else Color.Transparent,
-        border = if (!isSelected) BorderStroke(1.dp, appColors.divider) else null,
-        modifier = modifier
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (isSelected) appColors.accentPrimary else appColors.textMuted,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-    }
-}
-
-@Composable
 private fun PlayerControlsRefactored(
     isPlaying: Boolean,
     isShuffled: Boolean,

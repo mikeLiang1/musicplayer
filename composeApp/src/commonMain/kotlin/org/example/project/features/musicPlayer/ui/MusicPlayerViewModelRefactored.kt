@@ -90,7 +90,8 @@ class MusicPlayerViewModelRefactored constructor(
                     if (currentId != lastCurrentId) {
                         // Song changed — full rebuild with new start position
                         lastCurrentId = currentId
-                        musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = false)
+                        musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = state.autoPlay)
+                        queueManager.setAutoPlay(false)
                     } else {
                         // Same song, queue order changed — surgical update
                         musicPlayerManager.replaceFullQueueKeepingCurrentSong(playbackQueue, newIndex = startIndex)

@@ -77,6 +77,7 @@ class MusicPlayerManagerImpl(
                             Player.STATE_BUFFERING -> {
                                 // Show loading state if needed
                             }
+
                             Player.STATE_READY -> {
                                 // Update duration when ready
                                 _playerState.update { it.copy(durationMs = controller?.duration ?: 0L) }
@@ -102,7 +103,7 @@ class MusicPlayerManagerImpl(
     override fun setPlaylist(songs: List<Song>, startIndex: Int, positionMs: Long, autoPlay: Boolean) {
         val mediaItems = songs.map { it.toMediaItem() }
         controller?.apply {
-            playWhenReady = if(isPlaying) true else autoPlay
+            playWhenReady = if (isPlaying) true else autoPlay
             setMediaItems(mediaItems, startIndex, positionMs)
             prepare()
         }

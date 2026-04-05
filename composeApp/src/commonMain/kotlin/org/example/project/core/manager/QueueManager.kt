@@ -28,7 +28,8 @@ data class QueueState(
     val isShuffled: Boolean = false,
     val preShuffleBaseQueue: List<Song>? = null,     // snapshot before shuffle
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
-    val repeatMode: RepeatMode = RepeatMode.OFF
+    val repeatMode: RepeatMode = RepeatMode.OFF,
+    val autoPlay: Boolean = false
 ) {
     // Computed properties for UI consumption (formerly in ResolvedQueue)
     val history: List<Song>
@@ -76,7 +77,8 @@ class QueueManager {
                 manualQueue = emptyList(),
                 isShuffled = false,
                 preShuffleBaseQueue = null,
-                preShuffleBaseIndex = null
+                preShuffleBaseIndex = null,
+                autoPlay = true
             )
         }
     }
@@ -357,6 +359,10 @@ class QueueManager {
         }
     }
 
+    fun setAutoPlay(autoPlay: Boolean) {
+        _queueState.update { it.copy(autoPlay = autoPlay) }
+    }
+
     // ── Query Methods ───────────────────────────────────────────────────────
 
     /**
@@ -384,23 +390,6 @@ class QueueManager {
         }
     }
 
-    // ── Internal Helpers ───────────────────────────────────────────────────
-
-    // ── Utility Methods ────────────────────────────────────────────────────
-
-    /**
-     * Gets the flat list of songs for playback (current + manualUpNext + normalUpNext).
-     */
-    fun getPlaybackQueue(): List<Song> {
-        return _queueState.value.playbackQueue
-    }
-
-    /**
-     * Gets the current song for playback.
-     */
-    fun getCurrentSong(): Song? {
-        return _queueState.value.current
-    }
 
     /**
      * Replaces queues while preserving shuffle/repeat state.

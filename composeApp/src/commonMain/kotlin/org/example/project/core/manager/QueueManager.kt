@@ -91,6 +91,7 @@ class QueueManager {
      * If empty: currentBaseIndex++. Handles repeat at end.
      */
     fun playNext() {
+        Log.d("QueueManager", "playNext() called")
         _queueState.update { state ->
             if (state.currentManualSong != null) {
                 // Just finished a manual song — check if more manual songs remain
@@ -128,6 +129,7 @@ class QueueManager {
      * currentBaseIndex-- (manual queue stays pinned after new current)
      */
     fun playPrevious() {
+        Log.d("QueueManager", "playPrevious() called")
         _queueState.update { state ->
             if (state.currentManualSong != null) {
                 // If playing a manual song, go back to the base queue current song

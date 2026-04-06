@@ -1,5 +1,6 @@
 package org.example.project.features.musicPlayer.ui
 
+import android.R.attr.repeatMode
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -24,10 +25,17 @@ import androidx.compose.material.icons.automirrored.filled.LastPage
 import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.rememberModalBottomSheetState
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +54,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.helper.formatTime
 import org.example.project.core.manager.RepeatMode
@@ -55,6 +64,7 @@ import org.example.project.ui.theme.appColors
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
 
@@ -66,6 +76,17 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
 
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.onMove(from.key as String, to.key as String)
+    }
+
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.isMenuBottomSheetVisible) {
+        if (uiState.isMenuBottomSheetVisible) {
+            sheetState.show()
+        } else {
+            sheetState.hide()
+        }
     }
 
     LaunchedEffect(reorderableState.isAnyItemDragging) {
@@ -111,6 +132,40 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
             try {
                 listState.animateScrollToItem(index)
             } catch (e: CancellationException) {
+            }
+        }
+    }
+    if (uiState.isMenuBottomSheetVisible) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                viewModel.onCloseMenuBottomSheet()
+            },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                uiState.selectedSong?.let { song ->
+                    Text(
+                        text = "Add \"${song.title}\" to queue?",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            viewModel.addSelectedSongToQueue()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add to queue")
+                }
             }
         }
     }
@@ -166,49 +221,52 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                 }
             }
 
-            // ── Manual queue (Playing Next) ──────────────
-            if (displayQueue.manual.isNotEmpty()) {
-                stickyHeader(key = "header_manual") {
-                    SectionDivider(label = "Playing Next")
+            val combinedQueue = displayQueue.manual + displayQueue.upcoming
+            val manualCount = displayQueue.manual.size
+
+            if (combinedQueue.isNotEmpty()) {
+
+                if (manualCount > 0) {
+                    stickyHeader(key = "header_manual") {
+                        SectionDivider(label = "Playing Next")
+                    }
+                    items(displayQueue.manual, key = { it.uniqueId }) { song ->
+                        ReorderableItem(reorderableState, key = song.uniqueId) {
+                            SongItemRefactored(
+                                modifier = Modifier.animateItem(),
+                                song = song,
+                                isEditable = uiState.isEditingQueue,
+                                showRemoveButton = uiState.isEditingQueue,
+                                isManual = true,
+                                dragHandleModifier = Modifier.draggableHandle(),
+                                onMenuClicked = { viewModel.onMenuClicked(song) },
+                                onRemoveClicked = { viewModel.removeSong(song) }
+                            ) { viewModel.changePlayingToSong(song) }
+                        }
+                    }
                 }
-                items(displayQueue.manual, key = { it.uniqueId }) { song ->
-                    ReorderableItem(reorderableState, key = song.uniqueId) {
-                        SongItemRefactored(
-                            modifier = Modifier.animateItem(),
-                            song = song,
-                            isEditable = uiState.isEditingQueue,
-                            showRemoveButton = true,
-                            isManual = true,  // section determines this
-                            dragHandleModifier = Modifier.draggableHandle(),
-                            onMenuClicked = { viewModel.onMenuClicked(song) },
-                            onRemoveClicked = { viewModel.removeSong(song) }
-                        ) { viewModel.changePlayingToSong(song) }
+
+                if (displayQueue.upcoming.isNotEmpty()) {
+                    stickyHeader(key = "header_upcoming") {
+                        SectionDivider(label = "Queue")
+                    }
+                    items(displayQueue.upcoming, key = { it.uniqueId }) { song ->
+                        ReorderableItem(reorderableState, key = song.uniqueId) {
+                            SongItemRefactored(
+                                modifier = Modifier.animateItem(),
+                                song = song,
+                                isEditable = uiState.isEditingQueue,
+                                showRemoveButton = uiState.isEditingQueue,
+                                isManual = false,
+                                dragHandleModifier = Modifier.draggableHandle(),
+                                onMenuClicked = { viewModel.onMenuClicked(song) },
+                                onRemoveClicked = { viewModel.removeSong(song) }
+                            ) { viewModel.changePlayingToSong(song) }
+                        }
                     }
                 }
             }
 
-            // ── Normal upcoming queue ────────────────────
-            if (displayQueue.upcoming.isNotEmpty()) {
-                stickyHeader(key = "header_upcoming") {
-                    SectionDivider(label = "Queue")
-                }
-                items(displayQueue.upcoming, key = { it.uniqueId }) { song ->
-                    ReorderableItem(reorderableState, key = song.uniqueId) {
-                        SongItemRefactored(
-                            modifier = Modifier.animateItem(),
-                            song = song,
-                            isEditable = uiState.isEditingQueue,
-                            showRemoveButton = false,
-                            isManual = false,
-                            dragHandleModifier = Modifier.draggableHandle(),
-                            onMenuClicked = { viewModel.onMenuClicked(song) },
-                            onRemoveClicked = { viewModel.removeSong(song) }
-                        ) { viewModel.changePlayingToSong(song) }
-                    }
-                }
-            }
-
-            // ── Repeat mode footer ───────────────────────
             item(key = "footer_repeat_mode") {
                 RepeatModeFooter(repeatMode = repeatMode)
             }

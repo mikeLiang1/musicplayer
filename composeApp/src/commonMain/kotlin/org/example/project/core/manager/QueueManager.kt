@@ -67,13 +67,13 @@ class QueueManager {
     /**
      * Sets the base queue and starts playback from the specified index.
      */
-    fun setBaseQueue(songs: List<Song>, startIndex: Int = 0) {
+    fun setBaseQueue(songs: List<Song>) {
         // Songs already have uniqueId (from search or persistence)
         // We don't generate new ones here to preserve persistence IDs
         _queueState.update { state ->
             state.copy(
                 baseQueue = songs,
-                currentBaseIndex = startIndex.coerceIn(0, songs.lastIndex),
+                currentBaseIndex = 0,
                 manualQueue = emptyList(),
                 isShuffled = false,
                 preShuffleBaseQueue = null,

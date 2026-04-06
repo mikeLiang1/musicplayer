@@ -200,7 +200,21 @@ class MusicPlayerViewModelRefactored constructor(
     }
 
     fun onMenuClicked(song: Song) {
+        _uiState.update {
+            it.copy(isMenuBottomSheetVisible = true, selectedSong = song)
+        }
+    }
+
+    fun onCloseMenuBottomSheet() {
+        _uiState.update {
+            it.copy(isMenuBottomSheetVisible = false, selectedSong = null)
+        }
+    }
+
+    fun addSelectedSongToQueue() {
+        val song = _uiState.value.selectedSong ?: return
         queueManager.addToManualQueue(song)
+        onCloseMenuBottomSheet()
     }
 
     // ── Queue Edit ────────────────────────────────────
@@ -215,29 +229,31 @@ class MusicPlayerViewModelRefactored constructor(
 
     fun onMove(fromKey: String, toKey: String) {
         val current = _uiState.value.editingQueue ?: return
-        val future = (current.manual + current.upcoming).toMutableList()
+        val combined = (current.manual + current.upcoming).toMutableList()
         val manualCount = current.manual.size
 
-        val fromIndex = future.indexOfFirst { it.uniqueId == fromKey }.takeIf { it != -1 } ?: return
-        val toIndex = future.indexOfFirst { it.uniqueId == toKey }.takeIf { it != -1 } ?: return
+        val fromIndex = combined.indexOfFirst { it.uniqueId == fromKey }.takeIf { it != -1 } ?: return
 
-        val item = future.removeAt(fromIndex)
-        future.add(toIndex, item)
+        val toIndex = when (toKey) {
+            "header_manual" -> 0
+            "header_upcoming" -> manualCount  // drop on Queue header = start of upcoming
+            "footer_repeat_mode" -> combined.size
+            else -> combined.indexOfFirst { it.uniqueId == toKey }.takeIf { it != -1 } ?: return
+        }
 
-        // Determine new manual/normal split based on position
-        // Songs at indices 0 until manualCount are manual, rest are normal
-        // But the count may shift if a song crossed the boundary
+        combined.add(toIndex, combined.removeAt(fromIndex))
+
         val newManualCount = when {
-            fromIndex < manualCount && toIndex >= manualCount -> manualCount - 1  // manual → normal
-            fromIndex >= manualCount && toIndex < manualCount -> manualCount + 1  // normal → manual
-            else -> manualCount  // same section
+            fromIndex < manualCount && toIndex >= manualCount -> manualCount - 1
+            fromIndex >= manualCount && toIndex < manualCount -> manualCount + 1
+            else -> manualCount
         }
 
         _uiState.update {
             it.copy(
                 editingQueue = current.copy(
-                    manual = future.take(newManualCount),
-                    upcoming = future.drop(newManualCount)
+                    manual = combined.take(newManualCount),
+                    upcoming = combined.drop(newManualCount)
                 )
             )
         }
@@ -250,7 +266,7 @@ class MusicPlayerViewModelRefactored constructor(
             manualQueue = editing.manual,
             currentBaseIndex = editing.history.size
         )
-        _uiState.update { it.copy(editingQueue = null, isEditingQueue = false) }
+//        _uiState.update { it.copy(editingQueue = null, isEditingQueue = false) }
     }
 
     // ── Queue Management ──────────────────────────────
@@ -282,7 +298,9 @@ data class MusicPlayerUiState(
     val isFullScreenVisible: Boolean = false,
     val showHistory: Boolean = false,
     val isEditingQueue: Boolean = false,
-    val editingQueue: PlayerQueue? = null
+    val editingQueue: PlayerQueue? = null,
+    val isMenuBottomSheetVisible: Boolean = false,
+    val selectedSong: Song? = null
 )
 
 sealed interface MusicPlayerEffect {

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LastPage
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.AllInclusive
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -52,10 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -207,8 +203,7 @@ private fun PlayerHeader(
                     tint = appColors.iconSecondary
                 )
             }
-        }
-        else {
+        } else {
             IconButton(onClick = onEditQueueClicked) {
                 Icon(
                     imageVector = if (!uiState.isEditingQueue) Icons.Filled.Edit else Icons.Filled.Check,
@@ -228,25 +223,8 @@ private fun PlayerControlsRefactored(
     viewModel: MusicPlayerViewModelRefactored,
     modifier: Modifier = Modifier
 ) {
-    var showRepeatChip by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        // Repeat mode chip (conditional)
-        if (showRepeatChip) {
-            androidx.compose.animation.AnimatedVisibility(
-                visible = showRepeatChip,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                PlaybackModeChip(
-                    playbackMode = playbackMode,
-                    onDismiss = { showRepeatChip = false },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                )
-            }
-        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -309,7 +287,6 @@ private fun PlayerControlsRefactored(
                 IconButton(
                     onClick = {
                         viewModel.togglePlaybackMode()
-                        showRepeatChip = true
                     }
                 ) {
                     Icon(
@@ -322,49 +299,6 @@ private fun PlayerControlsRefactored(
                         tint = if (playbackMode != PlaybackMode.OFF) appColors.accentPrimary else appColors.iconSecondary
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlaybackModeChip(
-    playbackMode: PlaybackMode,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = appColors.accentContainer.copy(alpha = 0.3f),
-        border = BorderStroke(1.dp, appColors.accentContainer),
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = when (playbackMode) {
-                    PlaybackMode.OFF -> "Stop at end"
-                    PlaybackMode.REPEAT -> "Repeating queue"
-                    PlaybackMode.Infinite -> "Repeat one"
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = appColors.accentPrimary
-            )
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Cancel,
-                    contentDescription = "Dismiss",
-                    tint = appColors.iconSecondary,
-                    modifier = Modifier.size(16.dp)
-                )
             }
         }
     }

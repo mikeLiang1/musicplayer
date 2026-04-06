@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,24 +21,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.LastPage
 import androidx.compose.material.icons.filled.AllInclusive
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.Button
 import androidx.compose.material3.rememberModalBottomSheetState
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import org.example.project.core.helper.formatTime
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.model.Song
@@ -100,7 +101,8 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
                     val currentSong = displayQueue.current
                     if (currentSong != null) {
                         // Find index of current song in the combined list
-                        val allSongs = displayQueue.history + listOfNotNull(currentSong) + displayQueue.manual + displayQueue.upcoming
+                        val allSongs =
+                            displayQueue.history + listOfNotNull(currentSong) + displayQueue.manual + displayQueue.upcoming
                         val currentIndex = allSongs.indexOf(currentSong)
                         listState.requestScrollToItem(currentIndex)
                         val targetIndex = (currentIndex - 2).coerceAtLeast(0)
@@ -122,7 +124,8 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
     // Scroll when track changes
     LaunchedEffect(displayQueue.current) {
         if (displayQueue.current != null) {
-            val allSongs = displayQueue.history + listOfNotNull(displayQueue.current) + displayQueue.manual + displayQueue.upcoming
+            val allSongs =
+                displayQueue.history + listOfNotNull(displayQueue.current) + displayQueue.manual + displayQueue.upcoming
             val currentIndex = allSongs.indexOf(displayQueue.current)
             val index = if (uiState.showHistory) currentIndex else 0
             listState.requestScrollToItem(index)
@@ -265,7 +268,9 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
             }
 
             item(key = "footer_repeat_mode") {
-                PlaybackModeFooter(playbackMode = playbackMode)
+                PlaybackModeFooter(
+                    playbackMode = playbackMode,
+                    onPlaybackModeClicked = { viewModel.togglePlaybackMode() })
             }
         }
     }
@@ -414,10 +419,11 @@ private fun EqualizerBars(isPlaying: Boolean) {
 }
 
 @Composable
-private fun PlaybackModeFooter(playbackMode: PlaybackMode) {
+private fun PlaybackModeFooter(playbackMode: PlaybackMode, onPlaybackModeClicked: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = { onPlaybackModeClicked() })
             .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -431,9 +437,9 @@ private fun PlaybackModeFooter(playbackMode: PlaybackMode) {
         ) {
             Icon(
                 imageVector = when (playbackMode) {
-                    PlaybackMode.OFF -> Icons.Rounded.Repeat
-                    PlaybackMode.REPEAT -> Icons.Filled.AllInclusive
-                    PlaybackMode.Infinite -> Icons.AutoMirrored.Filled.LastPage
+                    PlaybackMode.OFF -> Icons.Rounded.Stop
+                    PlaybackMode.REPEAT -> Icons.Filled.Repeat
+                    PlaybackMode.Infinite -> Icons.Filled.AllInclusive
                 },
                 contentDescription = null,
                 tint = appColors.accentPrimary,
@@ -444,8 +450,8 @@ private fun PlaybackModeFooter(playbackMode: PlaybackMode) {
             Text(
                 text = when (playbackMode) {
                     PlaybackMode.OFF -> "Stop at end"
-                    PlaybackMode.REPEAT -> "Repeat all"
-                    PlaybackMode.Infinite -> "Infinite"
+                    PlaybackMode.REPEAT -> "Repeat playlist"
+                    PlaybackMode.Infinite -> "Infinite queue"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,

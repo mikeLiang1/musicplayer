@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,7 +51,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,19 +58,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.example.project.core.manager.RepeatMode
-import org.example.project.core.model.PlayerState
-import org.example.project.core.model.Song
+import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.musicPlayer.model.PlayerQueue
-import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -85,7 +77,7 @@ fun MusicPlayerScreenRefactored(
     val state by viewModel.playerState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isShuffled by viewModel.isShuffled.collectAsStateWithLifecycle()
-    val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle()
+    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
     val playerQueue by viewModel.playerQueue.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState { 2 }
 
@@ -126,7 +118,7 @@ fun MusicPlayerScreenRefactored(
             PlayerControlsRefactored(
                 isPlaying = state.isPlaying,
                 isShuffled = isShuffled,
-                repeatMode = repeatMode,
+                playbackMode = playbackMode,
                 viewModel = viewModel,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
             )
@@ -232,7 +224,7 @@ private fun PlayerHeader(
 private fun PlayerControlsRefactored(
     isPlaying: Boolean,
     isShuffled: Boolean,
-    repeatMode: RepeatMode,
+    playbackMode: PlaybackMode,
     viewModel: MusicPlayerViewModelRefactored,
     modifier: Modifier = Modifier
 ) {
@@ -246,8 +238,8 @@ private fun PlayerControlsRefactored(
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
-                RepeatModeChip(
-                    repeatMode = repeatMode,
+                PlaybackModeChip(
+                    playbackMode = playbackMode,
                     onDismiss = { showRepeatChip = false },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -316,18 +308,18 @@ private fun PlayerControlsRefactored(
             ) {
                 IconButton(
                     onClick = {
-                        viewModel.toggleRepeatMode()
+                        viewModel.togglePlaybackMode()
                         showRepeatChip = true
                     }
                 ) {
                     Icon(
-                        imageVector = when (repeatMode) {
-                            RepeatMode.OFF -> Icons.AutoMirrored.Filled.LastPage
-                            RepeatMode.ALL -> Icons.Rounded.Repeat
-                            RepeatMode.ONE -> Icons.Default.AllInclusive
+                        imageVector = when (playbackMode) {
+                            PlaybackMode.OFF -> Icons.AutoMirrored.Filled.LastPage
+                            PlaybackMode.REPEAT -> Icons.Rounded.Repeat
+                            PlaybackMode.Infinite -> Icons.Default.AllInclusive
                         },
                         contentDescription = "Repeat",
-                        tint = if (repeatMode != RepeatMode.OFF) appColors.accentPrimary else appColors.iconSecondary
+                        tint = if (playbackMode != PlaybackMode.OFF) appColors.accentPrimary else appColors.iconSecondary
                     )
                 }
             }
@@ -336,8 +328,8 @@ private fun PlayerControlsRefactored(
 }
 
 @Composable
-private fun RepeatModeChip(
-    repeatMode: RepeatMode,
+private fun PlaybackModeChip(
+    playbackMode: PlaybackMode,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -355,10 +347,10 @@ private fun RepeatModeChip(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = when (repeatMode) {
-                    RepeatMode.OFF -> "Stop at end"
-                    RepeatMode.ALL -> "Repeating queue"
-                    RepeatMode.ONE -> "Repeat one"
+                text = when (playbackMode) {
+                    PlaybackMode.OFF -> "Stop at end"
+                    PlaybackMode.REPEAT -> "Repeating queue"
+                    PlaybackMode.Infinite -> "Repeat one"
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = appColors.accentPrimary

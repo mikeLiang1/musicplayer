@@ -1,6 +1,5 @@
 package org.example.project.features.musicPlayer.ui
 
-import android.R.attr.repeatMode
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.LastPage
 import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,10 +52,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.helper.formatTime
-import org.example.project.core.manager.RepeatMode
+import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
@@ -72,7 +69,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
-    val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle()
+    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
 
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.onMove(from.key as String, to.key as String)
@@ -268,7 +265,7 @@ fun QueueSectionRefactored(viewModel: MusicPlayerViewModelRefactored) {
             }
 
             item(key = "footer_repeat_mode") {
-                RepeatModeFooter(repeatMode = repeatMode)
+                PlaybackModeFooter(playbackMode = playbackMode)
             }
         }
     }
@@ -417,7 +414,7 @@ private fun EqualizerBars(isPlaying: Boolean) {
 }
 
 @Composable
-private fun RepeatModeFooter(repeatMode: RepeatMode) {
+private fun PlaybackModeFooter(playbackMode: PlaybackMode) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -433,10 +430,10 @@ private fun RepeatModeFooter(repeatMode: RepeatMode) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = when (repeatMode) {
-                    RepeatMode.OFF -> Icons.Rounded.Repeat
-                    RepeatMode.ALL -> Icons.Filled.AllInclusive
-                    RepeatMode.ONE -> Icons.AutoMirrored.Filled.LastPage
+                imageVector = when (playbackMode) {
+                    PlaybackMode.OFF -> Icons.Rounded.Repeat
+                    PlaybackMode.REPEAT -> Icons.Filled.AllInclusive
+                    PlaybackMode.Infinite -> Icons.AutoMirrored.Filled.LastPage
                 },
                 contentDescription = null,
                 tint = appColors.accentPrimary,
@@ -445,20 +442,20 @@ private fun RepeatModeFooter(repeatMode: RepeatMode) {
         }
         Column {
             Text(
-                text = when (repeatMode) {
-                    RepeatMode.OFF -> "Stop at end"
-                    RepeatMode.ALL -> "Repeat all"
-                    RepeatMode.ONE -> "Infinite"
+                text = when (playbackMode) {
+                    PlaybackMode.OFF -> "Stop at end"
+                    PlaybackMode.REPEAT -> "Repeat all"
+                    PlaybackMode.Infinite -> "Infinite"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = appColors.textMuted
             )
             Text(
-                text = when (repeatMode) {
-                    RepeatMode.OFF -> "Playback stops after last song"
-                    RepeatMode.ALL -> "Will loop back to start"
-                    RepeatMode.ONE -> "Finding similar songs…"
+                text = when (playbackMode) {
+                    PlaybackMode.OFF -> "Playback stops after last song"
+                    PlaybackMode.REPEAT -> "Will loop back to start"
+                    PlaybackMode.Infinite -> "Finding similar songs…"
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = appColors.textDim

@@ -8,7 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.example.project.core.dao.MusicDatabase
 import org.example.project.core.manager.QueueState
-import org.example.project.core.manager.RepeatMode
+import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.model.PlaybackState
 import org.example.project.core.model.Song
 import org.example.project.core.model.entity.PlaybackStateEntity
@@ -105,7 +105,7 @@ class SavedDataRepository(
         dao.updatePlaybackState(
             currentIndex = state.currentBaseIndex,
             isShuffled = state.isShuffled,
-            repeatMode = state.repeatMode.name,
+            repeatMode = state.playbackMode.name,
             currentManualSongId = state.currentManualSong?.uniqueId
         )
     }
@@ -132,7 +132,7 @@ class SavedDataRepository(
             isShuffled = stateEntity.isShuffled,
             preShuffleBaseQueue = shuffleSnapshot.ifEmpty { null },
             preShuffleBaseIndex = if (stateEntity.isShuffled) stateEntity.currentIndex else null,
-            repeatMode = RepeatMode.valueOf(stateEntity.repeatMode ?: "OFF")
+            playbackMode = PlaybackMode.valueOf(stateEntity.repeatMode ?: "OFF")
         )
 
         Log.d("logging", "queuestate = $queueState")

@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
-import org.example.project.core.manager.RepeatMode
+import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.model.Song
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
@@ -64,9 +64,9 @@ class MusicPlayerViewModelRefactored constructor(
         .map { it.isShuffled }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    val repeatMode: StateFlow<RepeatMode> = queueManager.queueState
-        .map { it.repeatMode }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, RepeatMode.OFF)
+    val playbackMode: StateFlow<PlaybackMode> = queueManager.queueState
+        .map { it.playbackMode }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackMode.OFF)
 
     private var lastCurrentId: String? = null
 
@@ -149,7 +149,7 @@ class MusicPlayerViewModelRefactored constructor(
         }
     }
 
-    fun toggleRepeatMode() = queueManager.toggleRepeatMode()
+    fun togglePlaybackMode() = queueManager.togglePlaybackMode()
 
     // ── UI State ──────────────────────────────────────
     fun setFullScreen(fullScreen: Boolean) {

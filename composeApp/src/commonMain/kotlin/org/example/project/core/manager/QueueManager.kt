@@ -13,8 +13,8 @@ import java.util.UUID
 /**
  * Repeat mode for queue playback.
  */
-enum class RepeatMode {
-    OFF, ALL, ONE
+enum class PlaybackMode {
+    OFF, REPEAT, Infinite
 }
 
 /**
@@ -28,7 +28,7 @@ data class QueueState(
     val isShuffled: Boolean = false,
     val preShuffleBaseQueue: List<Song>? = null,     // snapshot before shuffle
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
-    val repeatMode: RepeatMode = RepeatMode.OFF,
+    val playbackMode: PlaybackMode = PlaybackMode.OFF,
     val autoPlay: Boolean = false
 ) {
     // Computed properties for UI consumption (formerly in ResolvedQueue)
@@ -102,11 +102,8 @@ class QueueManager {
                     )
                 } else {
                     // No more manual songs — advance base queue
-                    val newIndex = when (state.repeatMode) {
-                        RepeatMode.ONE -> state.currentBaseIndex
-                        RepeatMode.ALL -> (state.currentBaseIndex + 1) % state.baseQueue.size
-                        RepeatMode.OFF -> (state.currentBaseIndex + 1).coerceAtMost(state.baseQueue.lastIndex)
-                    }
+                    val newIndex = (state.currentBaseIndex + 1).coerceAtMost(state.baseQueue.lastIndex)
+
                     state.copy(currentBaseIndex = newIndex, currentManualSong = null)
                 }
             } else if (state.manualQueue.isNotEmpty()) {
@@ -118,12 +115,9 @@ class QueueManager {
                 )
             } else {
                 // No manual songs — advance base queue
-                val newIndex = when (state.repeatMode) {
-                    RepeatMode.ONE -> state.currentBaseIndex
-                    RepeatMode.ALL -> (state.currentBaseIndex + 1) % state.baseQueue.size
-                    RepeatMode.OFF -> if (state.currentBaseIndex < state.baseQueue.lastIndex)
+                val newIndex = if (state.currentBaseIndex < state.baseQueue.lastIndex)
                         state.currentBaseIndex + 1 else state.currentBaseIndex
-                }
+
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
         }
@@ -139,10 +133,7 @@ class QueueManager {
                 // If playing a manual song, go back to the base queue current song
                 state.copy(currentManualSong = null)
             } else {
-                val newIndex = when (state.repeatMode) {
-                    RepeatMode.ONE -> state.currentBaseIndex
-                    else -> (state.currentBaseIndex - 1).coerceAtLeast(0)
-                }
+                val newIndex = (state.currentBaseIndex - 1).coerceAtLeast(0)
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
         }
@@ -196,7 +187,6 @@ class QueueManager {
      */
     fun selectHistorySong(index: Int) {
         _queueState.update { state ->
-            val baseQueue = state.baseQueue
             if (index !in 0..state.currentBaseIndex) return@update state
 
             state.copy(currentBaseIndex = index)
@@ -348,14 +338,14 @@ class QueueManager {
     /**
      * Cycles repeat mode: OFF → ALL → ONE → OFF
      */
-    fun toggleRepeatMode() {
+    fun togglePlaybackMode() {
         _queueState.update { state ->
-            val nextMode = when (state.repeatMode) {
-                RepeatMode.OFF -> RepeatMode.ALL
-                RepeatMode.ALL -> RepeatMode.ONE
-                RepeatMode.ONE -> RepeatMode.OFF
+            val nextMode = when (state.playbackMode) {
+                PlaybackMode.OFF -> PlaybackMode.REPEAT
+                PlaybackMode.REPEAT -> PlaybackMode.Infinite
+                PlaybackMode.Infinite -> PlaybackMode.OFF
             }
-            state.copy(repeatMode = nextMode)
+            state.copy(playbackMode = nextMode)
         }
     }
 
@@ -373,8 +363,8 @@ class QueueManager {
         return when {
             state.manualQueue.isNotEmpty() -> true
             state.currentManualSong != null -> true  // can go back to base queue
-            state.repeatMode == RepeatMode.ONE -> true
-            state.repeatMode == RepeatMode.ALL -> state.baseQueue.isNotEmpty()
+            state.playbackMode == PlaybackMode.Infinite -> true
+            state.playbackMode == PlaybackMode.REPEAT -> state.baseQueue.isNotEmpty()
             else -> state.currentBaseIndex < state.baseQueue.lastIndex
         }
     }
@@ -384,8 +374,8 @@ class QueueManager {
      */
     fun hasPrevious(): Boolean {
         val state = _queueState.value
-        return when (state.repeatMode) {
-            RepeatMode.ONE -> true
+        return when (state.playbackMode) {
+            PlaybackMode.Infinite -> true
             else -> state.currentBaseIndex > 0
         }
     }
@@ -400,7 +390,7 @@ class QueueManager {
                 baseQueue = baseQueue,
                 manualQueue = manualQueue,
                 currentBaseIndex = currentBaseIndex
-                // isShuffled, preShuffleBaseQueue, repeatMode all preserved
+                // isShuffled, preShuffleBaseQueue, r
             )
         }
     }

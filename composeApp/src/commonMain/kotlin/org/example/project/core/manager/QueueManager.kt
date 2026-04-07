@@ -1,8 +1,11 @@
 package org.example.project.core.manager
 
 import android.util.Log
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
@@ -33,7 +36,16 @@ data class QueueState(
 ) {
     // Computed properties for UI consumption (formerly in ResolvedQueue)
     val history: List<Song>
-        get() = baseQueue.take(currentBaseIndex)
+        get() {
+            // If playing manual, the interrupted base song counts as "history"
+            // so the manual song sits at index history.size
+            return if (currentManualSong != null) {
+                baseQueue.take(currentBaseIndex + 1)
+            } else {
+                baseQueue.take(currentBaseIndex)
+            }
+        }
+
 
     val current: Song?
         get() = currentManualSong ?: baseQueue.getOrNull(currentBaseIndex)
@@ -44,9 +56,13 @@ data class QueueState(
     val normalUpNext: List<Song>
         get() = baseQueue.drop(currentBaseIndex + 1)
 
-    // Flat playback queue
+    // Flat playback queue (includes history for full MediaController queue)
     val playbackQueue: List<Song>
-        get() = listOfNotNull(current) + manualUpNext + normalUpNext
+        get() = history + listOfNotNull(current) + manualUpNext + normalUpNext
+
+    // Current index in the full playback queue (including history)
+    val playbackCurrentIndex: Int
+        get() = history.size
 }
 
 /**
@@ -61,6 +77,9 @@ class QueueManager {
 
     private val _queueState = MutableStateFlow(QueueState())
     val queueState: StateFlow<QueueState> = _queueState.asStateFlow()
+
+    private val _intent = MutableSharedFlow<QueueIntent>(replay = 1)
+    val intent: SharedFlow<QueueIntent> = _intent.asSharedFlow()
 
     // ── Queue Setup ──────────────────────────────────────────────────────────
 
@@ -81,6 +100,7 @@ class QueueManager {
                 autoPlay = true
             )
         }
+        _intent.tryEmit(QueueIntent.NewQueue)
     }
 
     // ── Playback Navigation ─────────────────────────────────────────────────
@@ -92,35 +112,44 @@ class QueueManager {
      */
     fun playNext() {
         Log.d("QueueManager", "playNext() called")
+
+        var shouldSeekToItem = false
+
         _queueState.update { state ->
             if (state.currentManualSong != null) {
-                // Just finished a manual song — check if more manual songs remain
+                // Case 1: Just finished a manual song
                 if (state.manualQueue.isNotEmpty()) {
-                    val nextManual = state.manualQueue.first()
+                    // Play next manual
                     state.copy(
                         manualQueue = state.manualQueue.drop(1),
-                        currentManualSong = nextManual
+                        currentManualSong = state.manualQueue.first()
                     )
                 } else {
-                    // No more manual songs — advance base queue
+                    // Advance base
                     val newIndex = (state.currentBaseIndex + 1).coerceAtMost(state.baseQueue.lastIndex)
-
                     state.copy(currentBaseIndex = newIndex, currentManualSong = null)
                 }
             } else if (state.manualQueue.isNotEmpty()) {
-                // Currently on a base queue song, manual songs are next
-                val nextManual = state.manualQueue.first()
+                // Case 2: Base -> Manual
+                shouldSeekToItem = true
                 state.copy(
                     manualQueue = state.manualQueue.drop(1),
-                    currentManualSong = nextManual
+                    currentManualSong = state.manualQueue.first()
                 )
             } else {
-                // No manual songs — advance base queue
+                // Case 3: Base -> Base
+                shouldSeekToItem = true
                 val newIndex = if (state.currentBaseIndex < state.baseQueue.lastIndex)
-                        state.currentBaseIndex + 1 else state.currentBaseIndex
-
+                    state.currentBaseIndex + 1 else state.currentBaseIndex
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
+        }
+
+        // Emit AFTER update is complete
+        if (shouldSeekToItem) {
+            _intent.tryEmit(QueueIntent.SeekToItem(_queueState.value.playbackCurrentIndex))
+        } else {
+            _intent.tryEmit(QueueIntent.SeekToPreviousManual(_queueState.value.playbackCurrentIndex + 1, -1))
         }
     }
 
@@ -130,14 +159,21 @@ class QueueManager {
      */
     fun playPrevious() {
         Log.d("QueueManager", "playPrevious() called")
+        var shouldSeekToItem = false
         _queueState.update { state ->
             if (state.currentManualSong != null) {
                 // If playing a manual song, go back to the base queue current song
                 state.copy(currentManualSong = null)
             } else {
                 val newIndex = (state.currentBaseIndex - 1).coerceAtLeast(0)
+                shouldSeekToItem = true
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
+        }
+        if (shouldSeekToItem) {
+            _intent.tryEmit(QueueIntent.SeekToItem(_queueState.value.playbackCurrentIndex))
+        } else {
+            _intent.tryEmit(QueueIntent.SeekToPreviousManual(_queueState.value.playbackCurrentIndex))
         }
     }
 
@@ -152,6 +188,7 @@ class QueueManager {
         _queueState.update { state ->
             state.copy(manualQueue = state.manualQueue + queueSong)
         }
+        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -167,6 +204,7 @@ class QueueManager {
                 currentManualSong = selectedSong
             )
         }
+        _intent.tryEmit(QueueIntent.SeekToItem(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -179,8 +217,9 @@ class QueueManager {
             val baseQueue = state.baseQueue
             if (index !in baseQueue.indices) return@update state
 
-            state.copy(currentBaseIndex = index)
+            state.copy(currentBaseIndex = index, currentManualSong = null)
         }
+        _intent.tryEmit(QueueIntent.SeekToItem(index))
     }
 
     /**
@@ -191,8 +230,9 @@ class QueueManager {
         _queueState.update { state ->
             if (index !in 0..state.currentBaseIndex) return@update state
 
-            state.copy(currentBaseIndex = index)
+            state.copy(currentBaseIndex = index, currentManualSong = null)
         }
+        _intent.tryEmit(QueueIntent.SeekToItem(index))
     }
 
     /**
@@ -224,7 +264,7 @@ class QueueManager {
 
             // If we removed a song before the current index in the original list,
             // we need to adjust currentBaseIndex
-            val newCurrentIndex = if (index < currentIndex) currentIndex - 1 else currentIndex
+            val newCurrentIndex = currentIndex
 
             state.copy(
                 baseQueue = baseQueue,
@@ -289,6 +329,7 @@ class QueueManager {
                 manualQueue = manualQueue
             )
         }
+        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     // ── Shuffle & Repeat ────────────────────────────────────────────────────
@@ -312,6 +353,7 @@ class QueueManager {
                 preShuffleBaseIndex = state.currentBaseIndex
             )
         }
+        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -335,6 +377,7 @@ class QueueManager {
                 preShuffleBaseIndex = null
             )
         }
+        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -404,6 +447,7 @@ class QueueManager {
     fun restoreState(state: QueueState) {
         Log.d("logging", "queuestate restored $state")
         _queueState.value = state
+        _intent.tryEmit(QueueIntent.NewQueue)
     }
 
 }

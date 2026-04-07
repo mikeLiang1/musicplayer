@@ -164,6 +164,10 @@ class MusicPlayerManagerImpl(
         stopPositionUpdates()
     }
 
+    override fun seekToDefaultPosition(index: Int) {
+        controller?.seekToDefaultPosition(index)
+    }
+
     private fun startPositionUpdates() {
         positionUpdateJob = coroutineScope.launch {
             while (true) {

@@ -33,6 +33,8 @@ interface MusicPlayerManager {
 
     fun seekTo(positionMs: Long)
 
+    fun seekToDefaultPosition(index: Int)
+
     fun release()
 
     fun onAppEnteredForeground()

@@ -19,8 +19,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
-import org.example.project.core.manager.QueueManager
 import org.example.project.core.manager.PlaybackMode
+import org.example.project.core.manager.QueueIntent
+import org.example.project.core.manager.QueueManager
 import org.example.project.core.model.Song
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
@@ -68,7 +69,6 @@ class MusicPlayerViewModelRefactored constructor(
         .map { it.playbackMode }
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackMode.OFF)
 
-    private var lastCurrentId: String? = null
 
     init {
         Log.d("logging", "viewmodel int")
@@ -78,24 +78,34 @@ class MusicPlayerViewModelRefactored constructor(
 
             // 2. Set up observers AFTER restoration completes
             // Sync queue changes to music player (for future changes)
-            queueManager.queueState
-                .onEach { state ->
-                    val playbackQueue = state.playbackQueue
-                    if (playbackQueue.isEmpty()) return@onEach
+            queueManager.intent
+                .onEach { intent ->
+                    // Access the current snapshot of the state directly
+                    val state = queueManager.queueState.value
+                    val queue = state.playbackQueue
 
-                    val currentSong = state.current
-                    val currentId = currentSong?.uniqueId
-                    val startIndex = playbackQueue.indexOfFirst { it.uniqueId == currentSong?.uniqueId }.coerceAtLeast(0)
+                    if (queue.isEmpty()) return@onEach
 
-                    if (currentId != lastCurrentId) {
-                        // Song changed — full rebuild with new start position
-                        lastCurrentId = currentId
-                        musicPlayerManager.setPlaylist(playbackQueue, startIndex = 0, positionMs = 0L, autoPlay = state.autoPlay)
-                        queueManager.setAutoPlay(false)
-                    } else {
-                        // Same song, queue order changed — surgical update
-                        musicPlayerManager.replaceFullQueueKeepingCurrentSong(playbackQueue, newIndex = startIndex)
+                    when (intent) {
+                        is QueueIntent.ReplaceQueue ->
+                            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queue, intent.newIndex)
+
+                        is QueueIntent.SeekToItem -> {
+                            musicPlayerManager.seekToDefaultPosition(intent.newIndex)
+                        }
+
+                        is QueueIntent.SeekToPreviousManual -> {
+                            musicPlayerManager.seekToDefaultPosition(intent.newIndex)
+                            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queue, intent.newIndex + intent.offset)
+                        }
+
+                        is QueueIntent.NewQueue ->
+                            musicPlayerManager.setPlaylist(queue, state.currentBaseIndex, 0L, state.autoPlay)
                     }
+
+                    // Optional: If intent is a MutableStateFlow, reset it here to avoid re-processing
+                    // on configuration changes if you aren't using a SharedFlow.
+                    // queueManager.resetIntent()
                 }
                 .launchIn(viewModelScope)
 
@@ -112,12 +122,12 @@ class MusicPlayerViewModelRefactored constructor(
         val savedState = savedDataRepository.getQueueState()
         savedState?.let { state ->
             val positionMs = savedDataRepository.getPosition() ?: 0L
-            val playbackQueue = state.playbackQueue
+            val playbackQueue = state.baseQueue
             if (playbackQueue.isNotEmpty()) {
 
                 musicPlayerManager.setPlaylist(
                     playbackQueue,
-                    startIndex = 0,
+                    startIndex = state.currentBaseIndex,
                     positionMs = positionMs,
                     autoPlay = false
                 )
@@ -126,7 +136,6 @@ class MusicPlayerViewModelRefactored constructor(
 
             queueManager.restoreState(state)
             Log.d("logging", "Restored queue state: $state")
-            lastCurrentId = state.current?.uniqueId
         } ?: Log.d("logging", "No saved queue state found")
     }
 
@@ -170,6 +179,9 @@ class MusicPlayerViewModelRefactored constructor(
 
     fun changePlayingToSong(song: Song) {
         val state = queueManager.queueState.value
+
+        // If song is already current, do nothing
+        if (song.uniqueId == state.current?.uniqueId) return
 
         _uiState.update { it.copy(showHistory = false) }
 

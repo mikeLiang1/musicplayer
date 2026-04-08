@@ -102,7 +102,7 @@ class MusicPlayerViewModelRefactored constructor(
                         is QueueIntent.NewQueue ->
                             musicPlayerManager.setPlaylist(
                                 queue,
-                                state.currentBaseIndex,
+                                state.playbackCurrentIndex,
                                 intent.positionMs,
                                 state.autoPlay
                             )

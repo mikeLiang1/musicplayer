@@ -89,7 +89,7 @@ class MediaService : MediaLibraryService() {
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                    queueManager.playNext()
+                    queueManager.playNext(fromAutoAdvanced = true)
                 }
             }
         })

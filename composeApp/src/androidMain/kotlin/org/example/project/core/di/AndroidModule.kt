@@ -20,7 +20,7 @@ val androidModule = module {
 
     // Updated MusicPlayerManagerImpl with SavedDataRepository for position restoration
     single<MusicPlayerManager> {
-        MusicPlayerManagerImpl(get(), get())
+        MusicPlayerManagerImpl(get())
     }
 
     single<DataStore<Preferences>> {

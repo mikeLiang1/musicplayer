@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.model.PlayerState
 import org.example.project.core.model.Song
-import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.service.MediaService
 
 /**
@@ -27,8 +26,7 @@ import org.example.project.core.service.MediaService
  * Only handles playback - queue logic is managed by QueueManager.
  */
 class MusicPlayerManagerImpl(
-    private val context: Context,
-    private val savedDataRepository: SavedDataRepository
+    private val context: Context
 ) : MusicPlayerManager {
 
     private var controller: MediaController? = null

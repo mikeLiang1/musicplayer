@@ -100,7 +100,7 @@ class QueueManager {
                 autoPlay = true
             )
         }
-        _intent.tryEmit(QueueIntent.NewQueue)
+        _intent.tryEmit(QueueIntent.NewQueue())
     }
 
     // ── Playback Navigation ─────────────────────────────────────────────────
@@ -110,14 +110,14 @@ class QueueManager {
      * If manual queue is not empty: plays manualQueue[0], removes it, currentBaseIndex stays.
      * If empty: currentBaseIndex++. Handles repeat at end.
      */
-    fun playNext() {
+    fun playNext(fromAutoAdvanced: Boolean = false) {
         Log.d("QueueManager", "playNext() called")
 
-        var shouldSeekToItem = false
+        var hasStructureChanged = false
 
         _queueState.update { state ->
             if (state.currentManualSong != null) {
-                // Case 1: Just finished a manual song
+                hasStructureChanged = true
                 if (state.manualQueue.isNotEmpty()) {
                     // Play next manual
                     state.copy(
@@ -130,26 +130,25 @@ class QueueManager {
                     state.copy(currentBaseIndex = newIndex, currentManualSong = null)
                 }
             } else if (state.manualQueue.isNotEmpty()) {
-                // Case 2: Base -> Manual
-                shouldSeekToItem = true
                 state.copy(
                     manualQueue = state.manualQueue.drop(1),
                     currentManualSong = state.manualQueue.first()
                 )
             } else {
-                // Case 3: Base -> Base
-                shouldSeekToItem = true
                 val newIndex = if (state.currentBaseIndex < state.baseQueue.lastIndex)
                     state.currentBaseIndex + 1 else state.currentBaseIndex
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
         }
 
+        if (fromAutoAdvanced) return
+
+        val pci = _queueState.value.playbackCurrentIndex
         // Emit AFTER update is complete
-        if (shouldSeekToItem) {
-            _intent.tryEmit(QueueIntent.SeekToItem(_queueState.value.playbackCurrentIndex))
+        if (hasStructureChanged) {
+            _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = pci + 1, pci))
         } else {
-            _intent.tryEmit(QueueIntent.SeekToPreviousManual(_queueState.value.playbackCurrentIndex + 1, -1))
+            _intent.tryEmit(QueueIntent.SeekToItem(pci))
         }
     }
 
@@ -159,21 +158,22 @@ class QueueManager {
      */
     fun playPrevious() {
         Log.d("QueueManager", "playPrevious() called")
-        var shouldSeekToItem = false
+        var hasStructureChanged = false
         _queueState.update { state ->
             if (state.currentManualSong != null) {
                 // If playing a manual song, go back to the base queue current song
+                hasStructureChanged = true
                 state.copy(currentManualSong = null)
             } else {
                 val newIndex = (state.currentBaseIndex - 1).coerceAtLeast(0)
-                shouldSeekToItem = true
                 state.copy(currentBaseIndex = newIndex, currentManualSong = null)
             }
         }
-        if (shouldSeekToItem) {
-            _intent.tryEmit(QueueIntent.SeekToItem(_queueState.value.playbackCurrentIndex))
+        val pci = _queueState.value.playbackCurrentIndex
+        if (hasStructureChanged) {
+            _intent.tryEmit(QueueIntent.SeekAndRebuild(pci, pci))
         } else {
-            _intent.tryEmit(QueueIntent.SeekToPreviousManual(_queueState.value.playbackCurrentIndex))
+            _intent.tryEmit(QueueIntent.SeekToItem(pci))
         }
     }
 
@@ -444,10 +444,10 @@ class QueueManager {
      * Restores queue state from persistence.
      * Should be called during app initialization.
      */
-    fun restoreState(state: QueueState) {
+    fun restoreState(state: QueueState, positionMs: Long) {
         Log.d("logging", "queuestate restored $state")
         _queueState.value = state
-        _intent.tryEmit(QueueIntent.NewQueue)
+        _intent.tryEmit(QueueIntent.NewQueue(positionMs))
     }
 
 }

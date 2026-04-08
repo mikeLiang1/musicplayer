@@ -3,6 +3,6 @@ package org.example.project.core.manager
 sealed class QueueIntent {
     data class ReplaceQueue(val newIndex: Int) : QueueIntent()
     data class SeekToItem(val newIndex: Int) : QueueIntent()
-    data class SeekToPreviousManual(val newIndex: Int, val offset: Int = 0) : QueueIntent()
-    object NewQueue : QueueIntent()
+    data class SeekAndRebuild(val mediaIndex: Int, val queueIndex: Int) : QueueIntent()
+    data class NewQueue(val positionMs: Long = 0) : QueueIntent()
 }

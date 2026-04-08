@@ -94,13 +94,18 @@ class MusicPlayerViewModelRefactored constructor(
                             musicPlayerManager.seekToDefaultPosition(intent.newIndex)
                         }
 
-                        is QueueIntent.SeekToPreviousManual -> {
-                            musicPlayerManager.seekToDefaultPosition(intent.newIndex)
-                            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queue, intent.newIndex + intent.offset)
+                        is QueueIntent.SeekAndRebuild -> {
+                            musicPlayerManager.seekToDefaultPosition(intent.mediaIndex)
+                            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queue, intent.queueIndex)
                         }
 
                         is QueueIntent.NewQueue ->
-                            musicPlayerManager.setPlaylist(queue, state.currentBaseIndex, 0L, state.autoPlay)
+                            musicPlayerManager.setPlaylist(
+                                queue,
+                                state.currentBaseIndex,
+                                intent.positionMs,
+                                state.autoPlay
+                            )
                     }
 
                     // Optional: If intent is a MutableStateFlow, reset it here to avoid re-processing
@@ -122,19 +127,8 @@ class MusicPlayerViewModelRefactored constructor(
         val savedState = savedDataRepository.getQueueState()
         savedState?.let { state ->
             val positionMs = savedDataRepository.getPosition() ?: 0L
-            val playbackQueue = state.baseQueue
-            if (playbackQueue.isNotEmpty()) {
 
-                musicPlayerManager.setPlaylist(
-                    playbackQueue,
-                    startIndex = state.currentBaseIndex,
-                    positionMs = positionMs,
-                    autoPlay = false
-                )
-                Log.d("logging", "Restored playback position: $positionMs ms")
-            }
-
-            queueManager.restoreState(state)
+            queueManager.restoreState(state, positionMs)
             Log.d("logging", "Restored queue state: $state")
         } ?: Log.d("logging", "No saved queue state found")
     }

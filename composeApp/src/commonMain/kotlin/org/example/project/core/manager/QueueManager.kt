@@ -146,7 +146,7 @@ class QueueManager {
         val pci = _queueState.value.playbackCurrentIndex
         // Emit AFTER update is complete
         if (hasStructureChanged) {
-            _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = pci + 1, pci))
+            _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = pci + 1, queueIndex = pci))
         } else {
             _intent.tryEmit(QueueIntent.SeekToItem(pci))
         }
@@ -157,24 +157,10 @@ class QueueManager {
      * currentBaseIndex-- (manual queue stays pinned after new current)
      */
     fun playPrevious() {
-        Log.d("QueueManager", "playPrevious() called")
-        var hasStructureChanged = false
-        _queueState.update { state ->
-            if (state.currentManualSong != null) {
-                // If playing a manual song, go back to the base queue current song
-                hasStructureChanged = true
-                state.copy(currentManualSong = null)
-            } else {
-                val newIndex = (state.currentBaseIndex - 1).coerceAtLeast(0)
-                state.copy(currentBaseIndex = newIndex, currentManualSong = null)
-            }
-        }
-        val pci = _queueState.value.playbackCurrentIndex
-        if (hasStructureChanged) {
-            _intent.tryEmit(QueueIntent.SeekAndRebuild(pci, pci))
-        } else {
-            _intent.tryEmit(QueueIntent.SeekToItem(pci))
-        }
+        val hadManualSong = _queueState.value.currentManualSong != null
+        val offset = if (hadManualSong) 0 else 1
+        val newIndex = (_queueState.value.currentBaseIndex - offset).coerceAtLeast(0)
+        selectHistorySong(newIndex)
     }
 
     // ── Queue Manipulation ──────────────────────────────────────────────────
@@ -196,6 +182,7 @@ class QueueManager {
      * Removes manualQueue[0 until index], plays manualQueue[index], removes it.
      */
     fun selectManualSong(index: Int) {
+        val hadManualSong = _queueState.value.currentManualSong != null
         _queueState.update { state ->
             if (index !in state.manualQueue.indices) return@update state
             val selectedSong = state.manualQueue[index]
@@ -204,7 +191,9 @@ class QueueManager {
                 currentManualSong = selectedSong
             )
         }
-        _intent.tryEmit(QueueIntent.SeekToItem(_queueState.value.playbackCurrentIndex))
+        val pci = _queueState.value.playbackCurrentIndex
+        val removedBefore = index + if (hadManualSong) 1 else 0
+        _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = pci + removedBefore, pci))
     }
 
     /**
@@ -213,13 +202,20 @@ class QueueManager {
      * Manual queue stays pinned after new current.
      */
     fun selectNormalSong(index: Int) {
+        val hadManualSong = _queueState.value.currentManualSong != null
+        val manualQueueSize = _queueState.value.manualQueue.size
         _queueState.update { state ->
             val baseQueue = state.baseQueue
             if (index !in baseQueue.indices) return@update state
 
             state.copy(currentBaseIndex = index, currentManualSong = null)
         }
-        _intent.tryEmit(QueueIntent.SeekToItem(index))
+        val offset = (if (hadManualSong) 1 else 0) + manualQueueSize
+        if (offset > 0) {
+            _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = index + offset, index))
+        } else {
+            _intent.tryEmit(QueueIntent.SeekToItem(index))
+        }
     }
 
     /**
@@ -227,12 +223,19 @@ class QueueManager {
      * Sets currentBaseIndex back to index.
      */
     fun selectHistorySong(index: Int) {
+        val hadManualSong = _queueState.value.currentManualSong != null
+        val hasManualQueue = _queueState.value.manualQueue.isNotEmpty()
         _queueState.update { state ->
             if (index !in 0..state.currentBaseIndex) return@update state
-
             state.copy(currentBaseIndex = index, currentManualSong = null)
         }
-        _intent.tryEmit(QueueIntent.SeekToItem(index))
+
+        val pci = _queueState.value.playbackCurrentIndex
+        if (hadManualSong || hasManualQueue) {
+            _intent.tryEmit(QueueIntent.SeekAndRebuild(pci, pci))
+        } else {
+            _intent.tryEmit(QueueIntent.SeekToItem(pci))
+        }
     }
 
     /**
@@ -362,7 +365,6 @@ class QueueManager {
     fun unshuffle() {
         _queueState.update { state ->
             val preShuffleBaseQueue = state.preShuffleBaseQueue ?: return@update state
-            val preShuffleBaseIndex = state.preShuffleBaseIndex ?: return@update state
 
             // Find current song in pre-shuffle queue
             val currentSong = state.baseQueue.getOrNull(state.currentBaseIndex) ?: return@update state
@@ -393,11 +395,6 @@ class QueueManager {
             state.copy(playbackMode = nextMode)
         }
     }
-
-    fun setAutoPlay(autoPlay: Boolean) {
-        _queueState.update { it.copy(autoPlay = autoPlay) }
-    }
-
     // ── Query Methods ───────────────────────────────────────────────────────
 
     /**

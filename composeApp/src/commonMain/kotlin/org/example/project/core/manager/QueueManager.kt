@@ -1,12 +1,15 @@
 package org.example.project.core.manager
 
 import android.util.Log
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
 import java.util.UUID
@@ -78,8 +81,8 @@ class QueueManager {
     private val _queueState = MutableStateFlow(QueueState())
     val queueState: StateFlow<QueueState> = _queueState.asStateFlow()
 
-    private val _intent = MutableSharedFlow<QueueIntent>(replay = 1)
-    val intent: SharedFlow<QueueIntent> = _intent.asSharedFlow()
+    private val _intent = Channel<QueueIntent>(Channel.UNLIMITED)
+    val intent: Flow<QueueIntent> = _intent.receiveAsFlow()
 
     // ── Queue Setup ──────────────────────────────────────────────────────────
 
@@ -100,7 +103,7 @@ class QueueManager {
                 autoPlay = true
             )
         }
-        _intent.tryEmit(QueueIntent.NewQueue())
+        _intent.trySend(QueueIntent.NewQueue())
     }
 
     // ── Playback Navigation ─────────────────────────────────────────────────
@@ -146,9 +149,9 @@ class QueueManager {
         val pci = _queueState.value.playbackCurrentIndex
         // Emit AFTER update is complete
         if (hasStructureChanged) {
-            _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = pci + 1, queueIndex = pci))
+            _intent.trySend(QueueIntent.SeekAndRebuild(mediaIndex = pci + 1, queueIndex = pci))
         } else {
-            _intent.tryEmit(QueueIntent.SeekToItem(pci))
+            _intent.trySend(QueueIntent.SeekToItem(pci))
         }
     }
 
@@ -174,7 +177,7 @@ class QueueManager {
         _queueState.update { state ->
             state.copy(manualQueue = state.manualQueue + queueSong)
         }
-        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
+        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -193,7 +196,7 @@ class QueueManager {
         }
         val pci = _queueState.value.playbackCurrentIndex
         val removedBefore = index + if (hadManualSong) 1 else 0
-        _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = pci + removedBefore, pci))
+        _intent.trySend(QueueIntent.SeekAndRebuild(mediaIndex = pci + removedBefore, pci))
     }
 
     /**
@@ -212,9 +215,9 @@ class QueueManager {
         }
         val offset = (if (hadManualSong) 1 else 0) + manualQueueSize
         if (offset > 0) {
-            _intent.tryEmit(QueueIntent.SeekAndRebuild(mediaIndex = index + offset, index))
+            _intent.trySend(QueueIntent.SeekAndRebuild(mediaIndex = index + offset, index))
         } else {
-            _intent.tryEmit(QueueIntent.SeekToItem(index))
+            _intent.trySend(QueueIntent.SeekToItem(index))
         }
     }
 
@@ -232,9 +235,9 @@ class QueueManager {
 
         val pci = _queueState.value.playbackCurrentIndex
         if (hadManualSong || hasManualQueue) {
-            _intent.tryEmit(QueueIntent.SeekAndRebuild(pci, pci))
+            _intent.trySend(QueueIntent.SeekAndRebuild(pci, pci))
         } else {
-            _intent.tryEmit(QueueIntent.SeekToItem(pci))
+            _intent.trySend(QueueIntent.SeekToItem(pci))
         }
     }
 
@@ -276,64 +279,64 @@ class QueueManager {
         }
     }
 
-    /**
-     * Moves a song within or between manual and normal queues.
-     * Only songs after current can be moved.
-     * Moving normal→manual inserts into manualQueue.
-     * Moving manual→normal inserts into baseQueue after current.
-     */
-    fun moveSong(fromQueue: String, fromIndex: Int, toQueue: String, toIndex: Int) {
-        _queueState.update { state ->
-            val baseQueue = state.baseQueue.toMutableList()
-            val manualQueue = state.manualQueue.toMutableList()
-            val currentIndex = state.currentBaseIndex
-
-            when {
-                fromQueue == "normal" && toQueue == "normal" -> {
-                    // Move within normal queue (after current)
-                    if (fromIndex <= currentIndex || toIndex <= currentIndex) return@update state
-                    if (fromIndex !in baseQueue.indices || toIndex !in baseQueue.indices) return@update state
-
-                    val song = baseQueue.removeAt(fromIndex)
-                    val adjustedToIndex = if (toIndex > fromIndex) toIndex - 1 else toIndex
-                    baseQueue.add(adjustedToIndex, song)
-                }
-
-                fromQueue == "manual" && toQueue == "manual" -> {
-                    // Move within manual queue
-                    if (fromIndex !in manualQueue.indices || toIndex !in manualQueue.indices) return@update state
-
-                    val song = manualQueue.removeAt(fromIndex)
-                    val adjustedToIndex = if (toIndex > fromIndex) toIndex - 1 else toIndex
-                    manualQueue.add(adjustedToIndex, song)
-                }
-
-                fromQueue == "normal" && toQueue == "manual" -> {
-                    // Move from normal to manual queue
-                    if (fromIndex <= currentIndex) return@update state
-                    if (fromIndex !in baseQueue.indices || toIndex !in manualQueue.indices) return@update state
-
-                    val song = baseQueue.removeAt(fromIndex)
-                    manualQueue.add(toIndex, song)
-                }
-
-                fromQueue == "manual" && toQueue == "normal" -> {
-                    // Move from manual to normal queue (insert after current)
-                    if (fromIndex !in manualQueue.indices) return@update state
-
-                    val song = manualQueue.removeAt(fromIndex)
-                    val insertIndex = currentIndex + 1 + toIndex
-                    baseQueue.add(insertIndex, song)
-                }
-            }
-
-            state.copy(
-                baseQueue = baseQueue,
-                manualQueue = manualQueue
-            )
-        }
-        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
-    }
+//    /**
+//     * Moves a song within or between manual and normal queues.
+//     * Only songs after current can be moved.
+//     * Moving normal→manual inserts into manualQueue.
+//     * Moving manual→normal inserts into baseQueue after current.
+//     */
+//    fun moveSong(fromQueue: String, fromIndex: Int, toQueue: String, toIndex: Int) {
+//        _queueState.update { state ->
+//            val baseQueue = state.baseQueue.toMutableList()
+//            val manualQueue = state.manualQueue.toMutableList()
+//            val currentIndex = state.currentBaseIndex
+//
+//            when {
+//                fromQueue == "normal" && toQueue == "normal" -> {
+//                    // Move within normal queue (after current)
+//                    if (fromIndex <= currentIndex || toIndex <= currentIndex) return@update state
+//                    if (fromIndex !in baseQueue.indices || toIndex !in baseQueue.indices) return@update state
+//
+//                    val song = baseQueue.removeAt(fromIndex)
+//                    val adjustedToIndex = if (toIndex > fromIndex) toIndex - 1 else toIndex
+//                    baseQueue.add(adjustedToIndex, song)
+//                }
+//
+//                fromQueue == "manual" && toQueue == "manual" -> {
+//                    // Move within manual queue
+//                    if (fromIndex !in manualQueue.indices || toIndex !in manualQueue.indices) return@update state
+//
+//                    val song = manualQueue.removeAt(fromIndex)
+//                    val adjustedToIndex = if (toIndex > fromIndex) toIndex - 1 else toIndex
+//                    manualQueue.add(adjustedToIndex, song)
+//                }
+//
+//                fromQueue == "normal" && toQueue == "manual" -> {
+//                    // Move from normal to manual queue
+//                    if (fromIndex <= currentIndex) return@update state
+//                    if (fromIndex !in baseQueue.indices || toIndex !in manualQueue.indices) return@update state
+//
+//                    val song = baseQueue.removeAt(fromIndex)
+//                    manualQueue.add(toIndex, song)
+//                }
+//
+//                fromQueue == "manual" && toQueue == "normal" -> {
+//                    // Move from manual to normal queue (insert after current)
+//                    if (fromIndex !in manualQueue.indices) return@update state
+//
+//                    val song = manualQueue.removeAt(fromIndex)
+//                    val insertIndex = currentIndex + 1 + toIndex
+//                    baseQueue.add(insertIndex, song)
+//                }
+//            }
+//
+//            state.copy(
+//                baseQueue = baseQueue,
+//                manualQueue = manualQueue
+//            )
+//        }
+//        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
+//    }
 
     // ── Shuffle & Repeat ────────────────────────────────────────────────────
 
@@ -356,7 +359,7 @@ class QueueManager {
                 preShuffleBaseIndex = state.currentBaseIndex
             )
         }
-        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
+        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -379,7 +382,7 @@ class QueueManager {
                 preShuffleBaseIndex = null
             )
         }
-        _intent.tryEmit(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
+        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -435,6 +438,7 @@ class QueueManager {
                 // isShuffled, preShuffleBaseQueue, r
             )
         }
+        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
 
     /**
@@ -444,7 +448,7 @@ class QueueManager {
     fun restoreState(state: QueueState, positionMs: Long) {
         Log.d("logging", "queuestate restored $state")
         _queueState.value = state
-        _intent.tryEmit(QueueIntent.NewQueue(positionMs))
+        _intent.trySend(QueueIntent.NewQueue(positionMs))
     }
 
 }

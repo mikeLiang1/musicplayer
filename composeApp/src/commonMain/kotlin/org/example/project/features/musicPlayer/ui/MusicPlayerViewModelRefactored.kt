@@ -3,6 +3,7 @@ package org.example.project.features.musicPlayer.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -27,6 +29,7 @@ import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 
+@OptIn(FlowPreview::class)
 class MusicPlayerViewModelRefactored constructor(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
@@ -80,7 +83,6 @@ class MusicPlayerViewModelRefactored constructor(
             // Sync queue changes to music player (for future changes)
             queueManager.intent
                 .onEach { intent ->
-                    // Access the current snapshot of the state directly
                     val state = queueManager.queueState.value
                     val queue = state.playbackQueue
 
@@ -107,10 +109,6 @@ class MusicPlayerViewModelRefactored constructor(
                                 state.autoPlay
                             )
                     }
-
-                    // Optional: If intent is a MutableStateFlow, reset it here to avoid re-processing
-                    // on configuration changes if you aren't using a SharedFlow.
-                    // queueManager.resetIntent()
                 }
                 .launchIn(viewModelScope)
 
@@ -272,7 +270,6 @@ class MusicPlayerViewModelRefactored constructor(
             manualQueue = editing.manual,
             currentBaseIndex = editing.history.size
         )
-//        _uiState.update { it.copy(editingQueue = null, isEditingQueue = false) }
     }
 
     // ── Queue Management ──────────────────────────────

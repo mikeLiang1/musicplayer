@@ -1,6 +1,5 @@
 package org.example.project.core.helper
 
-import android.os.Bundle
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -10,27 +9,16 @@ fun Song.toMediaItem(): MediaItem {
     val metadata = MediaMetadata.Builder()
         .setTitle(title)
         .setArtist(artist)
-        .setAlbumTitle("YouTube") // Assume YouTube source; could be omitted
         .setDisplayTitle(title)
         .setArtworkUri(thumbnailUrl?.toUri())
         .setDurationMs(duration)
+        .setIsBrowsable(false)
+        .setIsPlayable(true)
         .build()
     return MediaItem.Builder()
         .setMediaId(uniqueId)
         .setUri(url)
         .setMediaMetadata(metadata)
         .build()
-}
-
-fun MediaItem.toSong(): Song {
-
-    return Song(
-        url = localConfiguration?.uri.toString(), // Retrieved from mediaId
-        title = mediaMetadata.title?.toString() ?: "Unknown",
-        artist = mediaMetadata.artist?.toString() ?: "Unknown",
-        thumbnailUrl = mediaMetadata.artworkUri?.toString(),
-        duration = mediaMetadata.durationMs ?: 0L,
-        uniqueId = mediaId
-    )
 }
 

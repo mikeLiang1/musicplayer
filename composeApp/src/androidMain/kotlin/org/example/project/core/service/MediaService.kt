@@ -3,6 +3,8 @@ package org.example.project.core.service
 import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -77,8 +79,15 @@ class MediaService : MediaLibraryService() {
             dataSpec.withUri(streamUrl.toUri())
         }
 
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(C.USAGE_MEDIA)
+            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+            .build()
+
+
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(resolvingDataSourceFactory))
+            .setAudioAttributes(audioAttributes, true)
             .build()
 
 
@@ -120,6 +129,28 @@ class MediaService : MediaLibraryService() {
     @UnstableApi
     private inner class PlayerCallback : MediaLibrarySession.Callback {
 
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session).build()
+        }
+
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            isForPlayback: Boolean
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            val state = queueManager.queueState.value
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(
+                    state.playbackQueue.map { it.toMediaItem() },
+                    state.playbackCurrentIndex,
+                    0L
+                )
+            )
+        }
+
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
@@ -152,8 +183,10 @@ class MediaService : MediaLibraryService() {
                     browseNode("now_playing", "Now Playing", MediaMetadata.MEDIA_TYPE_PLAYLIST),
                     browseNode("queue", "Current Queue", MediaMetadata.MEDIA_TYPE_PLAYLIST)
                 )
+
                 "queue" -> queueManager.queueState.value.playbackQueue
                     .map { it.toMediaItem() }
+
                 else -> emptyList()
             }
             return Futures.immediateFuture(LibraryResult.ofItemList(children, params))

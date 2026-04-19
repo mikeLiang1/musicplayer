@@ -45,12 +45,14 @@ fun SongItem(
     isPreviousSong: Boolean = false,
     isEditable: Boolean = false,
     showRemoveButton: Boolean = false,
+    isManual: Boolean = false,
     onMenuClicked: () -> Unit = {},
     onRemoveClicked: () -> Unit = {},
     onClick: () -> Unit
 ) {
     val backgroundColor = when {
         isCurrentlyPlaying -> appColors.accentContainer.copy(alpha = 0.3f)
+        isManual -> appColors.rose.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
 
@@ -122,36 +124,39 @@ fun SongItem(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "Remove",
+                    contentDescription = "Remove song",
                     tint = appColors.iconSecondary
                 )
             }
-        }
-
-        IconButton(
-            onClick = { onMenuClicked() }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = "SongMenu",
-                tint = appColors.iconSecondary
-            )
+        } else {
+            IconButton(
+                onClick = { onMenuClicked() }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = "Song menu",
+                    tint = appColors.iconSecondary
+                )
+            }
         }
     }
 }
 
 @Preview
 @Composable
-fun SongItemPreview() {
+fun SongItemRefactoredPreview() {
     Surface {
         SongItem(
             song = Song(
                 url = "item.url",
-                title = "title",
-                artist = "Unknown",
+                title = "Currently Playing Song",
+                artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L
-            ), isCurrentlyPlaying = true, onMenuClicked = {}, onClick = {}
+            ),
+            isCurrentlyPlaying = true,
+            onMenuClicked = {},
+            onClick = {}
         )
 
         Spacer(Modifier.height(12.dp))
@@ -159,24 +164,47 @@ fun SongItemPreview() {
         SongItem(
             song = Song(
                 url = "item.url",
-                title = "title",
-                artist = "Unknown",
+                title = "Manual Queue Song",
+                artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L
+                duration = 3000L,
             ),
-            isCurrentlyPlaying = false, onMenuClicked = {},
-            onClick = {})
+            showRemoveButton = true,
+            onMenuClicked = {},
+            onRemoveClicked = {},
+            onClick = {}
+        )
+
+        Spacer(Modifier.height(12.dp))
 
         SongItem(
             song = Song(
                 url = "item.url",
-                title = "title",
-                artist = "Unknown",
+                title = "Normal Queue Song",
+                artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L
             ),
-            isCurrentlyPlaying = false, onMenuClicked = {},
-            onClick = {})
+            isEditable = true,
+            showRemoveButton = true,
+            onMenuClicked = {},
+            onRemoveClicked = {},
+            onClick = {}
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        SongItem(
+            song = Song(
+                url = "item.url",
+                title = "History Song",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+            isPreviousSong = true,
+            onMenuClicked = {},
+            onClick = {}
+        )
     }
 }
-

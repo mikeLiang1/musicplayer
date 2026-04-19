@@ -35,7 +35,7 @@ import org.example.project.ui.theme.appColors
 
 @OptIn(UnstableApi::class)
 @Composable
-fun MusicPlayerBar(viewModel: MusicPlayerViewModelRefactored, modifier: Modifier = Modifier) {
+fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.playerState.collectAsStateWithLifecycle()
     val playerQueue by viewModel.playerQueue.collectAsStateWithLifecycle()
 

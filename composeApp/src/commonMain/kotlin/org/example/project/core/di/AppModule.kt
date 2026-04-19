@@ -8,7 +8,7 @@ import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.home.ui.HomeViewModel
-import org.example.project.features.musicPlayer.ui.MusicPlayerViewModelRefactored
+import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.search.ui.SearchViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -29,7 +29,7 @@ val appModule = module {
 //    viewModel { MusicPlayerViewModel(get(), get()) }
 
     // New MusicPlayerViewModel with QueueManager support
-    viewModel { MusicPlayerViewModelRefactored(get(), get(), get(), get()) }
+    viewModel { MusicPlayerViewModel(get(), get(), get(), get()) }
 
     single<MusicDatabase> {
         getRoomDatabase(get())

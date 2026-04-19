@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -54,7 +53,7 @@ import org.example.project.ui.theme.appColors
 import kotlin.math.roundToInt
 
 @Composable
-fun SongScreen(song: Song?, viewModel: MusicPlayerViewModelRefactored) {
+fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
     song?.let {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -83,7 +82,7 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModelRefactored) {
 
 
 @Composable
-private fun SongDetails(song: Song, viewModel: MusicPlayerViewModelRefactored, modifier: Modifier = Modifier) {
+private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -137,7 +136,7 @@ private fun SongInfoRow(title: String, artist: String) {
 
 @Composable
 private fun MusicPlayerProgressSlider(
-    viewModel: MusicPlayerViewModelRefactored,
+    viewModel: MusicPlayerViewModel,
     duration: Long,
     modifier: Modifier = Modifier
 ) {

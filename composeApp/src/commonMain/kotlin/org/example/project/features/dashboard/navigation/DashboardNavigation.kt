@@ -28,8 +28,8 @@ import com.example.budget.navigation.toEntries
 import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
-import org.example.project.features.musicPlayer.ui.MusicPlayerScreenRefactored
-import org.example.project.features.musicPlayer.ui.MusicPlayerViewModelRefactored
+import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
+import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
@@ -48,7 +48,7 @@ fun DashboardNavigation() {
 
     val isBottomBarVisible = navigationState.topLevelRoute in dashboardTopLevelDestinations.keys
 
-    val musicPlayerViewModel = koinViewModel<MusicPlayerViewModelRefactored>()
+    val musicPlayerViewModel = koinViewModel<MusicPlayerViewModel>()
     val isFullScreenVisible by remember {
         musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
     }.collectAsStateWithLifecycle(initialValue = false)
@@ -112,7 +112,7 @@ fun DashboardNavigation() {
                 modifier = Modifier.fillMaxSize(),
                 color = appColors.backgroundSecondary,
             ) {
-                MusicPlayerScreenRefactored(
+                MusicPlayerScreen(
                     viewModel = musicPlayerViewModel,
                     navigateBack = { musicPlayerViewModel.setFullScreen(false) }
                 )

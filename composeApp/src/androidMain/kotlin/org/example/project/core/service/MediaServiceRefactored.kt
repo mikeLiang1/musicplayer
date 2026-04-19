@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
@@ -11,13 +12,20 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.*
+import org.example.project.core.helper.toMediaItem
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.SavedDataRepository
 import org.example.project.core.repository.YouTubeRepository
@@ -113,9 +121,47 @@ class MediaService : MediaLibraryService() {
 
     @UnstableApi
     private inner class PlayerCallback : MediaLibrarySession.Callback {
-        // Callback implementation can be added here for Android Auto support
-        // For now, we're using the default implementation
+
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val root = MediaItem.Builder()
+                .setMediaId("root")
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setIsPlayable(true)
+                        .setTitle("Music Player")
+                        .setIsBrowsable(true)
+                        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                        .build()
+                )
+                .build()
+            return Futures.immediateFuture(LibraryResult.ofItem(root, params))
+        }
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val children = when (parentId) {
+                "root" -> listOf(
+                    browseNode("now_playing", "Now Playing", MediaMetadata.MEDIA_TYPE_PLAYLIST),
+                    browseNode("queue", "Current Queue", MediaMetadata.MEDIA_TYPE_PLAYLIST)
+                )
+                "queue" -> queueManager.queueState.value.playbackQueue
+                    .map { it.toMediaItem() }
+                else -> emptyList()
+            }
+            return Futures.immediateFuture(LibraryResult.ofItemList(children, params))
+        }
     }
+
 
     override fun onDestroy() {
         saveData()
@@ -127,6 +173,17 @@ class MediaService : MediaLibraryService() {
         }
         super.onDestroy()
     }
+
+    private fun browseNode(id: String, title: String, mediaType: Int) = MediaItem.Builder()
+        .setMediaId(id)
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setTitle(title)
+                .setMediaType(mediaType)
+                .setIsBrowsable(true)
+                .setIsPlayable(false)
+                .build()
+        ).build()
 
     private fun saveData() {
         val currentPos = mediaSession?.player?.currentPosition

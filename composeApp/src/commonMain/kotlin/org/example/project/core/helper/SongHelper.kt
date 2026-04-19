@@ -10,6 +10,8 @@ fun Song.toMediaItem(): MediaItem {
     val metadata = MediaMetadata.Builder()
         .setTitle(title)
         .setArtist(artist)
+        .setAlbumTitle("YouTube") // Assume YouTube source; could be omitted
+        .setDisplayTitle(title)
         .setArtworkUri(thumbnailUrl?.toUri())
         .setDurationMs(duration)
         .build()

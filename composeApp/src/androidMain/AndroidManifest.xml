@@ -14,21 +14,25 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
-            android:exported="true"
-            android:name=".MainActivity">
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <service
             android:name=".core.service.MediaService"
-            android:foregroundServiceType="mediaPlayback"
-            android:exported="true">
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
             <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService"/>
+                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="androidx.media3.session.MediaLibraryService" />
             </intent-filter>
         </service>
 

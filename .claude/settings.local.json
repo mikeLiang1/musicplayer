@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }

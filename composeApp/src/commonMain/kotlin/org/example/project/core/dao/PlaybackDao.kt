@@ -16,29 +16,6 @@ interface PlaybackDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQueue(songs: List<QueueEntity>)
 
-    @Transaction
-    suspend fun saveFullQueue(songs: List<QueueEntity>) {
-        clearQueue()
-        insertQueue(songs)
-    }
-
-    @Transaction
-    suspend fun saveFullOriginalQueue(songs: List<QueueEntity>) {
-        clearOriginalQueue()
-        insertQueue(songs)
-    }
-
-    @Query("SELECT * FROM QueueEntity WHERE type = 'current' ORDER BY orderIndex ASC")
-    suspend fun getQueueOnce(): List<QueueEntity>
-
-    @Query("SELECT * FROM QueueEntity WHERE type = 'original' ORDER BY orderIndex ASC")
-    suspend fun getOriginalQueueOnce(): List<QueueEntity>
-
-    @Query("DELETE FROM QueueEntity WHERE type = 'current'")
-    suspend fun clearQueue()
-
-    @Query("DELETE FROM QueueEntity WHERE type = 'original'")
-    suspend fun clearOriginalQueue()
 
 
     @Query("SELECT * FROM PlaybackStateEntity WHERE id = 0")
@@ -51,14 +28,6 @@ interface PlaybackDao {
     @Query("UPDATE PlaybackStateEntity SET positionMs = :position WHERE id = 0")
     suspend fun updatePosition(position: Long)
 
-    @Query("UPDATE PlaybackStateEntity SET currentSongId = :songId, currentIndex = :index, positionMs = 0 WHERE id = 0")
-    suspend fun updateCurrentSong(songId: String, index: Int)
-
-    @Query("UPDATE PlaybackStateEntity SET currentIndex = :index WHERE id = 0")
-    suspend fun updateIndex(index: Int)
-
-    @Query("UPDATE PlaybackStateEntity SET isShuffled = :isShuffled WHERE id = 0")
-    suspend fun updateIsShuffled(isShuffled: Boolean)
 
     // --- New methods for QueueState persistence ---
 

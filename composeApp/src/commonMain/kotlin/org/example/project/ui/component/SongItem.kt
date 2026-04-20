@@ -1,4 +1,4 @@
-package org.example.project.features.musicPlayer.ui
+package org.example.project.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,7 +33,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
-import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -144,7 +143,7 @@ fun SongItem(
 
 @Preview
 @Composable
-private fun SongItemRefactoredPreview() {
+private fun SongItemPreview() {
     Surface {
         Column {
             SongItem(

@@ -42,7 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
-import org.example.project.features.musicPlayer.ui.SongItem
+import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.appColors
 
 @Composable

@@ -17,7 +17,7 @@ sealed interface Route : NavKey {
         }
 
         @Serializable
-        data object Profile : Route
+        data object LibraryRoutes : Route
 
     }
 }
@@ -26,12 +26,16 @@ val appTopLevelRoutes = setOf(Route.DashboardRoutes)
 
 val dashboardAllRoutes = setOf(
     Route.DashboardRoutes.Home,
-    Route.DashboardRoutes.Profile,
+    Route.DashboardRoutes.LibraryRoutes,
     Route.DashboardRoutes.SearchRoutes,
 )
 
 val searchAllRoutes = setOf(
     Route.DashboardRoutes.SearchRoutes.Suggestions
+)
+
+val libraryAllRoutes = setOf(
+    Route.DashboardRoutes.LibraryRoutes
 )
 
 

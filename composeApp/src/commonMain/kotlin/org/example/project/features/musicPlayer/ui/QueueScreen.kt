@@ -36,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +55,7 @@ import org.example.project.core.helper.formatTime
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
+import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.appColors
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState

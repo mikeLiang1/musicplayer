@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,6 +26,7 @@ import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
 import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeScreen
+import org.example.project.features.library.navigation.LibraryNavigation
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
@@ -76,8 +76,8 @@ fun DashboardNavigation() {
 
                 val entryProvider = entryProvider<NavKey> {
                     entry<Route.DashboardRoutes.Home> { HomeScreen() }
-                    entry<Route.DashboardRoutes.Profile> { Text("Profile") }
                     entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
+                    entry<Route.DashboardRoutes.LibraryRoutes> { LibraryNavigation() }
                 }
 
                 NavDisplay(

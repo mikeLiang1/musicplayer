@@ -17,6 +17,5 @@ fun getRoomDatabase(builder: RoomDatabase.Builder<MusicDatabase>): MusicDatabase
     return builder
         .setDriver(BundledSQLiteDriver()) // Use the bundled driver for KMP
         .setQueryCoroutineContext(Dispatchers.IO)
-        .fallbackToDestructiveMigration()
         .build()
 }

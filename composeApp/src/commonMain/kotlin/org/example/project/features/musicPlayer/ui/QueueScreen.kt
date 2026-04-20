@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,7 +52,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
 import org.example.project.core.helper.formatTime
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.model.Song
@@ -77,7 +75,6 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
     }
 
     val sheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(uiState.isMenuBottomSheetVisible) {
         if (uiState.isMenuBottomSheetVisible) {
@@ -140,31 +137,30 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
             onDismissRequest = {
                 viewModel.onCloseMenuBottomSheet()
             },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = appColors.backgroundElevated
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp)
             ) {
                 uiState.selectedSong?.let { song ->
-                    Text(
-                        text = "Add \"${song.title}\" to queue?",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-                Button(
-                    onClick = {
-                        scope.launch {
-                            sheetState.hide()
-                        }.invokeOnCompletion {
-                            viewModel.addSelectedSongToQueue()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Add to queue")
+                    BottomSheetAction.all.forEach { action ->
+                        val isManual = displayQueue.manual.contains(song)
+
+                        // Check: Is this a "Remove" button that shouldn't be shown?
+                        if (action is BottomSheetAction.RemoveFromQueue && !isManual) return@forEach
+
+                        // Check: Is this an "Add" button that is already there?
+                        if (action is BottomSheetAction.AddToQueue && isManual) return@forEach
+                        BottomSheetItem(
+                            bottomSheetAction = action,
+                            onClick = { viewModel.handleBottomSheetAction(action) }
+                        )
+                    }
                 }
             }
         }

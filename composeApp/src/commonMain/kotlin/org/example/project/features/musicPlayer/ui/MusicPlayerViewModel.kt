@@ -1,6 +1,13 @@
 package org.example.project.features.musicPlayer.ui
 
 import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Queue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
@@ -202,6 +209,8 @@ class MusicPlayerViewModel constructor(
         // Song not found in queue
     }
 
+    // MENU related
+
     fun onMenuClicked(song: Song) {
         _uiState.update {
             it.copy(isMenuBottomSheetVisible = true, selectedSong = song)
@@ -211,6 +220,25 @@ class MusicPlayerViewModel constructor(
     fun onCloseMenuBottomSheet() {
         _uiState.update {
             it.copy(isMenuBottomSheetVisible = false, selectedSong = null)
+        }
+    }
+
+    fun handleBottomSheetAction(action: BottomSheetAction) {
+        when (action) {
+            BottomSheetAction.AddToPlaylist -> {
+            }
+
+            BottomSheetAction.AddToQueue -> {
+                addSelectedSongToQueue()
+            }
+
+            BottomSheetAction.GoToAlbum -> {}
+            BottomSheetAction.GoToArtist -> {}
+            BottomSheetAction.RemoveFromQueue -> {
+                val song = _uiState.value.selectedSong ?: return
+                removeSong(song)
+            }
+
         }
     }
 

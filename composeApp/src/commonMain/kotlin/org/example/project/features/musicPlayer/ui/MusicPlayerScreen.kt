@@ -111,7 +111,7 @@ fun MusicPlayerScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            PlayerControlsRefactored(
+            PlayerControls(
                 isPlaying = state.isPlaying,
                 isShuffled = isShuffled,
                 playbackMode = playbackMode,
@@ -216,7 +216,7 @@ private fun PlayerHeader(
 }
 
 @Composable
-private fun PlayerControlsRefactored(
+private fun PlayerControls(
     isPlaying: Boolean,
     isShuffled: Boolean,
     playbackMode: PlaybackMode,

@@ -144,67 +144,70 @@ fun SongItem(
 
 @Preview
 @Composable
-fun SongItemRefactoredPreview() {
+private fun SongItemRefactoredPreview() {
     Surface {
-        SongItem(
-            song = Song(
-                url = "item.url",
-                title = "Currently Playing Song",
-                artist = "Artist",
-                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L
-            ),
-            isCurrentlyPlaying = true,
-            onMenuClicked = {},
-            onClick = {}
-        )
+        Column {
+            SongItem(
+                song = Song(
+                    url = "item.url",
+                    title = "Currently Playing Song",
+                    artist = "Artist",
+                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                    duration = 3000L
+                ),
+                isCurrentlyPlaying = true,
+                onMenuClicked = {},
+                onClick = {}
+            )
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-        SongItem(
-            song = Song(
-                url = "item.url",
-                title = "Manual Queue Song",
-                artist = "Artist",
-                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L,
-            ),
-            showRemoveButton = true,
-            onMenuClicked = {},
-            onRemoveClicked = {},
-            onClick = {}
-        )
+            SongItem(
+                song = Song(
+                    url = "item.url",
+                    title = "Manual Queue Song",
+                    artist = "Artist",
+                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                    duration = 3000L,
+                ),
+                showRemoveButton = true,
+                onMenuClicked = {},
+                onRemoveClicked = {},
+                onClick = {}
+            )
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-        SongItem(
-            song = Song(
-                url = "item.url",
-                title = "Normal Queue Song",
-                artist = "Artist",
-                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L
-            ),
-            isEditable = true,
-            showRemoveButton = true,
-            onMenuClicked = {},
-            onRemoveClicked = {},
-            onClick = {}
-        )
+            SongItem(
+                song = Song(
+                    url = "item.url",
+                    title = "Normal Queue Song",
+                    artist = "Artist",
+                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                    duration = 3000L
+                ),
+                isEditable = true,
+                showRemoveButton = true,
+                onMenuClicked = {},
+                onRemoveClicked = {},
+                onClick = {}
+            )
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-        SongItem(
-            song = Song(
-                url = "item.url",
-                title = "History Song",
-                artist = "Artist",
-                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                duration = 3000L
-            ),
-            isPreviousSong = true,
-            onMenuClicked = {},
-            onClick = {}
-        )
+            SongItem(
+                song = Song(
+                    url = "item.url",
+                    title = "History Song",
+                    artist = "Artist",
+                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                    duration = 3000L
+                ),
+                isPreviousSong = true,
+                onMenuClicked = {},
+                onClick = {}
+            )
+        }
+
     }
 }

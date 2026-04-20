@@ -21,11 +21,11 @@ val dashboardTopLevelDestinations = mapOf(
         icon = Icons.Filled.Home
     ),
     Route.DashboardRoutes.SearchRoutes to BottomNavItem(
-        label = "Serach",
+        label = "Search",
         icon = Icons.Filled.Search
     ),
     Route.DashboardRoutes.Profile to BottomNavItem(
-        label = "Profile",
+        label = "Library",
         icon = Icons.Filled.AccountCircle
     )
 )

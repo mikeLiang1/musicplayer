@@ -44,6 +44,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
     playerQueue.current?.let { song ->
         Surface(
             color = appColors.backgroundElevated,
+            shadowElevation = 8.dp,
             shape = RoundedCornerShape(12.dp),
             modifier = modifier.clickable { viewModel.setFullScreen(true) }
         ) {

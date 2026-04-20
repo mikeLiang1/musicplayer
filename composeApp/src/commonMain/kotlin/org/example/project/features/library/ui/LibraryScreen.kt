@@ -101,10 +101,10 @@ private fun LibraryFilterPill(
     Box(
         modifier = modifier
             .clip(CircleShape) // 1. Clip first to ensure the ripple and background are pill-shaped
-            .background(if (isSelected) appColors.accentPrimary.copy(alpha = 0.5f) else Color.Transparent)
+            .background(if (isSelected) appColors.accentContainer else Color.Transparent)
             .border(
                 width = 1.dp,
-                color = if (isSelected) appColors.accentPrimary else appColors.divider,
+                color = if (isSelected) appColors.accentDark else appColors.divider,
                 shape = CircleShape // 2. Must match the clip shape
             )
             .clickable(onClick = onClick)
@@ -112,7 +112,7 @@ private fun LibraryFilterPill(
     ) {
         Text(
             text = libraryItemFilter.name,
-            color = appColors.textSecondary,
+            color = if (isSelected) appColors.accentPrimary else appColors.textSecondary,
             style = MaterialTheme.typography.labelLarge
         )
     }
@@ -151,7 +151,7 @@ private fun LikedSongBanner(
             .padding(16.dp)
             .height(100.dp), // Slightly taller to feel like a "Hero" item
         shape = RoundedCornerShape(16.dp),
-        color = appColors.accentPrimary
+        color = appColors.accentContainer
     ) {
         Row(
             modifier = Modifier
@@ -165,7 +165,7 @@ private fun LikedSongBanner(
                     .size(56.dp)
                     .background(
                         color = appColors.onAccentContainer,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape (12.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {

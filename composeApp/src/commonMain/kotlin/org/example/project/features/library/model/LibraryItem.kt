@@ -7,7 +7,6 @@ sealed class LibraryItem {
     data class SongItem(val song: Song) : LibraryItem()
     data class PlaylistItem(val playlist: Playlist) : LibraryItem()
 
-
 }
 
 fun LibraryItem.stableKey(): String = when (this) {

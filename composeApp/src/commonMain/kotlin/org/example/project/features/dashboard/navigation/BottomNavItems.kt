@@ -3,6 +3,7 @@ package org.example.project.features.dashboard.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.example.project.navigation.Route
@@ -24,6 +25,6 @@ val dashboardTopLevelDestinations = mapOf(
     ),
     Route.DashboardRoutes.LibraryRoutes to BottomNavItem(
         label = "Library",
-        icon = Icons.Filled.AccountCircle
+        icon = Icons.Filled.LibraryMusic
     )
 )

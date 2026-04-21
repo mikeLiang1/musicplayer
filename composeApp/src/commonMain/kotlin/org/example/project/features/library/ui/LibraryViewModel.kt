@@ -1,11 +1,14 @@
 package org.example.project.features.library.ui
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.model.Playlist
@@ -13,7 +16,6 @@ import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.library.model.LibraryItem
 
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class LibraryViewModel constructor(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
@@ -23,16 +25,23 @@ class LibraryViewModel constructor(
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _effect = MutableSharedFlow<LibraryEffect>()
+    val effect: SharedFlow<LibraryEffect> = _effect.asSharedFlow()
 
     fun handleAction(libraryAction: LibraryAction) {
-        when (libraryAction) {
-            is LibraryAction.OnFilterSelected -> {
-                _uiState.update { it.copy(selectedFilter = libraryAction.filter) }
+        viewModelScope.launch {
+            when (libraryAction) {
+                is LibraryAction.OnFilterSelected -> {
+                    _uiState.update { it.copy(selectedFilter = libraryAction.filter) }
+                }
+
+                is LibraryAction.OnPlayListSelected -> {
+                    _effect.emit(LibraryEffect.NavigateToPlaylist(libraryAction.playlistId))
+                }
             }
         }
     }
 }
-
 
 data class LibraryUiState(
     val likedSongCount: Int = 0,
@@ -52,7 +61,6 @@ data class LibraryUiState(
 )
 
 
-
 enum class LibraryItemFilter {
     All,
     Playlist,
@@ -61,6 +69,10 @@ enum class LibraryItemFilter {
 
 sealed interface LibraryAction {
     data class OnFilterSelected(val filter: LibraryItemFilter) : LibraryAction
+    data class OnPlayListSelected(val playlistId: String) : LibraryAction
 }
 
+sealed interface LibraryEffect {
+    data class NavigateToPlaylist(val playlistId: String) : LibraryEffect
+}
 

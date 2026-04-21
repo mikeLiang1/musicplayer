@@ -3,9 +3,9 @@ package org.example.project.features.library.model
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
 
-sealed class LibraryItem {
-    data class SongItem(val song: Song) : LibraryItem()
-    data class PlaylistItem(val playlist: Playlist) : LibraryItem()
+sealed interface LibraryItem {
+    data class SongItem(val song: Song) : LibraryItem
+    data class PlaylistItem(val playlist: Playlist) : LibraryItem
 
 }
 

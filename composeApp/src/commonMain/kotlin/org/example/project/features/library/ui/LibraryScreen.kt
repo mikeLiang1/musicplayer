@@ -25,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.core.model.Playlist
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.library.model.stableKey
@@ -43,22 +41,16 @@ import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.appColors
 
 @Composable
-fun LibraryScreen(libraryViewModel: LibraryViewModel) {
-    val state by libraryViewModel.uiState.collectAsStateWithLifecycle()
-    LibraryScreenContent(state, libraryViewModel::handleAction)
-
-}
-
-@Composable
-private fun LibraryScreenContent(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
+fun LibraryScreen(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        HeaderSection(onAction = onAction, state)
+        HeaderSection(onAction = onAction, state = state)
         HorizontalDivider(color = appColors.divider)
-        LibraryColumn(state = state)
+        LibraryColumn(state = state, onAction = onAction)
     }
 }
+
 
 @Composable
 private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiState) {
@@ -119,7 +111,7 @@ private fun LibraryFilterPill(
 }
 
 @Composable
-private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState) {
+private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     LazyColumn {
         item {
             LikedSongBanner(songCount = state.likedSongCount, onClick = {})
@@ -128,7 +120,10 @@ private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState) 
         items(state.libraryItems, key = { it.stableKey() }) { item ->
             when (item) {
                 is LibraryItem.PlaylistItem -> {
-                    PlaylistItem(onClick = {}, playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30))
+                    PlaylistItem(
+                        onClick = { onAction(LibraryAction.OnPlayListSelected(item.playlist.uniqueId)) },
+                        playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30)
+                    )
                 }
 
                 is LibraryItem.SongItem -> {
@@ -165,7 +160,7 @@ private fun LikedSongBanner(
                     .size(56.dp)
                     .background(
                         color = appColors.onAccentContainer,
-                        shape = RoundedCornerShape (12.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -206,6 +201,6 @@ private fun LikedSongBanner(
 @Composable
 private fun LibraryPreview() {
     Column {
-        LibraryScreenContent(state = LibraryUiState(), onAction = {})
+        LibraryScreen(state = LibraryUiState(), onAction = {})
     }
 }

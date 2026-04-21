@@ -5,8 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed interface Route : NavKey {
+
     @Serializable
     data object DashboardRoutes : Route {
+
         @Serializable
         data object Home : Route
 
@@ -17,8 +19,14 @@ sealed interface Route : NavKey {
         }
 
         @Serializable
-        data object LibraryRoutes : Route
+        data object LibraryRoutes : Route {
+            @Serializable
+            data object Library : Route
+        }
 
+        // Shared route — reachable from both Search and Library
+        @Serializable
+        data class Playlist(val playlistId: String) : Route
     }
 }
 
@@ -26,8 +34,8 @@ val appTopLevelRoutes = setOf(Route.DashboardRoutes)
 
 val dashboardAllRoutes = setOf(
     Route.DashboardRoutes.Home,
-    Route.DashboardRoutes.LibraryRoutes,
     Route.DashboardRoutes.SearchRoutes,
+    Route.DashboardRoutes.LibraryRoutes
 )
 
 val searchAllRoutes = setOf(
@@ -35,7 +43,6 @@ val searchAllRoutes = setOf(
 )
 
 val libraryAllRoutes = setOf(
-    Route.DashboardRoutes.LibraryRoutes
+    Route.DashboardRoutes.LibraryRoutes.Library,
 )
-
 

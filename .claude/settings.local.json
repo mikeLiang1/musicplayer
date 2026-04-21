@@ -4,7 +4,9 @@
       "Bash(cat:*)",
       "Bash(find:*)",
       "WebFetch(domain:github.com)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(./gradlew:*)",
+      "Bash(curl:*)"
     ]
   }
 }

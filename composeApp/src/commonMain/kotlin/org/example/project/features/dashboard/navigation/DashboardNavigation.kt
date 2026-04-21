@@ -30,6 +30,7 @@ import org.example.project.features.library.navigation.LibraryNavigation
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
+import org.example.project.features.playlist.ui.PlaylistScreen
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
@@ -73,11 +74,17 @@ fun DashboardNavigation() {
                     .padding(innerPadding)
             ) {
 
-
                 val entryProvider = entryProvider<NavKey> {
                     entry<Route.DashboardRoutes.Home> { HomeScreen() }
                     entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
-                    entry<Route.DashboardRoutes.LibraryRoutes> { LibraryNavigation() }
+                    entry<Route.DashboardRoutes.LibraryRoutes> {
+                        LibraryNavigation(
+                            navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }
+                        )
+                    }
+                    entry<Route.DashboardRoutes.Playlist> { key ->
+                        PlaylistScreen(playlistId = key.playlistId)
+                    }
                 }
 
                 NavDisplay(

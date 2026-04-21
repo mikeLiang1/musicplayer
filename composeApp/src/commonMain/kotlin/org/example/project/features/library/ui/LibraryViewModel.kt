@@ -29,29 +29,97 @@ class LibraryViewModel constructor(
     val effect: SharedFlow<LibraryEffect> = _effect.asSharedFlow()
 
     fun handleAction(libraryAction: LibraryAction) {
-        viewModelScope.launch {
-            when (libraryAction) {
-                is LibraryAction.OnFilterSelected -> {
-                    _uiState.update { it.copy(selectedFilter = libraryAction.filter) }
-                }
-
-                is LibraryAction.OnPlayListSelected -> {
+        when (libraryAction) {
+            is LibraryAction.OnFilterSelected -> {
+                filterItems(libraryAction.filter)
+            }
+            is LibraryAction.OnPlayListSelected -> {
+                viewModelScope.launch {
                     _effect.emit(LibraryEffect.NavigateToPlaylist(libraryAction.playlistId))
                 }
             }
         }
     }
+
+    private fun filterItems(filter: LibraryItemFilter) {
+        _uiState.update { currentState ->
+            val filteredList = when (filter) {
+                LibraryItemFilter.All -> currentState.allItems
+                LibraryItemFilter.Playlist -> currentState.allItems.filterIsInstance<LibraryItem.PlaylistItem>()
+                LibraryItemFilter.Song -> currentState.allItems.filterIsInstance<LibraryItem.SongItem>()
+            }
+
+            currentState.copy(
+                selectedFilter = filter,
+                libraryItems = filteredList
+            )
+        }
+    }
 }
 
 data class LibraryUiState(
-    val likedSongCount: Int = 0,
-    val selectedFilter: LibraryItemFilter = LibraryItemFilter.All,
-    val libraryItems: List<LibraryItem> = listOf(
+    val allItems: List<LibraryItem> = listOf(
         LibraryItem.PlaylistItem(playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad2", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad3", thumbnailUrl = null, numSongs = 30)),
         LibraryItem.SongItem(
             song = Song(
                 url = "item.url",
                 title = "Currently Playing Song",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+        ),
+        LibraryItem.SongItem(
+            song = Song(
+                url = "item.url",
+                title = "Currently Playing Song2",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+        ),
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.SongItem(
+            song = Song(
+                url = "item.url",
+                title = "Currently Playing Song3",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+        )
+    ),
+    val likedSongCount: Int = 0,
+    val selectedFilter: LibraryItemFilter = LibraryItemFilter.All,
+    val libraryItems: List<LibraryItem> = listOf(
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad2", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad3", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.SongItem(
+            song = Song(
+                url = "item.url",
+                title = "Currently Playing Song",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+        ),
+        LibraryItem.SongItem(
+            song = Song(
+                url = "item.url",
+                title = "Currently Playing Song2",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
+            ),
+        ),
+        LibraryItem.PlaylistItem(playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30)),
+        LibraryItem.SongItem(
+            song = Song(
+                url = "item.url",
+                title = "Currently Playing Song3",
                 artist = "Artist",
                 thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
                 duration = 3000L

@@ -7,6 +7,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,12 +32,14 @@ import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.playlist.ui.PlaylistScreen
+import org.example.project.features.playlist.ui.PlaylistViewModel
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
 import org.example.project.ui.theme.appColors
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun DashboardNavigation() {
@@ -56,6 +59,7 @@ fun DashboardNavigation() {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             containerColor = appColors.backgroundPrimary,
             bottomBar = {
                 Column {
@@ -83,7 +87,11 @@ fun DashboardNavigation() {
                         )
                     }
                     entry<Route.DashboardRoutes.Playlist> { key ->
-                        PlaylistScreen(playlistId = key.playlistId)
+                        val playlistViewModel: PlaylistViewModel = koinViewModel(
+                            parameters = { parametersOf(key.playlistId) }
+                        )
+                        val state by playlistViewModel.uiState.collectAsStateWithLifecycle()
+                        PlaylistScreen(state, onBackPressed = { navigator.goBack() })
                     }
                 }
 

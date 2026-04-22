@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -39,7 +40,6 @@ import org.example.project.core.model.Playlist
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.library.model.stableKey
 import org.example.project.ui.component.PlaylistItem
-import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.appColors
@@ -75,8 +75,9 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Library", color = appColors.textPrimary, style = MaterialTheme.typography.headlineLarge)
-
-            Icon(Icons.Default.Add, tint = appColors.iconPrimary, contentDescription = "add playlist")
+            IconButton(onClick = { onAction(LibraryAction.OnAddPlaylist) }) {
+                Icon(Icons.Default.Add, tint = appColors.iconPrimary, contentDescription = "add playlist")
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             LibraryItemFilter.entries.forEach { it ->
@@ -133,13 +134,9 @@ private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState, 
                         playlist = Playlist(
                             title = item.playlist.title,
                             thumbnailUrl = item.playlist.thumbnailUrl,
-                            numSongs = 30
+                            numSongs = item.playlist.numSongs
                         )
                     )
-                }
-
-                is LibraryItem.SongItem -> {
-                    SongItem(onClick = {}, song = item.song)
                 }
             }
         }

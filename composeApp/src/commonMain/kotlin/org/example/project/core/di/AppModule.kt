@@ -12,6 +12,7 @@ import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.ui.LibraryViewModel
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
+import org.example.project.features.playlist.repository.PlaylistRepository
 import org.example.project.features.playlist.ui.PlaylistViewModel
 import org.example.project.features.search.ui.SearchViewModel
 import org.koin.core.module.dsl.viewModel
@@ -21,6 +22,7 @@ import org.koin.dsl.module
 val repositoryModule = module {
     single { YouTubeRepository() }
     single { PlaybackRepository(get()) }
+    single { PlaylistRepository(get()) }
     single { QueueManager() }
 }
 
@@ -41,7 +43,7 @@ val databaseModule = module {
 val viewModelModule = module {
     viewModel { HomeViewModel(get()) }
     viewModel { SearchViewModel(get(), get(), get()) }
-    viewModel { LibraryViewModel(get(), get(), get()) }
+    viewModel { LibraryViewModel(get(), get(), get(), get())  }
     viewModel { MusicPlayerViewModel(get(), get(), get(), get()) }
     viewModel { params -> PlaylistViewModel(params.get(), get(), get(), get()) }
 }

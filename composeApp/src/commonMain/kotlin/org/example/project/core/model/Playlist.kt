@@ -8,5 +8,6 @@ data class Playlist(
     val uniqueId: String = UUID.randomUUID().toString(),
     val title: String,
     val thumbnailUrl: String?,
-    val numSongs: Int
+    val numSongs: Int,
+    val songs: List<Song> = listOf()
 )

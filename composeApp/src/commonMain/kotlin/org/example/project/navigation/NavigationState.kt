@@ -3,6 +3,7 @@ package com.example.budget.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
@@ -87,7 +88,17 @@ fun NavigationState.toEntries(
         )
     }
 
-    return stacksInUse
-        .flatMap { decoratedEntries[it] ?: emptyList() }
-        .toMutableStateList()
+    // Stable list instance that persists across recompositions
+    val entries = remember { mutableStateListOf<NavEntry<NavKey>>() }
+
+    // Derive what the list should look like
+    val newEntries = stacksInUse.flatMap { decoratedEntries[it] ?: emptyList() }
+
+    // Mutate in place only if contents actually changed
+    if (entries != newEntries) {
+        entries.clear()
+        entries.addAll(newEntries)
+    }
+
+    return entries
 }

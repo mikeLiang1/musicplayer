@@ -8,7 +8,6 @@ import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.example.budget.navigation.NavigationState
 import org.example.project.navigation.Navigator
 import org.example.project.ui.theme.appColors
@@ -29,7 +28,7 @@ fun BottomNavigationBar(
                 label = { Text(bottomNavItem.label) },
                 selected = navigationState.topLevelRoute == route,
                 onClick = {
-                    navigator.navigate(route)
+                    navigator.navigateToTopLevelRoute(route)
                 },
                 colors = NavigationBarItemColors(
                     selectedIconColor = appColors.accentPrimary,

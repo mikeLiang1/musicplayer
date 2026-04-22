@@ -29,6 +29,14 @@ class Navigator(val state: NavigationState) {
         }
     }
 
+    fun navigateToTopLevelRoute(route: NavKey) {
+        if (route == state.topLevelRoute) return
+        val stack = state.backStacks[route]
+        stack?.clear()
+        stack?.add(route)
+        state.topLevelRoute = route
+    }
+
     fun replaceRoot(newRoot: NavKey) {
         // 1. Logic for "PopUpTo(0) inclusive" on the NEW route
         // We want the new stack to be fresh: [newRoot]

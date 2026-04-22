@@ -6,14 +6,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.example.project.core.dao.MusicDatabase
+import org.example.project.core.database.MusicDatabase
+import org.example.project.core.database.entity.PlaybackStateEntity
+import org.example.project.core.database.entity.QueueEntity
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueState
 import org.example.project.core.model.Song
-import org.example.project.core.model.entity.PlaybackStateEntity
-import org.example.project.core.model.entity.QueueEntity
 
-class SavedDataRepository(
+class PlaybackRepository(
     database: MusicDatabase,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {

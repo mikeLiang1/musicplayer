@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +47,7 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun LibraryScreen(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             Column(modifier = Modifier.statusBarsPadding()) {
                 HeaderSection(onAction = onAction, state = state)
@@ -128,7 +130,11 @@ private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState, 
                 is LibraryItem.PlaylistItem -> {
                     PlaylistItem(
                         onClick = { onAction(LibraryAction.OnPlayListSelected(item.playlist.uniqueId)) },
-                        playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30)
+                        playlist = Playlist(
+                            title = item.playlist.title,
+                            thumbnailUrl = item.playlist.thumbnailUrl,
+                            numSongs = 30
+                        )
                     )
                 }
 

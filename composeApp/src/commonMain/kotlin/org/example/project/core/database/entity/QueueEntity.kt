@@ -1,4 +1,4 @@
-package org.example.project.core.model.entity
+package org.example.project.core.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

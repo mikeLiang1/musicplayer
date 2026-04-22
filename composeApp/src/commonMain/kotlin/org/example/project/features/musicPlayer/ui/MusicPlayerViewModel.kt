@@ -24,7 +24,7 @@ import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueIntent
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.model.Song
-import org.example.project.core.repository.SavedDataRepository
+import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 
@@ -33,7 +33,7 @@ class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,
-    private val savedDataRepository: SavedDataRepository
+    private val playbackRepository: PlaybackRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MusicPlayerUiState())
@@ -114,16 +114,16 @@ class MusicPlayerViewModel constructor(
             // Debounced save of queue state
             queueManager.queueState
                 .debounce(500)
-                .onEach { state -> savedDataRepository.saveQueueState(state) }
+                .onEach { state -> playbackRepository.saveQueueState(state) }
                 .launchIn(viewModelScope)
         }
     }
 
     private suspend fun restorePlaybackState() {
         // 1. Restore state first (blocking in this coroutine)
-        val savedState = savedDataRepository.getQueueState()
+        val savedState = playbackRepository.getQueueState()
         savedState?.let { state ->
-            val positionMs = savedDataRepository.getPosition() ?: 0L
+            val positionMs = playbackRepository.getPosition() ?: 0L
 
             queueManager.restoreState(state, positionMs)
             Log.d("logging", "Restored queue state: $state")

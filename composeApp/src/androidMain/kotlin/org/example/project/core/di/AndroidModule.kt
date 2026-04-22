@@ -3,7 +3,7 @@ package org.example.project.core.di
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.RoomDatabase
-import org.example.project.core.dao.MusicDatabase
+import org.example.project.core.database.MusicDatabase
 import org.example.project.core.dao.getDatabaseBuilder
 import org.example.project.core.helper.createDataStore
 import org.example.project.core.helper.dataStoreFileName

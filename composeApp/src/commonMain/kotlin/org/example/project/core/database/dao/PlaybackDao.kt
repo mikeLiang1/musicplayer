@@ -1,4 +1,4 @@
-package org.example.project.core.dao
+package org.example.project.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -6,14 +6,14 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
-import org.example.project.core.model.entity.PlaybackStateEntity
-import org.example.project.core.model.entity.QueueEntity
+import org.example.project.core.database.entity.PlaybackStateEntity
+import org.example.project.core.database.entity.QueueEntity
 
 @Dao
 interface PlaybackDao {
     // --- Queue Logic ---
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertQueue(songs: List<QueueEntity>)
 
 

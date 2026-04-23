@@ -8,10 +8,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.example.project.core.database.MusicDatabase
 import org.example.project.core.database.entity.PlaybackStateEntity
-import org.example.project.core.database.entity.QueueEntity
+import org.example.project.core.database.mapper.toDomain
+import org.example.project.core.database.mapper.toEntity
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueState
-import org.example.project.core.model.Song
 
 class PlaybackRepository(
     database: MusicDatabase,
@@ -94,24 +94,3 @@ class PlaybackRepository(
 
 }
 
-// Mappers
-fun QueueEntity.toDomain() = Song(
-    uniqueId = uniqueId,
-    url = url,
-    title = title,
-    artist = artist,
-    thumbnailUrl = thumbnailUrl,
-    duration = duration
-)
-
-fun Song.toEntity(index: Int, type: String) = QueueEntity(
-    title = title,
-    artist = artist,
-    thumbnailUrl = thumbnailUrl,
-    url = url,
-    duration = duration,
-    orderIndex = index,
-    type = type,
-    uniqueId = uniqueId,
-    isManual = false  // Ignored for backward compatibility
-)

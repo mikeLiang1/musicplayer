@@ -20,10 +20,10 @@ interface PlaylistDao {
     suspend fun insertSongs(songs: List<PlaylistSongEntity>)
 
     @Query("DELETE FROM playlist_songs WHERE ownerPlaylistId = :playlistId")
-    suspend fun deleteSongsByPlaylist(playlistId: String)
+    suspend fun deleteSongsFromPlaylist(playlistId: String)
 
     @Query("DELETE FROM playlists WHERE playlistId = :playlistId")
-    suspend fun deletePlaylistOnly(playlistId: String)
+    suspend fun deleteEntirePlaylist(playlistId: String)
 
     @Transaction
     @Query("SELECT * FROM playlists WHERE playlistId = :id")
@@ -32,7 +32,7 @@ interface PlaylistDao {
     // Get all playlists (Flow updates automatically when data changes)
     @Transaction
     @Query("SELECT * FROM playlists")
-    fun getAllPlaylistsWithSongs(): Flow<List<PlaylistWithSongs>>
+    fun getAllPlaylists(): Flow<List<PlaylistWithSongs>>
 
 
     // High-level function to save/update a whole playlist safely
@@ -40,7 +40,7 @@ interface PlaylistDao {
     suspend fun saveFullPlaylist(playlist: PlaylistEntity, songs: List<PlaylistSongEntity>) {
         insertPlaylist(playlist)
         // We delete old versions of songs for this playlist to avoid duplicates/order issues
-        deleteSongsByPlaylist(playlist.playlistId)
+        deleteSongsFromPlaylist(playlist.playlistId)
         insertSongs(songs)
     }
 

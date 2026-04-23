@@ -16,7 +16,7 @@ class PlaylistRepository(database: MusicDatabase) {
     val allPlaylists: Flow<List<Playlist>> = dao.getAllPlaylistsWithSongs()
         .map { list -> list.map { it.toUIModel() } }
 
-    // 2. Save a playlist
+    // 2. Add a new playlist
     suspend fun savePlaylist(playlist: Playlist) {
         val playlistEntity = playlist.toEntity()
         val songEntities = playlist.songs.mapIndexed { index, song ->
@@ -24,10 +24,26 @@ class PlaylistRepository(database: MusicDatabase) {
         }
         dao.saveFullPlaylist(playlistEntity, songEntities)
     }
+
+    suspend fun addSongToPlaylist(playlistId: String, song: Song) {
+        // 1. Find the current last position (if empty, start at -1)
+        val currentMaxIndex = dao.getMaxOrderIndex(playlistId) ?: -1
+        val nextIndex = currentMaxIndex + 1
+
+        // 2. Convert your UI Song model to the Database Entity
+        val entity = song.toPlaylistSongEntity(playlistId = playlistId, index = nextIndex)
+
+        // 3. Save it
+        dao.insertPlaylistSong(entity)
+    }
+
+    fun getSongsFromPlaylist(playListId: String): Flow<Playlist?> {
+        return dao.getSongsFromPlaylist(playListId).map { it?.toUIModel() }
+    }
 }
 
 
-fun Playlist.toEntity() = PlaylistEntity(uniqueId, title, thumbnailUrl, numSongs)
+fun Playlist.toEntity() = PlaylistEntity(uniqueId, title, thumbnailUrl)
 
 fun Song.toPlaylistSongEntity(playlistId: String, index: Int): PlaylistSongEntity {
     return PlaylistSongEntity(
@@ -58,12 +74,12 @@ fun PlaylistSongEntity.toSong(): Song {
 // Convert Room result -> UI Playlist class
 fun PlaylistWithSongs.toUIModel(): Playlist {
     return Playlist(
-        uniqueId = this.playlist.playlistId,
-        title = this.playlist.title,
-        thumbnailUrl = this.playlist.thumbnailUrl,
-        numSongs = this.playlist.numSongs,
+        uniqueId = playlist.playlistId,
+        title = playlist.title,
+        thumbnailUrl = playlist.thumbnailUrl,
+        numSongs = songs.size,
         // Map the database songs to UI songs and sort them by orderIndex
-        songs = this.songs
+        songs = songs
             .sortedBy { it.orderIndex }
             .map { it.toSong() }
     )

@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.model.Song
 import org.example.project.core.repository.YouTubeRepository
 
 class PlaylistViewModel constructor(
@@ -20,5 +21,6 @@ class PlaylistViewModel constructor(
 }
 
 data class PlaylistUiState(
-    val playlistId: String
+    val playlistId: String,
+    val songs: List<Song> = listOf()
 )

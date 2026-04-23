@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.entity.PlaylistSongEntity
 import org.example.project.core.database.entity.PlaylistWithSongs
@@ -24,10 +25,15 @@ interface PlaylistDao {
     @Query("DELETE FROM playlists WHERE playlistId = :playlistId")
     suspend fun deletePlaylistOnly(playlistId: String)
 
+    @Transaction
+    @Query("SELECT * FROM playlists WHERE playlistId = :id")
+    fun getSongsFromPlaylist(id: String): Flow<PlaylistWithSongs?>
+
     // Get all playlists (Flow updates automatically when data changes)
     @Transaction
     @Query("SELECT * FROM playlists")
-    fun getAllPlaylistsWithSongs(): kotlinx.coroutines.flow.Flow<List<PlaylistWithSongs>>
+    fun getAllPlaylistsWithSongs(): Flow<List<PlaylistWithSongs>>
+
 
     // High-level function to save/update a whole playlist safely
     @Transaction
@@ -37,4 +43,11 @@ interface PlaylistDao {
         deleteSongsByPlaylist(playlist.playlistId)
         insertSongs(songs)
     }
+
+    // Add song to playlist
+    @Query("SELECT MAX(orderIndex) FROM playlist_songs WHERE ownerPlaylistId = :playlistId")
+    suspend fun getMaxOrderIndex(playlistId: String): Int?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylistSong(songEntity: PlaylistSongEntity)
 }

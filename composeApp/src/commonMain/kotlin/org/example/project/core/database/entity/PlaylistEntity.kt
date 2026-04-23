@@ -11,8 +11,7 @@ import androidx.room.Relation
 data class PlaylistEntity(
     @PrimaryKey val playlistId: String,
     val title: String,
-    val thumbnailUrl: String?,
-    val numSongs: Int
+    val thumbnailUrl: String?
 )
 
 @Entity(

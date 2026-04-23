@@ -3,6 +3,7 @@ package org.example.project.features.musicPlayer.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,13 +28,15 @@ import org.example.project.core.model.Song
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
+import org.example.project.features.playlist.repository.PlaylistRepository
 
 @OptIn(FlowPreview::class)
 class MusicPlayerViewModel constructor(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,
-    private val playbackRepository: PlaybackRepository
+    private val playbackRepository: PlaybackRepository,
+    private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MusicPlayerUiState())
@@ -71,6 +74,12 @@ class MusicPlayerViewModel constructor(
         .map { it.playbackMode }
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackMode.OFF)
 
+
+    val playlists = playlistRepository.allPlaylists.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 
     init {
         Log.d("logging", "viewmodel int")
@@ -212,13 +221,33 @@ class MusicPlayerViewModel constructor(
 
     fun onCloseMenuBottomSheet() {
         _uiState.update {
-            it.copy(isMenuBottomSheetVisible = false, selectedSong = null)
+            it.copy(isMenuBottomSheetVisible = false)
+        }
+    }
+
+    fun onClosePlaylistBottomSheet() {
+        _uiState.update {
+            it.copy(isAddToPlaylistBottomSheetVisible = false)
+        }
+    }
+
+    fun addSongToSelectedPlaylist(playlistId: String) {
+        _uiState.value.selectedSong?.let { song->
+            viewModelScope.launch {
+                playlistRepository.addSongToPlaylist(playlistId, song)
+                _uiState.update {
+                    it.copy(selectedSong = null)
+                }
+            }
         }
     }
 
     fun handleBottomSheetAction(action: BottomSheetAction) {
         when (action) {
             BottomSheetAction.AddToPlaylist -> {
+                _uiState.update {
+                    it.copy(isAddToPlaylistBottomSheetVisible = true)
+                }
             }
 
             BottomSheetAction.AddToQueue -> {
@@ -323,7 +352,8 @@ data class MusicPlayerUiState(
     val isEditingQueue: Boolean = false,
     val editingQueue: PlayerQueue? = null,
     val isMenuBottomSheetVisible: Boolean = false,
-    val selectedSong: Song? = null
+    val selectedSong: Song? = null,
+    val isAddToPlaylistBottomSheetVisible: Boolean = false
 )
 
 sealed interface MusicPlayerEffect {

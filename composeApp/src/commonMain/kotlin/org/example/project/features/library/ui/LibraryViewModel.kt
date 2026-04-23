@@ -76,7 +76,7 @@ class LibraryViewModel constructor(
             LibraryAction.OnAddPlaylist -> {
                 viewModelScope.launch {
                     playlistRepository.savePlaylist(
-                        playlist = Playlist(title = "title1", thumbnailUrl = null, numSongs = 2)
+                        playlist = Playlist(title = "title1", thumbnailUrl = null, numSongs = 0)
                     )
                 }
             }

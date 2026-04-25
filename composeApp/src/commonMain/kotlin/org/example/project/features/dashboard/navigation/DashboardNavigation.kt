@@ -8,12 +8,9 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,67 +57,58 @@ fun DashboardNavigation() {
         musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
     }.collectAsStateWithLifecycle(initialValue = false)
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            containerColor = appColors.backgroundPrimary,
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(appColors.backgroundPrimary)) {
 
-                val entryProvider = entryProvider<NavKey> {
-                    entry<Route.DashboardRoutes.Home> { HomeScreen() }
-                    entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
-                    entry<Route.DashboardRoutes.LibraryRoutes> {
-                        LibraryNavigation(
-                            navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }
-                        )
-                    }
-                    entry<Route.DashboardRoutes.Playlist> { key ->
-                        val playlistViewModel: PlaylistViewModel = koinViewModel(
-                            parameters = { parametersOf(key.playlistId) }
-                        )
-                        val state by playlistViewModel.uiState.collectAsStateWithLifecycle()
-                        PlaylistScreen(
-                            state,
-                            onBackPressed = { navigator.goBack() },
-                            onAction = playlistViewModel::handleAction
-                        )
-                    }
-                }
-
-                NavDisplay(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    entries = navigationState.toEntries(entryProvider),
-                    onBack = { navigator.goBack() }
+        val entryProvider = entryProvider<NavKey> {
+            entry<Route.DashboardRoutes.Home> { HomeScreen() }
+            entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
+            entry<Route.DashboardRoutes.LibraryRoutes> {
+                LibraryNavigation(
+                    navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }
                 )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        // Gradient makes it look like Spotify (fading from transparent to dark)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    appColors.backgroundPrimary.copy(alpha = 0.9f),
-                                    appColors.backgroundPrimary
-                                )
-                            )
+            }
+            entry<Route.DashboardRoutes.Playlist> { key ->
+                val playlistViewModel: PlaylistViewModel = koinViewModel(
+                    parameters = { parametersOf(key.playlistId) }
+                )
+                val state by playlistViewModel.uiState.collectAsStateWithLifecycle()
+                PlaylistScreen(
+                    state,
+                    onBackPressed = { navigator.goBack() },
+                    onAction = playlistViewModel::handleAction
+                )
+            }
+        }
+
+        NavDisplay(
+            modifier = Modifier
+                .fillMaxSize(),
+            entries = navigationState.toEntries(entryProvider),
+            onBack = { navigator.goBack() }
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                // Gradient makes it look like Spotify (fading from transparent to dark)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            appColors.backgroundPrimary.copy(alpha = 0.9f),
+                            appColors.backgroundPrimary
                         )
-                        .navigationBarsPadding() // Protect system navigation buttons
-                ) {
-                    MusicPlayerBar(viewModel = musicPlayerViewModel)
-                    if (isBottomBarVisible) {
-                        BottomNavigationBar(
-                            navigationState = navigationState,
-                            navigate = { navigator.navigateToTopLevelRoute(it) })
-                    }
-                }
+                    )
+                )
+                .navigationBarsPadding()
+        ) {
+            MusicPlayerBar(viewModel = musicPlayerViewModel)
+            if (isBottomBarVisible) {
+                BottomNavigationBar(
+                    navigationState = navigationState,
+                    navigate = { navigator.navigateToTopLevelRoute(it) })
             }
         }
 

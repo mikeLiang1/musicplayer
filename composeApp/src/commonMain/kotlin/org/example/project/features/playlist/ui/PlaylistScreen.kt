@@ -77,12 +77,14 @@ fun PlaylistScreen(
             }
         }
     ) {
+
         var selectedSong by remember { mutableStateOf<Song?>(null) }
         SongMenuProvider(selectedSong = selectedSong, resetSelectSong = { selectedSong = null })
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = it.calculateBottomPadding())
+                .padding(it)
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator()

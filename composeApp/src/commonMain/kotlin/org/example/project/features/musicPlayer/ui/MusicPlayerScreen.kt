@@ -61,6 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.musicPlayer.model.PlayerQueue
+import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -255,20 +256,7 @@ private fun PlayerControls(
             }
 
             // Play/Pause button
-            FilledIconButton(
-                onClick = viewModel::onPlayPauseClicked,
-                modifier = Modifier.size(64.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = appColors.iconActive,
-                    contentColor = Color.White
-                )
-            ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+            PlayPauseButton(viewModel::onPlayPauseClicked, isPlaying)
 
             // Next button
             IconButton(onClick = viewModel::onNextClicked) {

@@ -7,7 +7,7 @@ import java.util.UUID
 data class Playlist(
     val uniqueId: String = UUID.randomUUID().toString(),
     val title: String,
-    val thumbnailUrl: String?,
+    val thumbnailUrl: String? = null,
     val numSongs: Int,
     val songs: List<Song> = listOf()
 )

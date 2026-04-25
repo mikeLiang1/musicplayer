@@ -14,27 +14,45 @@ class PlaylistViewModel constructor(
     private val playlistId: String,
     private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(PlaylistUiState(isLoading = true))
 
-    private val _uiState = MutableStateFlow(PlaylistUiState(playlistId = playlistId))
-
+    // TODO i think may need to seperate playlist and isloading since they arent related to each other
     val uiState: StateFlow<PlaylistUiState> = combine(
         playlistRepository.getSongsFromPlaylist(playlistId),
         _uiState
     ) { playlist, uiState ->
-        uiState.copy(playlist = playlist, isLoading = uiState.isLoading)
+        uiState.copy(playlist = playlist, isLoading = false)
 
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = PlaylistUiState(
-            isLoading = true,
-            playlistId = playlistId,
-        )
+        initialValue = PlaylistUiState(isLoading = true)
     )
+
+    fun handleAction(playlistAction: PlaylistAction) {
+        when (playlistAction) {
+            PlaylistAction.OnShuffledPressed -> {}
+            PlaylistAction.OnMenuPressed -> {
+                TODO()
+            }
+            PlaylistAction.OnPlayPressed -> {
+                TODO()
+            }
+            PlaylistAction.OnSearchPressed -> {
+
+            }
+        }
+    }
+}
+
+sealed interface PlaylistAction {
+    data object OnShuffledPressed : PlaylistAction
+    data object OnMenuPressed : PlaylistAction
+    data object OnPlayPressed : PlaylistAction
+    data object OnSearchPressed : PlaylistAction
 }
 
 data class PlaylistUiState(
-    val playlistId: String,
     val playlist: Playlist? = null,
     val isLoading: Boolean = false
 )

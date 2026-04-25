@@ -91,7 +91,11 @@ fun DashboardNavigation() {
                             parameters = { parametersOf(key.playlistId) }
                         )
                         val state by playlistViewModel.uiState.collectAsStateWithLifecycle()
-                        PlaylistScreen(state, onBackPressed = { navigator.goBack() })
+                        PlaylistScreen(
+                            state,
+                            onBackPressed = { navigator.goBack() },
+                            onAction = playlistViewModel::handleAction
+                        )
                     }
                 }
 

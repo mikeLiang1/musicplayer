@@ -79,14 +79,15 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(horizontal = 16.dp)
             .padding(top = 16.dp)
     ) {
         // Search Bar
         TextField(
             value = state.searchQuery,
             onValueChange = { searchViewModel.onQueryChanged(it) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             placeholder = { Text("Search on YouTube Music...") },
             trailingIcon = {
                 IconButton(onClick = {

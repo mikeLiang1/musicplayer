@@ -15,10 +15,10 @@ import org.example.project.ui.theme.appColors
 
 
 @Composable
-fun PlayPauseButton(onPressed: () -> Unit, isPlaying: Boolean) {
+fun PlayPauseButton(onPressed: () -> Unit, isPlaying: Boolean, modifier: Modifier = Modifier) {
     FilledIconButton(
         onClick = onPressed,
-        modifier = Modifier.size(64.dp),
+        modifier = modifier.size(64.dp),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = appColors.iconActive,
             contentColor = Color.White

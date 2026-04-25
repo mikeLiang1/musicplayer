@@ -29,14 +29,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,13 +49,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
 import org.example.project.core.helper.formatTime
 import org.example.project.core.manager.PlaybackMode
-import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
+import org.example.project.features.songMenu.ui.AddToPlaylistBottomSheet
+import org.example.project.features.songMenu.ui.SongMenuBottomSheet
 import org.example.project.ui.component.CoverImage
-import org.example.project.ui.component.PlaylistItem
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.appColors
 import sh.calvin.reorderable.ReorderableItem
@@ -130,7 +126,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
     }
 
 
-    MenuBottomSheet(
+    SongMenuBottomSheet(
         isMenuBottomSheetVisible = uiState.isMenuBottomSheetVisible,
         onCloseBottomSheet = {
             viewModel.onCloseMenuBottomSheet()
@@ -442,113 +438,6 @@ private fun PlaybackModeFooter(playbackMode: PlaybackMode, onPlaybackModeClicked
                 style = MaterialTheme.typography.labelSmall,
                 color = appColors.textDim
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MenuBottomSheet(
-    isMenuBottomSheetVisible: Boolean,
-    onCloseBottomSheet: () -> Unit,
-    isManualSongSelected: Boolean,
-    handleBottomSheetAction: (BottomSheetAction) -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(isMenuBottomSheetVisible) {
-        if (isMenuBottomSheetVisible) {
-            sheetState.show()
-        } else {
-            sheetState.hide()
-        }
-    }
-    if (isMenuBottomSheetVisible) {
-        ModalBottomSheet(
-            onDismissRequest = onCloseBottomSheet,
-            sheetState = sheetState,
-            containerColor = appColors.backgroundElevated
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(32.dp)
-            ) {
-
-                BottomSheetAction.all.forEach { action ->
-
-                    // Check: Is this a "Remove" button that shouldn't be shown?
-                    if (action is BottomSheetAction.RemoveFromQueue && !isManualSongSelected) return@forEach
-
-                    // Check: Is this an "Add" button that is already there?
-                    if (action is BottomSheetAction.AddToQueue && isManualSongSelected) return@forEach
-                    BottomSheetItem(
-                        bottomSheetAction = action,
-                        onClick = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    onCloseBottomSheet() // This sets the boolean to false
-                                }
-                            }
-                            handleBottomSheetAction(action)
-                        }
-                    )
-                }
-
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AddToPlaylistBottomSheet(
-    isBottomSheetVisible: Boolean,
-    onCloseBottomSheet: () -> Unit,
-    playlists: List<Playlist>,
-    onPlaylistClicked: (String) -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(isBottomSheetVisible) {
-        if (isBottomSheetVisible) {
-            sheetState.show()
-        } else {
-            sheetState.hide()
-        }
-    }
-    if (isBottomSheetVisible) {
-        ModalBottomSheet(
-            onDismissRequest = onCloseBottomSheet,
-            sheetState = sheetState,
-            containerColor = appColors.backgroundElevated
-        ) {
-            LazyColumn(
-                contentPadding = PaddingValues(bottom = 16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            ) {
-                items(playlists, key = { it.uniqueId }) { playlist ->
-                    PlaylistItem(
-                        playlist = playlist,
-                        onClick = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    onCloseBottomSheet() // This sets the boolean to false
-                                }
-                            }
-                            onPlaylistClicked(playlist.uniqueId)
-                        }
-                    )
-                }
-
-
-            }
         }
     }
 }

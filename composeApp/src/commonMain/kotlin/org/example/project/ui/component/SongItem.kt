@@ -61,7 +61,8 @@ fun SongItem(
             .background(backgroundColor)
             .clickable { onClick() }
             .alpha(if (isPreviousSong) 0.45f else 1f)
-            .padding(8.dp),
+            .padding(vertical = 8.dp)
+            .padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
 

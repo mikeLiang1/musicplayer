@@ -15,6 +15,7 @@ import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.playlist.repository.PlaylistRepository
 import org.example.project.features.playlist.ui.PlaylistViewModel
 import org.example.project.features.search.ui.SearchViewModel
+import org.example.project.features.songMenu.ui.SongMenuViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -42,6 +43,7 @@ val databaseModule = module {
 // 4. ViewModels Module (UI Layer)
 val viewModelModule = module {
     viewModel { HomeViewModel(get()) }
+    viewModel { SongMenuViewModel(get(), get()) }
     viewModel { SearchViewModel(get(), get(), get()) }
     viewModel { LibraryViewModel(get(), get(), get(), get()) }
     viewModel { MusicPlayerViewModel(get(), get(), get(), get(), get()) }

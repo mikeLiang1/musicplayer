@@ -28,11 +28,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
+import org.example.project.features.songMenu.ui.SongMenuProvider
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.component.SongItem
@@ -72,6 +78,8 @@ fun PlaylistScreen(
             }
         }
     ) {
+        var selectedSong by remember { mutableStateOf<Song?>(null) }
+        SongMenuProvider(selectedSong = selectedSong, resetSelectSong = { selectedSong = null })
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,15 +90,25 @@ fun PlaylistScreen(
             } else if (state.playlist == null) {
                 Text("Playlist not found")
             } else {
-                LazyColumn(contentPadding = PaddingValues(vertical = 16.dp)) {
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     item {
                         PlaylistHeader(playlist = state.playlist, onAction = onAction)
                     }
                     item {
                         HorizontalDivider(color = appColors.divider, modifier = Modifier.padding(vertical = 12.dp))
                     }
-                    items(state.playlist.songs) { song ->
-                        SongItem(song = song, onClick = {})
+                    if (state.playlist.songs.isEmpty()) {
+                        item {
+                            Text("No songs in playlist")
+                        }
+                    } else {
+
+                        items(state.playlist.songs) { song ->
+                            SongItem(song = song, onClick = {}, onMenuClicked = { selectedSong = song })
+                        }
                     }
                 }
             }
@@ -142,12 +160,15 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
 
                 Spacer(modifier = Modifier.width(12.dp))
                 IconButton(onClick = { onAction(PlaylistAction.OnMenuPressed) }) {
-
                     Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
                 }
             }
 
-            PlayPauseButton(onPressed = { onAction(PlaylistAction.OnPlayPressed) }, isPlaying = false)
+            PlayPauseButton(
+                onPressed = { onAction(PlaylistAction.OnPlayPressed) },
+                isPlaying = false,
+                modifier = Modifier.padding(end = 12.dp)
+            )
         }
     }
 }
@@ -169,6 +190,20 @@ private fun PlaylistPreview() {
                         )
                     )
                 )
+            ),
+            onBackPressed = {},
+            onAction = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun NoSongPreview() {
+    AppPreview {
+        PlaylistScreen(
+            state = PlaylistUiState(
+                playlist = Playlist(title = "Title", numSongs = 30)
             ),
             onBackPressed = {},
             onAction = {}

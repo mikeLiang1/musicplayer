@@ -51,21 +51,25 @@ class SongMenuViewModel constructor(
         _uiState.update { it.copy(isPlaylistSheetVisible = false) }
     }
 
-    fun handleAction(action: BottomSheetAction) {
+    fun handleAction(action: SongMenuAction) {
         when (action) {
-            BottomSheetAction.AddToPlaylist -> _uiState.update {
+            SongMenuAction.AddToPlaylist -> _uiState.update {
                 it.copy(isPlaylistSheetVisible = true)
             }
 
-            BottomSheetAction.AddToQueue -> {
+            SongMenuAction.AddToQueue -> {
                 val song = _uiState.value.selectedSong ?: return
                 queueManager.addToManualQueue(song)
                 onCloseMenuSheet()
             }
 
-            BottomSheetAction.RemoveFromQueue -> {
+            SongMenuAction.RemoveFromQueue -> {
                 val song = _uiState.value.selectedSong ?: return
                 removeSong(song)
+            }
+
+            SongMenuAction.RemoveFromPlaylist -> {
+                // TODO
             }
 
             else -> {}

@@ -131,8 +131,8 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
         onCloseBottomSheet = {
             viewModel.onCloseMenuBottomSheet()
         },
-        isManualSongSelected = displayQueue.manual.contains(uiState.selectedSong),
-        handleBottomSheetAction = { viewModel.handleBottomSheetAction(it) }
+        handleBottomSheetAction = { viewModel.handleBottomSheetAction(it) },
+        songMenuActions = listOf()
     )
 
     AddToPlaylistBottomSheet(

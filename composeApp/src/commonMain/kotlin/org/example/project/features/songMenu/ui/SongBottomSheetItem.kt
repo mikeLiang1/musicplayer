@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.outlined.PlaylistRemove
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Person
@@ -33,10 +34,10 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun BottomSheetItem(
     modifier: Modifier = Modifier,
-    bottomSheetAction: BottomSheetAction,
+    songMenuAction: SongMenuAction,
     onClick: () -> Unit
 ) {
-    val isManual = bottomSheetAction == BottomSheetAction.RemoveFromQueue
+    val isManual = songMenuAction == SongMenuAction.RemoveFromQueue
     Row(
         modifier = modifier
             .background(appColors.backgroundElevated)
@@ -52,13 +53,13 @@ fun BottomSheetItem(
                 .padding(8.dp)
         ) {
             Icon(
-                bottomSheetAction.icon,
-                contentDescription = bottomSheetAction.label,
+                songMenuAction.icon,
+                contentDescription = songMenuAction.label,
                 tint = if (isManual) appColors.error else appColors.iconSecondary
             )
         }
         Text(
-            text = bottomSheetAction.label,
+            text = songMenuAction.label,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = if (isManual) appColors.error else appColors.textPrimary,
@@ -74,44 +75,47 @@ private fun BottomSheetItemPreview() {
     Surface {
         Column {
             BottomSheetItem(
-                bottomSheetAction = BottomSheetAction.AddToPlaylist, onClick = {}
+                songMenuAction = SongMenuAction.AddToPlaylist, onClick = {}
             )
             BottomSheetItem(
-                bottomSheetAction = BottomSheetAction.AddToPlaylist, onClick = {}
+                songMenuAction = SongMenuAction.AddToPlaylist, onClick = {}
             )
         }
     }
 }
 
-sealed class BottomSheetAction {
+sealed class SongMenuAction {
     abstract val label: String
     abstract val icon: ImageVector
-    open val isDangerous: Boolean = false
 
-    data object GoToArtist : BottomSheetAction() {
+    data object GoToArtist : SongMenuAction() {
         override val label = "Go to artist"
         override val icon = Icons.Rounded.Person
     }
 
-    data object GoToAlbum : BottomSheetAction() {
+    data object GoToAlbum : SongMenuAction() {
         override val label = "Go to album"
         override val icon = Icons.Rounded.Album
     }
 
-    data object AddToPlaylist : BottomSheetAction() {
+    data object AddToPlaylist : SongMenuAction() {
         override val label = "Add to playlist"
         override val icon = Icons.AutoMirrored.Rounded.PlaylistAdd
     }
 
-    data object AddToQueue : BottomSheetAction() {
+    data object RemoveFromPlaylist : SongMenuAction() {
+        override val label = "Remove from this playlist"
+        override val icon = Icons.Outlined.PlaylistRemove
+    }
+
+    data object AddToQueue : SongMenuAction() {
         override val label = "Add to queue"
         override val icon = Icons.Rounded.Queue
     }
 
-    data object RemoveFromQueue : BottomSheetAction() {
+    data object RemoveFromQueue : SongMenuAction() {
         override val label = "Remove from queue"
         override val icon = Icons.Rounded.DeleteOutline
-        override val isDangerous = true
     }
 
     companion object {

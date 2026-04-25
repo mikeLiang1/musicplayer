@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
+import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.SongMenuProvider
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.component.PlayPauseButton
@@ -79,7 +79,15 @@ fun PlaylistScreen(
     ) {
 
         var selectedSong by remember { mutableStateOf<Song?>(null) }
-        SongMenuProvider(selectedSong = selectedSong, resetSelectSong = { selectedSong = null })
+        SongMenuProvider(
+            selectedSong = selectedSong, resetSelectSong = { selectedSong = null }, songMenuOptions = listOf(
+                SongMenuAction.AddToQueue,
+                SongMenuAction.AddToPlaylist,
+                SongMenuAction.GoToArtist,
+                SongMenuAction.GoToAlbum,
+                SongMenuAction.RemoveFromPlaylist
+            )
+        )
 
         Column(
             modifier = Modifier
@@ -106,7 +114,6 @@ fun PlaylistScreen(
                             Text("No songs in playlist")
                         }
                     } else {
-
                         items(state.playlist.songs) { song ->
                             SongItem(song = song, onClick = {}, onMenuClicked = { selectedSong = song })
                         }
@@ -121,7 +128,6 @@ fun PlaylistScreen(
 private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth()
-
     ) {
         CoverImage(
             modifier = Modifier

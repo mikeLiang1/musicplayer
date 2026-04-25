@@ -11,7 +11,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SongMenuProvider(
     selectedSong: Song?,
-    resetSelectSong: () -> Unit
+    resetSelectSong: () -> Unit,
+    songMenuOptions: List<SongMenuAction>
 ) {
     val viewModel: SongMenuViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -28,7 +29,7 @@ fun SongMenuProvider(
             viewModel.onCloseMenuSheet()
         },
         handleBottomSheetAction = viewModel::handleAction,
-        isManualSongSelected = uiState.isManualSongSelected
+        songMenuActions = songMenuOptions
     )
 
     AddToPlaylistBottomSheet(

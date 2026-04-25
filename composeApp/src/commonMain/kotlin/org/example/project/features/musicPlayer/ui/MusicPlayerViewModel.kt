@@ -28,7 +28,7 @@ import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 import org.example.project.features.playlist.repository.PlaylistRepository
-import org.example.project.features.songMenu.ui.BottomSheetAction
+import org.example.project.features.songMenu.ui.SongMenuAction
 
 @OptIn(FlowPreview::class)
 class MusicPlayerViewModel constructor(
@@ -242,24 +242,25 @@ class MusicPlayerViewModel constructor(
         }
     }
 
-    fun handleBottomSheetAction(action: BottomSheetAction) {
+    fun handleBottomSheetAction(action: SongMenuAction) {
         when (action) {
-            BottomSheetAction.AddToPlaylist -> {
+            SongMenuAction.AddToPlaylist -> {
                 _uiState.update {
                     it.copy(isAddToPlaylistBottomSheetVisible = true)
                 }
             }
 
-            BottomSheetAction.AddToQueue -> {
+            SongMenuAction.AddToQueue -> {
                 addSelectedSongToQueue()
             }
 
-            BottomSheetAction.GoToAlbum -> {}
-            BottomSheetAction.GoToArtist -> {}
-            BottomSheetAction.RemoveFromQueue -> {
+            SongMenuAction.GoToAlbum -> {}
+            SongMenuAction.GoToArtist -> {}
+            SongMenuAction.RemoveFromQueue -> {
                 val song = _uiState.value.selectedSong ?: return
                 removeSong(song)
             }
+            else -> {}
 
         }
     }

@@ -20,8 +20,8 @@ import org.example.project.ui.theme.appColors
 fun SongMenuBottomSheet(
     isMenuBottomSheetVisible: Boolean,
     onCloseBottomSheet: () -> Unit,
-    isManualSongSelected: Boolean,
-    handleBottomSheetAction: (BottomSheetAction) -> Unit
+    handleBottomSheetAction: (SongMenuAction) -> Unit,
+    songMenuActions:  List<SongMenuAction>
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -47,14 +47,9 @@ fun SongMenuBottomSheet(
                 verticalArrangement = Arrangement.spacedBy(32.dp)
             ) {
 
-                BottomSheetAction.Companion.all.forEach { action ->
-                    // Check: Is this a "Remove" button that shouldn't be shown?
-                    if (action is BottomSheetAction.RemoveFromQueue && !isManualSongSelected) return@forEach
-
-                    // Check: Is this an "Add" button that is already there?
-                    if (action is BottomSheetAction.AddToQueue && isManualSongSelected) return@forEach
+                songMenuActions.forEach { action ->
                     BottomSheetItem(
-                        bottomSheetAction = action,
+                        songMenuAction = action,
                         onClick = {
                             scope.launch { sheetState.hide() }.invokeOnCompletion {
                                 if (!sheetState.isVisible) {

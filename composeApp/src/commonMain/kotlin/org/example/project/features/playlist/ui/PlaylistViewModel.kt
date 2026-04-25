@@ -33,10 +33,10 @@ class PlaylistViewModel constructor(
         when (playlistAction) {
             PlaylistAction.OnShuffledPressed -> {}
             PlaylistAction.OnMenuPressed -> {
-                TODO()
+
             }
             PlaylistAction.OnPlayPressed -> {
-                TODO()
+
             }
             PlaylistAction.OnSearchPressed -> {
 

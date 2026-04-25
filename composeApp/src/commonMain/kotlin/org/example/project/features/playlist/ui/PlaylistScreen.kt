@@ -54,7 +54,6 @@ fun PlaylistScreen(
     onAction: (PlaylistAction) -> Unit
 ) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -83,7 +82,7 @@ fun PlaylistScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(bottom = it.calculateBottomPadding())
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator()
@@ -91,7 +90,7 @@ fun PlaylistScreen(
                 Text("Playlist not found")
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(vertical = 16.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 146.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     item {

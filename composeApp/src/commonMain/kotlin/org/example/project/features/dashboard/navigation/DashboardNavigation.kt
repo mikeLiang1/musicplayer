@@ -5,11 +5,13 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -18,7 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -61,16 +64,6 @@ fun DashboardNavigation() {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             containerColor = appColors.backgroundPrimary,
-            bottomBar = {
-                Column {
-                    if (isBottomBarVisible) {
-                        BottomNavigationBar(
-                            navigationState = navigationState,
-                            navigator = navigator
-                        )
-                    }
-                }
-            },
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -105,13 +98,29 @@ fun DashboardNavigation() {
                     entries = navigationState.toEntries(entryProvider),
                     onBack = { navigator.goBack() }
                 )
-                MusicPlayerBar(
-                    viewModel = musicPlayerViewModel,
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .padding(12.dp)
-                )
+                        .fillMaxWidth()
+                        // Gradient makes it look like Spotify (fading from transparent to dark)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    appColors.backgroundPrimary.copy(alpha = 0.9f),
+                                    appColors.backgroundPrimary
+                                )
+                            )
+                        )
+                        .navigationBarsPadding() // Protect system navigation buttons
+                ) {
+                    MusicPlayerBar(viewModel = musicPlayerViewModel)
+                    if (isBottomBarVisible) {
+                        BottomNavigationBar(
+                            navigationState = navigationState,
+                            navigate = { navigator.navigateToTopLevelRoute(it) })
+                    }
+                }
             }
         }
 

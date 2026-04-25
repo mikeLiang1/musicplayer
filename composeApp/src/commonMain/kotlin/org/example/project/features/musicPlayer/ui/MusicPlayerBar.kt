@@ -3,9 +3,11 @@ package org.example.project.features.musicPlayer.ui
 import androidx.annotation.OptIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,17 +47,18 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
         Surface(
             color = appColors.backgroundElevated,
             shadowElevation = 8.dp,
-            shape = RoundedCornerShape(12.dp),
-            modifier = modifier.clickable { viewModel.setFullScreen(true) }
+            modifier = modifier
+                .height(65.dp)
+                .clickable { viewModel.setFullScreen(true) }
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 12.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp)
             ) {
-                // Player content
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .fillMaxSize(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -138,7 +141,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(2.dp),
+                        .align(Alignment.BottomCenter),
                     color = appColors.accentDark,
                     trackColor = appColors.backgroundSurface,
                 )

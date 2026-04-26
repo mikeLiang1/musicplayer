@@ -1,116 +1,149 @@
 package org.example.project.ui.component
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
+import org.example.project.ui.theme.AppPreview
+import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.appColors
+
+sealed interface SongItemState {
+    // 1. Standard song in the list
+    data object Default : SongItemState
+
+    // 2. The song currently being played
+    data class Current(val isPlaying: Boolean) : SongItemState
+
+    // 3. A song that has already played (usually dimmed)
+    data object Previous : SongItemState
+
+    // 4. A song added manually (special background)
+    data object Manual : SongItemState
+}
 
 @Composable
 fun SongItem(
     modifier: Modifier = Modifier,
-    dragHandleModifier: Modifier = Modifier,
     song: Song,
-    isCurrentlyPlaying: Boolean = false,
-    isPreviousSong: Boolean = false,
-    isEditable: Boolean = false,
-    showRemoveButton: Boolean = false,
-    isManual: Boolean = false,
+    state: SongItemState = SongItemState.Default,
+    isEditMode: Boolean = false,
+    dragHandleModifier: Modifier = Modifier,
     onMenuClicked: () -> Unit = {},
     onRemoveClicked: () -> Unit = {},
     onClick: () -> Unit
 ) {
-    val backgroundColor = when {
-        isCurrentlyPlaying -> appColors.accentContainer.copy(alpha = 0.3f)
-        isManual -> appColors.rose.copy(alpha = 0.1f)
+    // 1. Derived Properties based on State
+    val backgroundColor = when (state) {
+        is SongItemState.Current -> appColors.accentContainer.copy(alpha = 0.3f)
+        is SongItemState.Manual -> appColors.rose.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
+
+    val contentAlpha = if (state is SongItemState.Previous) 0.45f else 1f
+    val titleColor = if (state is SongItemState.Current) appColors.accentPrimary else appColors.textPrimary
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(backgroundColor)
             .clickable { onClick() }
-            .alpha(if (isPreviousSong) 0.45f else 1f)
+            .alpha(contentAlpha)
             .padding(vertical = 8.dp)
             .padding(start = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
-        if (isEditable) {
+        // 2. Conditional Drag Handle
+        if (isEditMode) {
             Icon(
-                imageVector = Icons.Default.Reorder, // The "hamburger" or "drag" handle
-                contentDescription = "Drag to reorder",
+                imageVector = Icons.Default.Reorder,
+                contentDescription = null,
                 tint = appColors.iconSecondary,
                 modifier = Modifier
-                    .padding(end = 16.dp)
                     .then(dragHandleModifier)
             )
         }
 
-        Box(
-            // 1. Center all children within the Box
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(50.dp) // Match the size of the image
-        ) {
-            // 2. Draw the Image first (bottom layer)
-            CoverImage(song.thumbnailUrl, modifier = modifier.fillMaxSize(), shape = RoundedCornerShape(4.dp))
+        // 3. Cover Image + Equalizer Logic
+        Box(modifier = Modifier.size(48.dp)) {
+            CoverImage(
+                data = song.thumbnailUrl,
+                modifier = Modifier
+                    .fillMaxSize(),
+                shape = RoundedCornerShape(8.dp)
+            )
 
-            // 3. Draw the Icon second (top layer)
-            if (isCurrentlyPlaying) {
-                Icon(
-                    imageVector = Icons.Filled.GraphicEq,
-                    contentDescription = "Currently playing",
-                    tint = appColors.iconActive,
-                    modifier = Modifier.size(24.dp) // Adjust icon size as needed
-                )
+            if (state is SongItemState.Current) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EqualizerBars(state.isPlaying)
+                }
             }
         }
 
-        Spacer(Modifier.width(12.dp))
+        // 4. Current Song Accent Bar
+        if (state is SongItemState.Current) {
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(48.dp)
+                    .clip(CircleShape)
+                    .background(appColors.accentPrimary)
+            )
+        }
 
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        // 5. Texts
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = song.title,
                 maxLines = 1,
                 fontWeight = FontWeight.SemiBold,
-                color = when {
-                    isCurrentlyPlaying -> appColors.accentPrimary
-                    else -> appColors.textPrimary
-                }
+                color = titleColor
             )
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${song.artist} • ${formatTime(song.duration)}",
                 style = MaterialTheme.typography.bodySmall,
@@ -118,96 +151,132 @@ fun SongItem(
             )
         }
 
-        if (showRemoveButton) {
-            IconButton(
-                onClick = { onRemoveClicked() }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = "Remove song",
-                    tint = appColors.iconSecondary
-                )
-            }
-        } else {
-            IconButton(
-                onClick = { onMenuClicked() }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "Song menu",
-                    tint = appColors.iconSecondary
-                )
-            }
+        // 6. Action Button
+        IconButton(onClick = if (isEditMode) onRemoveClicked else onMenuClicked) {
+            Icon(
+                imageVector = if (isEditMode) Icons.Filled.Close else Icons.Filled.MoreVert,
+                contentDescription = null,
+                tint = appColors.iconSecondary
+            )
         }
     }
 }
 
-@Preview
+@Composable
+private fun EqualizerBars(isPlaying: Boolean) {
+    val bars = listOf(0.3f, 0.7f, 1f, 0.5f)
+    val lifecycle = LocalLifecycleOwner.current
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.height(20.dp)
+    ) {
+        bars.forEachIndexed { i, base ->
+            val scale = remember { Animatable(base * 0.3f) }
+
+            LaunchedEffect(isPlaying) {
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    if (isPlaying) {
+                        while (true) {
+                            scale.animateTo(
+                                base,
+                                animationSpec = tween(
+                                    durationMillis = 500 + i * 80,
+                                    easing = FastOutSlowInEasing
+                                )
+                            )
+                            scale.animateTo(
+                                base * 0.3f,
+                                animationSpec = tween(
+                                    durationMillis = 500 + i * 80,
+                                    easing = FastOutSlowInEasing
+                                )
+                            )
+                        }
+                    } else {
+                        scale.stop()
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(20.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .graphicsLayer {
+                        scaleY = scale.value
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                    }
+                    .background(appColors.accentPrimary)
+            )
+        }
+    }
+}
+
+
+@DevicePreviews
 @Composable
 private fun SongItemPreview() {
-    Surface {
-        Column {
+    val mockSong = Song(
+        url = "url",
+        title = "Song Title",
+        artist = "Artist Name",
+        thumbnailUrl = "https://example.com/image.jpg",
+        duration = 180000L // 3 minutes
+    )
+
+    AppPreview {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // 1. CURRENTLY PLAYING
+            Text("Current State", style = MaterialTheme.typography.labelSmall)
             SongItem(
-                song = Song(
-                    url = "item.url",
-                    title = "Currently Playing Song",
-                    artist = "Artist",
-                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                    duration = 3000L
-                ),
-                isCurrentlyPlaying = true,
-                onMenuClicked = {},
+                song = mockSong.copy(title = "Currently Playing Song"),
+                state = SongItemState.Current(isPlaying = true),
                 onClick = {}
             )
 
-            Spacer(Modifier.height(12.dp))
-
+            // 2. MANUAL QUEUE + REMOVE BUTTON
+            Text("Manual State", style = MaterialTheme.typography.labelSmall)
             SongItem(
-                song = Song(
-                    url = "item.url",
-                    title = "Manual Queue Song",
-                    artist = "Artist",
-                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                    duration = 3000L,
-                ),
-                showRemoveButton = true,
-                onMenuClicked = {},
+                song = mockSong.copy(title = "Manual Queue Song"),
+                state = SongItemState.Manual,
+                isEditMode = true,
                 onRemoveClicked = {},
                 onClick = {}
             )
 
-            Spacer(Modifier.height(12.dp))
-
+            // 3. EDITABLE QUEUE
+            Text("Editable State", style = MaterialTheme.typography.labelSmall)
             SongItem(
-                song = Song(
-                    url = "item.url",
-                    title = "Normal Queue Song",
-                    artist = "Artist",
-                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                    duration = 3000L
-                ),
-                isEditable = true,
-                showRemoveButton = true,
-                onMenuClicked = {},
+                song = mockSong.copy(title = "Normal Editable Queue Song"),
+                state = SongItemState.Default,
+                isEditMode = true,
                 onRemoveClicked = {},
                 onClick = {}
             )
 
-            Spacer(Modifier.height(12.dp))
-
+            // 4. NORMAL / DEFAULT
+            Text("Default State", style = MaterialTheme.typography.labelSmall)
             SongItem(
-                song = Song(
-                    url = "item.url",
-                    title = "History Song",
-                    artist = "Artist",
-                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                    duration = 3000L
-                ),
-                isPreviousSong = true,
+                song = mockSong.copy(title = "Normal Queue Song"),
+                state = SongItemState.Default,
+                onMenuClicked = {},
+                onClick = {}
+            )
+
+            // 5. HISTORY / PREVIOUS
+            Text("Previous State", style = MaterialTheme.typography.labelSmall)
+            SongItem(
+                song = mockSong.copy(title = "History Song"),
+                state = SongItemState.Previous,
                 onMenuClicked = {},
                 onClick = {}
             )
         }
-
     }
 }

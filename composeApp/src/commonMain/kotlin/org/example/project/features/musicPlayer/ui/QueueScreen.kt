@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -37,25 +36,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
-import org.example.project.core.helper.formatTime
 import org.example.project.core.manager.PlaybackMode
-import org.example.project.core.model.Song
 import org.example.project.features.songMenu.ui.AddToPlaylistBottomSheet
 import org.example.project.features.songMenu.ui.SongMenuBottomSheet
-import org.example.project.ui.component.CoverImage
 import org.example.project.ui.component.SongItem
+import org.example.project.ui.component.SongItemState
 import org.example.project.ui.theme.appColors
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -146,7 +141,11 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
 
         // ── Pinned current song ──────────────────────────
         displayQueue.current?.let { currentSong ->
-            CurrentSongRow(song = currentSong, isPlaying = playerState.isPlaying)
+            SongItem(
+                song = currentSong,
+                state = SongItemState.Current(playerState.isPlaying),
+                onClick = { viewModel.onMenuClicked(currentSong) },
+                onMenuClicked = { viewModel.onMenuClicked(currentSong) })
         }
 
         // ── Scrollable queue ─────────────────────────────
@@ -166,9 +165,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                         SongItem(
                             modifier = Modifier.animateItem(),
                             song = song,
-                            isPreviousSong = true,
-                            isEditable = false,
-                            isManual = false,
+                            state = SongItemState.Previous,
                             dragHandleModifier = Modifier,
                             onMenuClicked = { viewModel.onMenuClicked(song) },
                         ) { viewModel.changePlayingToSong(song) }
@@ -176,18 +173,16 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                 }
 
                 // Current song inline — only when history is open
-                displayQueue.current?.let { current ->
+                displayQueue.current?.let { currentSong ->
                     stickyHeader(key = "header_current") {
                         SectionDivider(label = "Now Playing")
                     }
-                    item(key = current.uniqueId) {
+                    item(key = currentSong.uniqueId) {
                         SongItem(
-                            song = current,
-                            isCurrentlyPlaying = true,
-                            isEditable = false,
-                            isManual = false,
+                            song = currentSong,
+                            state = SongItemState.Current(playerState.isPlaying),
                             dragHandleModifier = Modifier,
-                            onMenuClicked = { viewModel.onMenuClicked(current) }
+                            onMenuClicked = { viewModel.onMenuClicked(currentSong) }
                         ) { /* can't tap current to change, already playing */ }
                     }
                 }
@@ -207,9 +202,8 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                             SongItem(
                                 modifier = Modifier.animateItem(),
                                 song = song,
-                                isEditable = uiState.isEditingQueue,
-                                showRemoveButton = uiState.isEditingQueue,
-                                isManual = true,
+                                state = SongItemState.Manual,
+                                isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
                                 onMenuClicked = { viewModel.onMenuClicked(song) },
                                 onRemoveClicked = { viewModel.removeSong(song) }
@@ -227,9 +221,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                             SongItem(
                                 modifier = Modifier.animateItem(),
                                 song = song,
-                                isEditable = uiState.isEditingQueue,
-                                showRemoveButton = uiState.isEditingQueue,
-                                isManual = false,
+                                isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
                                 onMenuClicked = { viewModel.onMenuClicked(song) },
                                 onRemoveClicked = { viewModel.removeSong(song) }
@@ -275,67 +267,69 @@ private fun SectionDivider(label: String) {
     }
 }
 
-@Composable
-private fun CurrentSongRow(song: Song, isPlaying: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(appColors.accentContainer.copy(alpha = 0.3f))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Artwork with eq overlay
-        Box(modifier = Modifier.size(48.dp)) {
-            CoverImage(
-                data = song.thumbnailUrl,
-                modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(8.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Black.copy(alpha = 0.45f)),
-                contentAlignment = Alignment.Center
-            ) {
-                EqualizerBars(isPlaying)
-            }
-        }
-
-        // Left accent bar
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .height(48.dp)
-                .clip(RoundedCornerShape(99.dp))
-                .background(appColors.accentPrimary)
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = appColors.accentPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = "${song.artist} • ${formatTime(song.duration)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = appColors.textMuted
-            )
-        }
-
-        Icon(
-            imageVector = Icons.Rounded.MoreVert,
-            contentDescription = null,
-            tint = appColors.iconMuted,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
+//@Composable
+//private fun CurrentSongRow(song: Song, isPlaying: Boolean) {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(appColors.accentContainer.copy(alpha = 0.3f))
+//            .padding(horizontal = 16.dp, vertical = 10.dp),
+//        verticalAlignment = Alignment.CenterVertically,
+//        horizontalArrangement = Arrangement.spacedBy(12.dp)
+//    ) {
+//        // Artwork with eq overlay
+//        Box(modifier = Modifier.size(48.dp)) {
+//            CoverImage(
+//                data = song.thumbnailUrl,
+//                modifier = Modifier.fillMaxSize(),
+//                shape = RoundedCornerShape(8.dp)
+//            )
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .clip(RoundedCornerShape(8.dp))
+//                    .background(Color.Black.copy(alpha = 0.45f)),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                EqualizerBars(isPlaying)
+//            }
+//        }
+//
+//        // Left accent bar
+//        Box(
+//            modifier = Modifier
+//                .width(3.dp)
+//                .height(48.dp)
+//                .clip(RoundedCornerShape(99.dp))
+//                .background(appColors.accentPrimary)
+//        )
+//
+//        Column(modifier = Modifier.weight(1f)) {
+//            Text(
+//                text = song.title,
+//                style = MaterialTheme.typography.bodyMedium,
+//                fontWeight = FontWeight.SemiBold,
+//                color = appColors.accentPrimary,
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//            Text(
+//                text = "${song.artist} • ${formatTime(song.duration)}",
+//                style = MaterialTheme.typography.bodySmall,
+//                color = appColors.textMuted
+//            )
+//        }
+//        IconButton(
+//            onClick = { ) }
+//        ) {
+//            Icon(
+//                imageVector = Icons.Filled.MoreVert,
+//                contentDescription = "Song menu",
+//                tint = appColors.iconSecondary
+//            )
+//        }
+//    }
+//}
 
 @Composable
 private fun EqualizerBars(isPlaying: Boolean) {

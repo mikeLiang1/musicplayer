@@ -42,6 +42,7 @@ fun BottomSheetItem(
         modifier = modifier
             .background(appColors.backgroundElevated)
             .clickable(onClick = { onClick() })
+            .padding(horizontal = 16.dp, vertical = 12.dp)
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)

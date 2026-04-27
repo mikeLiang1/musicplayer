@@ -37,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
+import org.example.project.features.dashboard.navigation.bottomBarDp
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.SongMenuProvider
 import org.example.project.ui.component.CoverImage
@@ -78,16 +79,6 @@ fun PlaylistScreen(
         }
     ) {
 
-        var selectedSong by remember { mutableStateOf<Song?>(null) }
-        SongMenuProvider(
-            selectedSong = selectedSong, resetSelectSong = { selectedSong = null }, songMenuOptions = listOf(
-                SongMenuAction.AddToQueue,
-                SongMenuAction.AddToPlaylist,
-                SongMenuAction.GoToArtist,
-                SongMenuAction.GoToAlbum,
-                SongMenuAction.RemoveFromPlaylist
-            )
-        )
 
         Column(
             modifier = Modifier
@@ -99,8 +90,22 @@ fun PlaylistScreen(
             } else if (state.playlist == null) {
                 Text("Playlist not found")
             } else {
+
+                var selectedSong by remember { mutableStateOf<Song?>(null) }
+                SongMenuProvider(
+                    selectedSong = selectedSong,
+                    resetSelectSong = { selectedSong = null },
+                    songMenuOptions = listOf(
+                        SongMenuAction.AddToQueue,
+                        SongMenuAction.AddToPlaylist,
+                        SongMenuAction.GoToArtist,
+                        SongMenuAction.GoToAlbum,
+                        SongMenuAction.RemoveFromPlaylist(state.playlist.uniqueId)
+                    )
+                )
+
                 LazyColumn(
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 146.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomBarDp + 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     item {

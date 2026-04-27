@@ -5,19 +5,17 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,28 +33,23 @@ fun BottomNavigationBar(
     navigationState: NavigationState,
     navigate: (Route) -> Unit,
 ) {
-    val bottomPadding = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     Surface(
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .height(65.dp)
-            // Lets just hardcode for we can dynamic change it later
+            .height(60.dp)
     ) {
         Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .padding(horizontal = 32.dp)
+            modifier = Modifier.fillMaxWidth(), // No horizontal padding here
+            verticalAlignment = Alignment.CenterVertically
         ) {
             dashboardTopLevelDestinations.forEach { (route, bottomNavItem) ->
                 CustomBottomNavItem(
+                    modifier = Modifier.weight(1f),
                     icon = bottomNavItem.icon,
                     label = bottomNavItem.label,
                     isSelected = navigationState.topLevelRoute == route,
-                    onClick = {
-                        navigate(route)
-                    }
+                    onClick = { navigate(route) }
                 )
             }
         }
@@ -73,13 +66,14 @@ fun CustomBottomNavItem(
 ) {
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null, // Removes the ripple for a cleaner look, or keep it if you prefer
+                indication = ripple(),
                 onClick = onClick
             )
-            .padding(vertical = 8.dp),
+            .padding(top = 8.dp), // Internal spacing
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -89,7 +83,6 @@ fun CustomBottomNavItem(
             tint = if (isSelected) appColors.accentPrimary else appColors.iconSecondary,
             modifier = Modifier.size(26.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,

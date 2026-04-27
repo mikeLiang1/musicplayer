@@ -40,6 +40,11 @@ class PlaylistRepository(database: MusicDatabase) {
     fun getSongsFromPlaylist(playListId: String): Flow<Playlist?> {
         return dao.getSongsFromPlaylist(playListId).map { it?.toUIModel() }
     }
+
+    suspend fun deleteSongFromPlaylist(playlistId: String, songId: String) {
+        dao.deleteSongFromPlaylist(playlistId, songId)
+    }
+
 }
 
 

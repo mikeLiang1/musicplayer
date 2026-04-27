@@ -104,7 +104,7 @@ sealed class SongMenuAction {
         override val icon = Icons.AutoMirrored.Rounded.PlaylistAdd
     }
 
-    data object RemoveFromPlaylist : SongMenuAction() {
+    data class RemoveFromPlaylist(val playlistId: String) : SongMenuAction() {
         override val label = "Remove from this playlist"
         override val icon = Icons.Outlined.PlaylistRemove
     }

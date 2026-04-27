@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
 import java.util.UUID
 
-// QueueSong removed - using Song directly with uniqueId as instance identifier
 
 /**
  * Repeat mode for queue playback.
@@ -178,10 +177,44 @@ class QueueManager {
     }
 
     /**
+     * Plays song from queue.
+     */
+    fun playSongFromQueue(uniqueId: String) {
+        val state = _queueState.value
+
+        // 1. Already playing?
+        if (uniqueId == state.current?.uniqueId) return
+
+        // 2. Check History (Indices 0 to currentBaseIndex)
+        // In your QueueState, history is baseQueue.take(currentBaseIndex)
+        val historyIndex = state.baseQueue.take(state.currentBaseIndex).indexOfFirst { it.uniqueId == uniqueId }
+        if (historyIndex != -1) {
+            selectHistorySong(historyIndex)
+            return
+        }
+
+        // 3. Check Manual Queue
+        val manualIndex = state.manualQueue.indexOfFirst { it.uniqueId == uniqueId }
+        if (manualIndex != -1) {
+            selectManualSong(manualIndex)
+            return
+        }
+
+        // 4. Check Normal Up Next (Indices currentBaseIndex + 1 to end)
+        val normalIndex = state.baseQueue.indexOfFirst { it.uniqueId == uniqueId }
+        if (normalIndex != -1) {
+            // We found it in baseQueue. Since we already checked history,
+            // this index is guaranteed to be in the "upcoming" part.
+            selectNormalSong(normalIndex)
+            return
+        }
+    }
+
+    /**
      * Selects a song from the manual queue to play now.
      * Removes manualQueue[0 until index], plays manualQueue[index], removes it.
      */
-    fun selectManualSong(index: Int) {
+    private fun selectManualSong(index: Int) {
         val hadManualSong = _queueState.value.currentManualSong != null
         _queueState.update { state ->
             if (index !in state.manualQueue.indices) return@update state
@@ -201,7 +234,7 @@ class QueueManager {
      * Sets currentBaseIndex to index. Skipped songs become history.
      * Manual queue stays pinned after new current.
      */
-    fun selectNormalSong(index: Int) {
+    private fun selectNormalSong(index: Int) {
         val hadManualSong = _queueState.value.currentManualSong != null
         val manualQueueSize = _queueState.value.manualQueue.size
         _queueState.update { state ->
@@ -222,7 +255,7 @@ class QueueManager {
      * Selects a song from history to play again.
      * Sets currentBaseIndex back to index.
      */
-    fun selectHistorySong(index: Int) {
+    private fun selectHistorySong(index: Int) {
         val hadManualSong = _queueState.value.currentManualSong != null
         val hasManualQueue = _queueState.value.manualQueue.isNotEmpty()
         _queueState.update { state ->
@@ -238,102 +271,30 @@ class QueueManager {
         }
     }
 
-    /**
-     * Removes a song from the manual queue.
-     */
-    fun removeManualSong(index: Int) {
+    fun removeSong(uniqueId: String) {
         _queueState.update { state ->
-            val manualQueue = state.manualQueue.toMutableList()
-            if (index !in manualQueue.indices) return@update state
+            // 1. Check Manual Queue
+            val manualIndex = state.manualQueue.indexOfFirst { it.uniqueId == uniqueId }
+            if (manualIndex != -1) {
+                val newManual = state.manualQueue.filterIndexed { index, _ -> index != manualIndex }
+                return@update state.copy(manualQueue = newManual)
+            }
 
-            manualQueue.removeAt(index)
-            state.copy(manualQueue = manualQueue)
+            // 2. Check Base Queue (Upcoming only)
+            val baseIndex = state.baseQueue.indexOfFirst { it.uniqueId == uniqueId }
+            // Only allow removal if it's in the future (index > currentBaseIndex)
+            if (baseIndex > state.currentBaseIndex) {
+                val newBase = state.baseQueue.filterIndexed { index, _ -> index != baseIndex }
+                return@update state.copy(baseQueue = newBase)
+            }
+
+            // 3. If not found or is currently playing/history, do nothing
+            state
         }
+
+        // 4. Notify Media Session that the list changed
+        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }
-
-    /**
-     * Removes a song from the normal queue (only after currentBaseIndex).
-     * Adjusts index if needed.
-     */
-    fun removeNormalSong(index: Int) {
-        _queueState.update { state ->
-            val baseQueue = state.baseQueue.toMutableList()
-            val currentIndex = state.currentBaseIndex
-
-            // Can only remove songs after current
-            if (index <= currentIndex || index !in baseQueue.indices) return@update state
-
-            baseQueue.removeAt(index)
-
-            // If we removed a song before the current index in the original list,
-            // we need to adjust currentBaseIndex
-            val newCurrentIndex = currentIndex
-
-            state.copy(
-                baseQueue = baseQueue,
-                currentBaseIndex = newCurrentIndex
-            )
-        }
-    }
-
-//    /**
-//     * Moves a song within or between manual and normal queues.
-//     * Only songs after current can be moved.
-//     * Moving normal→manual inserts into manualQueue.
-//     * Moving manual→normal inserts into baseQueue after current.
-//     */
-//    fun moveSong(fromQueue: String, fromIndex: Int, toQueue: String, toIndex: Int) {
-//        _queueState.update { state ->
-//            val baseQueue = state.baseQueue.toMutableList()
-//            val manualQueue = state.manualQueue.toMutableList()
-//            val currentIndex = state.currentBaseIndex
-//
-//            when {
-//                fromQueue == "normal" && toQueue == "normal" -> {
-//                    // Move within normal queue (after current)
-//                    if (fromIndex <= currentIndex || toIndex <= currentIndex) return@update state
-//                    if (fromIndex !in baseQueue.indices || toIndex !in baseQueue.indices) return@update state
-//
-//                    val song = baseQueue.removeAt(fromIndex)
-//                    val adjustedToIndex = if (toIndex > fromIndex) toIndex - 1 else toIndex
-//                    baseQueue.add(adjustedToIndex, song)
-//                }
-//
-//                fromQueue == "manual" && toQueue == "manual" -> {
-//                    // Move within manual queue
-//                    if (fromIndex !in manualQueue.indices || toIndex !in manualQueue.indices) return@update state
-//
-//                    val song = manualQueue.removeAt(fromIndex)
-//                    val adjustedToIndex = if (toIndex > fromIndex) toIndex - 1 else toIndex
-//                    manualQueue.add(adjustedToIndex, song)
-//                }
-//
-//                fromQueue == "normal" && toQueue == "manual" -> {
-//                    // Move from normal to manual queue
-//                    if (fromIndex <= currentIndex) return@update state
-//                    if (fromIndex !in baseQueue.indices || toIndex !in manualQueue.indices) return@update state
-//
-//                    val song = baseQueue.removeAt(fromIndex)
-//                    manualQueue.add(toIndex, song)
-//                }
-//
-//                fromQueue == "manual" && toQueue == "normal" -> {
-//                    // Move from manual to normal queue (insert after current)
-//                    if (fromIndex !in manualQueue.indices) return@update state
-//
-//                    val song = manualQueue.removeAt(fromIndex)
-//                    val insertIndex = currentIndex + 1 + toIndex
-//                    baseQueue.add(insertIndex, song)
-//                }
-//            }
-//
-//            state.copy(
-//                baseQueue = baseQueue,
-//                manualQueue = manualQueue
-//            )
-//        }
-//        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
-//    }
 
     // ── Shuffle & Repeat ────────────────────────────────────────────────────
 

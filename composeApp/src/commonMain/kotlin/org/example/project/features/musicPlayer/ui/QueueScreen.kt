@@ -168,7 +168,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                             state = SongItemState.Previous,
                             dragHandleModifier = Modifier,
                             onMenuClicked = { viewModel.onMenuClicked(song) },
-                        ) { viewModel.changePlayingToSong(song) }
+                        ) { viewModel.changePlayingToSong(song.uniqueId) }
                     }
                 }
 
@@ -206,8 +206,8 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                                 isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
                                 onMenuClicked = { viewModel.onMenuClicked(song) },
-                                onRemoveClicked = { viewModel.removeSong(song) }
-                            ) { viewModel.changePlayingToSong(song) }
+                                onRemoveClicked = { viewModel.removeSong(song.uniqueId) }
+                            ) { viewModel.changePlayingToSong(song.uniqueId) }
                         }
                     }
                 }
@@ -224,8 +224,8 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                                 isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
                                 onMenuClicked = { viewModel.onMenuClicked(song) },
-                                onRemoveClicked = { viewModel.removeSong(song) }
-                            ) { viewModel.changePlayingToSong(song) }
+                                onRemoveClicked = { viewModel.removeSong(song.uniqueId) }
+                            ) { viewModel.changePlayingToSong(song.uniqueId) }
                         }
                     }
                 }

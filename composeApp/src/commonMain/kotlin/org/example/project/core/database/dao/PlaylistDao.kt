@@ -1,6 +1,7 @@
 package org.example.project.core.database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -50,4 +51,7 @@ interface PlaylistDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistSong(songEntity: PlaylistSongEntity)
+
+    @Query("DELETE FROM playlist_songs WHERE ownerPlaylistId = :playlistId AND songUniqueId = :songId")
+    suspend fun deleteSongFromPlaylist(playlistId: String, songId: String)
 }

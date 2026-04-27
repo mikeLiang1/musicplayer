@@ -26,13 +26,6 @@ class SongMenuViewModel constructor(
         emptyList()
     )
 
-    data class SongMenuState(
-        val isMenuSheetVisible: Boolean = false,
-        val isPlaylistSheetVisible: Boolean = false,
-        val selectedSong: Song? = null,
-        val isManualSongSelected: Boolean = false
-    )
-
     fun onMenuClicked(song: Song) {
         _uiState.update {
             it.copy(
@@ -68,8 +61,11 @@ class SongMenuViewModel constructor(
                 removeSong(song)
             }
 
-            SongMenuAction.RemoveFromPlaylist -> {
-                // TODO
+            is SongMenuAction.RemoveFromPlaylist -> {
+                val song = _uiState.value.selectedSong ?: return
+                viewModelScope.launch {
+                    playlistRepository.deleteSongFromPlaylist(playlistId = action.playlistId, songId = song.uniqueId)
+                }
             }
 
             else -> {}
@@ -77,24 +73,7 @@ class SongMenuViewModel constructor(
     }
 
     fun removeSong(song: Song) {
-        val state = queueManager.queueState.value
-
-        // Check if song is in manual queue
-        val manualIndex = state.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (manualIndex != -1) {
-            queueManager.removeManualSong(manualIndex)
-            return
-        }
-
-        // Check if song is in normal upcoming queue
-        val normalIndex = state.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (normalIndex != -1) {
-            val currentIndex = state.currentBaseIndex
-            queueManager.removeNormalSong(currentIndex + 1 + normalIndex)
-            return
-        }
-
-        // Song not found or is in history/current (can't remove those)
+        queueManager.removeSong(song.uniqueId)
     }
 
     fun addSongToSelectedPlaylist(playlistId: String) {
@@ -104,3 +83,10 @@ class SongMenuViewModel constructor(
         }
     }
 }
+
+data class SongMenuState(
+    val isMenuSheetVisible: Boolean = false,
+    val isPlaylistSheetVisible: Boolean = false,
+    val selectedSong: Song? = null,
+    val isManualSongSelected: Boolean = false
+)

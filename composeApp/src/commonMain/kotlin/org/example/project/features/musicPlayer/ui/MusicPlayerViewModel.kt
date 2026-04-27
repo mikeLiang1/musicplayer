@@ -177,38 +177,8 @@ class MusicPlayerViewModel constructor(
         }
     }
 
-    fun changePlayingToSong(song: Song) {
-        val state = queueManager.queueState.value
-
-        // If song is already current, do nothing
-        if (song.uniqueId == state.current?.uniqueId) return
-
-        _uiState.update { it.copy(showHistory = false) }
-
-        // Check if song is in history
-        val historyIndex = state.history.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (historyIndex != -1) {
-            queueManager.selectHistorySong(historyIndex)
-            return
-        }
-
-        // Check if song is in manual queue
-        val manualIndex = state.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (manualIndex != -1) {
-            queueManager.selectManualSong(manualIndex)
-            return
-        }
-
-        // Check if song is in normal upcoming queue
-        val normalIndex = state.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (normalIndex != -1) {
-            // Convert to absolute index in base queue
-            val currentIndex = state.currentBaseIndex
-            queueManager.selectNormalSong(currentIndex + 1 + normalIndex)
-            return
-        }
-
-        // Song not found in queue
+    fun changePlayingToSong(songId: String) {
+        queueManager.playSongFromQueue(songId)
     }
 
     // MENU related
@@ -258,7 +228,7 @@ class MusicPlayerViewModel constructor(
             SongMenuAction.GoToArtist -> {}
             SongMenuAction.RemoveFromQueue -> {
                 val song = _uiState.value.selectedSong ?: return
-                removeSong(song)
+                removeSong(song.uniqueId)
             }
             else -> {}
 
@@ -324,25 +294,8 @@ class MusicPlayerViewModel constructor(
 
     // ── Queue Management ──────────────────────────────
 
-    fun removeSong(song: Song) {
-        val state = queueManager.queueState.value
-
-        // Check if song is in manual queue
-        val manualIndex = state.manualUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (manualIndex != -1) {
-            queueManager.removeManualSong(manualIndex)
-            return
-        }
-
-        // Check if song is in normal upcoming queue
-        val normalIndex = state.normalUpNext.indexOfFirst { it.uniqueId == song.uniqueId }
-        if (normalIndex != -1) {
-            val currentIndex = state.currentBaseIndex
-            queueManager.removeNormalSong(currentIndex + 1 + normalIndex)
-            return
-        }
-
-        // Song not found or is in history/current (can't remove those)
+    fun removeSong(songId: String) {
+        queueManager.removeSong(uniqueId = songId)
     }
 
 }

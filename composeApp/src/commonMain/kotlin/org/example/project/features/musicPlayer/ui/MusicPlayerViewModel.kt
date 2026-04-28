@@ -23,6 +23,7 @@ import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueIntent
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.YouTubeRepository
@@ -49,7 +50,7 @@ class MusicPlayerViewModel constructor(
     val currentPosition = musicPlayerManager.currentPosition
 
     // Projection from QueueManager's state
-    val playerQueue: StateFlow<PlayerQueue> = queueManager.queueState
+    private val playerQueue: StateFlow<PlayerQueue> = queueManager.queueState
         .map { state ->
             PlayerQueue(
                 history = state.history,
@@ -75,11 +76,8 @@ class MusicPlayerViewModel constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackMode.OFF)
 
 
-    val playlists = playlistRepository.allPlaylists.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
+    val playlists: StateFlow<List<Playlist>> = playlistRepository.getPlaylists()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         Log.d("logging", "viewmodel int")
@@ -204,7 +202,7 @@ class MusicPlayerViewModel constructor(
     fun addSongToSelectedPlaylist(playlistId: String) {
         _uiState.value.selectedSong?.let { song ->
             viewModelScope.launch {
-                playlistRepository.addSongToPlaylist(playlistId, song)
+                playlistRepository.addSong(playlistId, song)
                 _uiState.update {
                     it.copy(selectedSong = null)
                 }
@@ -230,6 +228,7 @@ class MusicPlayerViewModel constructor(
                 val song = _uiState.value.selectedSong ?: return
                 removeSong(song.uniqueId)
             }
+
             else -> {}
 
         }

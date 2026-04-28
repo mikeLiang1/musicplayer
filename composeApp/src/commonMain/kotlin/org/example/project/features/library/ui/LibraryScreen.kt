@@ -130,12 +130,8 @@ private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState, 
             when (item) {
                 is LibraryItem.PlaylistItem -> {
                     PlaylistItem(
-                        onClick = { onAction(LibraryAction.OnPlayListSelected(item.playlist.uniqueId)) },
-                        playlist = Playlist(
-                            title = item.playlist.title,
-                            thumbnailUrl = item.playlist.thumbnailUrl,
-                            numSongs = item.playlist.numSongs
-                        )
+                        onClick = { onAction(LibraryAction.OnPlayListSelected(item.playlist.id)) },
+                        playlist = item.playlist
                     )
                 }
             }

@@ -8,5 +8,5 @@ sealed interface LibraryItem {
 }
 
 fun LibraryItem.stableKey(): String = when (this) {
-    is LibraryItem.PlaylistItem -> "artist_${playlist.uniqueId}"
+    is LibraryItem.PlaylistItem -> "artist_${playlist.id}"
 }

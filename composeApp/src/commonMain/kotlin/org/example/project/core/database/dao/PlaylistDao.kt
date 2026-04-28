@@ -1,7 +1,6 @@
 package org.example.project.core.database.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -10,48 +9,85 @@ import kotlinx.coroutines.flow.Flow
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.entity.PlaylistSongEntity
 import org.example.project.core.database.entity.PlaylistWithSongs
+import org.example.project.core.database.entity.SongEntity
 
 @Dao
 interface PlaylistDao {
+    // Playlists
+    @Query("SELECT * FROM playlists ORDER BY updatedAt DESC")
+    fun getAllPlaylists(): Flow<List<PlaylistEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
+    @Query("SELECT * FROM playlists ORDER BY updatedAt DESC")
+    fun getAllPlaylistsWithSongs(): Flow<List<PlaylistWithSongs>>
+
+    @Transaction
+    @Query("SELECT * FROM playlists WHERE id = :playlistId")
+    fun getPlaylistWithSongs(playlistId: String): Flow<PlaylistWithSongs?>
+
+    @Insert
     suspend fun insertPlaylist(playlist: PlaylistEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSongs(songs: List<PlaylistSongEntity>)
+    @Query("UPDATE playlists SET name = :name, updatedAt = :timestamp WHERE id = :id")
+    suspend fun renamePlaylist(id: String, name: String, timestamp: Long)
 
-    @Query("DELETE FROM playlist_songs WHERE ownerPlaylistId = :playlistId")
-    suspend fun deleteSongsFromPlaylist(playlistId: String)
+    @Query("UPDATE playlists SET updatedAt = :timestamp WHERE id = :id")
+    suspend fun touchPlaylist(id: String, timestamp: Long)
 
-    @Query("DELETE FROM playlists WHERE playlistId = :playlistId")
-    suspend fun deleteEntirePlaylist(playlistId: String)
+    @Query("DELETE FROM playlists WHERE id = :id")
+    suspend fun deletePlaylist(id: String)
 
+    // Songs (canonical library)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertSongIfMissing(song: SongEntity)
+
+    @Query("SELECT * FROM songs WHERE url = :url")
+    suspend fun getSong(url: String): SongEntity?
+
+    // Playlist songs (junction)
+    @Insert
+    suspend fun insertPlaylistSong(playlistSong: PlaylistSongEntity)
+
+    @Insert
+    suspend fun insertPlaylistSongs(playlistSongs: List<PlaylistSongEntity>)
+
+    @Query("DELETE FROM playlist_songs WHERE id = :id")
+    suspend fun deletePlaylistSong(id: String)
+
+    @Query("DELETE FROM playlist_songs WHERE playlistId = :playlistId")
+    suspend fun deleteAllPlaylistSongs(playlistId: String)
+
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM playlist_songs WHERE playlistId = :playlistId")
+    suspend fun getNextPosition(playlistId: String): Int
+
+    // Transactional helpers
     @Transaction
-    @Query("SELECT * FROM playlists WHERE playlistId = :id")
-    fun getSongsFromPlaylist(id: String): Flow<PlaylistWithSongs?>
-
-    // Get all playlists (Flow updates automatically when data changes)
-    @Transaction
-    @Query("SELECT * FROM playlists")
-    fun getAllPlaylists(): Flow<List<PlaylistWithSongs>>
-
-
-    // High-level function to save/update a whole playlist safely
-    @Transaction
-    suspend fun saveFullPlaylist(playlist: PlaylistEntity, songs: List<PlaylistSongEntity>) {
-        insertPlaylist(playlist)
-        // We delete old versions of songs for this playlist to avoid duplicates/order issues
-        deleteSongsFromPlaylist(playlist.playlistId)
-        insertSongs(songs)
+    suspend fun addSongToPlaylist(
+        playlistId: String,
+        song: SongEntity,
+        timestamp: Long
+    ): String {
+        insertSongIfMissing(song)
+        val nextPos = getNextPosition(playlistId)
+        val playlistSong = PlaylistSongEntity(
+            playlistId = playlistId,
+            songUrl = song.url,
+            position = nextPos
+        )
+        insertPlaylistSong(playlistSong)
+        touchPlaylist(playlistId, timestamp)
+        return playlistSong.id
     }
 
-    // Add song to playlist
-    @Query("SELECT MAX(orderIndex) FROM playlist_songs WHERE ownerPlaylistId = :playlistId")
-    suspend fun getMaxOrderIndex(playlistId: String): Int?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlaylistSong(songEntity: PlaylistSongEntity)
-
-    @Query("DELETE FROM playlist_songs WHERE ownerPlaylistId = :playlistId AND songUniqueId = :songId")
-    suspend fun deleteSongFromPlaylist(playlistId: String, songId: String)
+    @Transaction
+    suspend fun replaceAllPlaylistSongs(
+        playlistId: String,
+        playlistSongs: List<PlaylistSongEntity>,
+        timestamp: Long
+    ) {
+        deleteAllPlaylistSongs(playlistId)
+        insertPlaylistSongs(playlistSongs)
+        touchPlaylist(playlistId, timestamp)
+    }
 }
+

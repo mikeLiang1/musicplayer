@@ -48,7 +48,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.songMenu.ui.AddToPlaylistBottomSheet
+import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.SongMenuBottomSheet
+import org.example.project.features.songMenu.ui.SongMenuProvider
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.component.SongItemState
 import org.example.project.ui.theme.appColors
@@ -127,7 +129,9 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
             viewModel.onCloseMenuBottomSheet()
         },
         handleBottomSheetAction = { viewModel.handleBottomSheetAction(it) },
-        songMenuActions = listOf()
+        songMenuActions = listOf(
+            SongMenuAction.AddToPlaylist
+        )
     )
 
     AddToPlaylistBottomSheet(

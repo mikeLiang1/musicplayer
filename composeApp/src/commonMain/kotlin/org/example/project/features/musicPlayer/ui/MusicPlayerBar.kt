@@ -39,11 +39,11 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.playerState.collectAsStateWithLifecycle()
-    val playerQueue by viewModel.playerQueue.collectAsStateWithLifecycle()
+    val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
 
-    playerQueue.current?.let { song ->
+    displayQueue.current?.let { song ->
         Surface(
             color = appColors.backgroundElevated,
             modifier = modifier

@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
+import org.example.project.core.model.PlaylistSong
+import org.example.project.core.model.Song
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -59,14 +61,14 @@ fun PlaylistItem(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = playlist.title,
+                text = playlist.name,
                 maxLines = 1,
                 fontWeight = FontWeight.SemiBold,
                 color = appColors.textPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Playlist • ${playlist.numSongs} songs",
+                text = "Playlist • ${playlist.songs.count()} songs",
                 style = MaterialTheme.typography.bodySmall,
                 color = appColors.textMuted
             )
@@ -79,7 +81,20 @@ fun PlaylistItem(
 private fun PlaylistItemPreview() {
     Surface {
         Column {
-            PlaylistItem(playlist = Playlist(title = "sad", thumbnailUrl = null, numSongs = 30), onClick = {})
+            PlaylistItem(
+                playlist = Playlist(
+                    name = "Title", id = "", thumbnailUrl = "", songs = listOf(
+                        PlaylistSong(
+                            song = Song(
+                                url = "item.url",
+                                title = "Currently Playing Song",
+                                artist = "Artist",
+                                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                                duration = 3000L
+                            ), position = 0, id = ""
+                        )
+                    )
+                ), onClick = {})
         }
 
     }

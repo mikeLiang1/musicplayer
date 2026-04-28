@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -20,18 +21,16 @@ class SongMenuViewModel constructor(
     private val _uiState = MutableStateFlow(SongMenuState())
     val uiState = _uiState.asStateFlow()
 
-    val playlists = playlistRepository.allPlaylists.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
+    val playlists = playlistRepository.getPlaylists()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun onMenuClicked(song: Song) {
+    fun onMenuClicked(song: Song, playlistSongId: String?) {
         _uiState.update {
             it.copy(
                 isMenuSheetVisible = true,
                 selectedSong = song,
-                isManualSongSelected = queueManager.queueState.value.manualQueue.contains(song)
+                isManualSongSelected = queueManager.queueState.value.manualQueue.contains(song),
+                playlistSongId = playlistSongId
             )
         }
     }
@@ -62,9 +61,10 @@ class SongMenuViewModel constructor(
             }
 
             is SongMenuAction.RemoveFromPlaylist -> {
-                val song = _uiState.value.selectedSong ?: return
+                val playlistSongId = _uiState.value.playlistSongId ?: return
                 viewModelScope.launch {
-                    playlistRepository.deleteSongFromPlaylist(playlistId = action.playlistId, songId = song.uniqueId)
+                    playlistRepository.removePlaylistSong(playlistSongId)
+//                    playlistRepository.deleteSongFromPlaylist(playlistId = action.playlistId, songId = song.uniqueId)
                 }
             }
 
@@ -79,7 +79,7 @@ class SongMenuViewModel constructor(
     fun addSongToSelectedPlaylist(playlistId: String) {
         val song = _uiState.value.selectedSong ?: return
         viewModelScope.launch {
-            playlistRepository.addSongToPlaylist(playlistId, song)
+            playlistRepository.addSong(playlistId, song)
         }
     }
 }
@@ -88,5 +88,6 @@ data class SongMenuState(
     val isMenuSheetVisible: Boolean = false,
     val isPlaylistSheetVisible: Boolean = false,
     val selectedSong: Song? = null,
-    val isManualSongSelected: Boolean = false
+    val isManualSongSelected: Boolean = false,
+    val playlistSongId: String? = null
 )

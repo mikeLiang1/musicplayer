@@ -33,19 +33,15 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,7 +50,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,7 +70,7 @@ fun MusicPlayerScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isShuffled by viewModel.isShuffled.collectAsStateWithLifecycle()
     val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
-    val playerQueue by viewModel.playerQueue.collectAsStateWithLifecycle()
+    val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState { 2 }
 
     Column(
@@ -88,7 +83,7 @@ fun MusicPlayerScreen(
         PlayerHeader(
             navigateBack = navigateBack,
             pagerState = pagerState,
-            playerQueue = playerQueue,
+            displayQueue = displayQueue,
             uiState = uiState,
             onHistoryClick = viewModel::onHistoryPillClicked,
             onEditQueueClicked = viewModel::onEditQueueClicked
@@ -99,7 +94,7 @@ fun MusicPlayerScreen(
             modifier = Modifier.weight(1f),
         ) { page ->
             when (page) {
-                0 -> SongScreen(song = playerQueue.current, viewModel = viewModel)
+                0 -> SongScreen(song = displayQueue.current, viewModel = viewModel)
 
                 1 -> QueueScreen(viewModel = viewModel)
             }
@@ -132,7 +127,7 @@ private fun PlayerHeader(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     pagerState: PagerState,
-    playerQueue: PlayerQueue,
+    displayQueue: PlayerQueue,
     uiState: MusicPlayerUiState,
     onHistoryClick: () -> Unit,
     onEditQueueClicked: () -> Unit
@@ -164,7 +159,7 @@ private fun PlayerHeader(
                 )
             } else {
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = playerQueue.history.isNotEmpty(),
+                    visible = displayQueue.history.isNotEmpty(),
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically()
                 ) {
@@ -186,7 +181,7 @@ private fun PlayerHeader(
                                 tint = appColors.iconMuted
                             )
                             Text(
-                                text = if (uiState.showHistory) "Hide history" else "${playerQueue.history.size} previous songs",
+                                text = if (uiState.showHistory) "Hide history" else "${displayQueue.history.size} previous songs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = appColors.textMuted,
                                 fontFamily = FontFamily.Monospace

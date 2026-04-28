@@ -18,7 +18,7 @@ class PlaylistViewModel constructor(
 
     // TODO i think may need to seperate playlist and isloading since they arent related to each other
     val uiState: StateFlow<PlaylistUiState> = combine(
-        playlistRepository.getSongsFromPlaylist(playlistId),
+        playlistRepository.getPlaylist(playlistId),
         _uiState
     ) { playlist, uiState ->
         uiState.copy(playlist = playlist, isLoading = false)

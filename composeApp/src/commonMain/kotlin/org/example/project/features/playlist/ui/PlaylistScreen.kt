@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
+import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
 import org.example.project.features.dashboard.navigation.bottomBarDp
 import org.example.project.features.songMenu.ui.SongMenuAction
@@ -70,7 +71,7 @@ fun PlaylistScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
                 }
 
-                Text(text = state.playlist?.title ?: "", color = appColors.textPrimary)
+                Text(text = state.playlist?.name ?: "", color = appColors.textPrimary)
 
                 IconButton(onClick = { onAction(PlaylistAction.OnSearchPressed) }) {
                     Icon(Icons.Default.Search, contentDescription = "Search")
@@ -92,15 +93,17 @@ fun PlaylistScreen(
             } else {
 
                 var selectedSong by remember { mutableStateOf<Song?>(null) }
+                var playlistSongId by remember { mutableStateOf<String?>(null) }
                 SongMenuProvider(
                     selectedSong = selectedSong,
+                    playlistSongId = playlistSongId,
                     resetSelectSong = { selectedSong = null },
                     songMenuOptions = listOf(
                         SongMenuAction.AddToQueue,
                         SongMenuAction.AddToPlaylist,
                         SongMenuAction.GoToArtist,
                         SongMenuAction.GoToAlbum,
-                        SongMenuAction.RemoveFromPlaylist(state.playlist.uniqueId)
+                        SongMenuAction.RemoveFromPlaylist
                     )
                 )
 
@@ -119,8 +122,11 @@ fun PlaylistScreen(
                             Text("No songs in playlist")
                         }
                     } else {
-                        items(state.playlist.songs) { song ->
-                            SongItem(song = song, onClick = {}, onMenuClicked = { selectedSong = song })
+                        items(state.playlist.songs, key = { it.id }) { song ->
+                            SongItem(song = song.song, onClick = {}, onMenuClicked = {
+                                selectedSong = song.song
+                                playlistSongId = song.id
+                            })
                         }
                     }
                 }
@@ -141,7 +147,7 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
         )
 
         Text(
-            playlist.title,
+            playlist.name,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
@@ -152,7 +158,7 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
                 .padding(horizontal = 12.dp)
         ) {
             Text(
-                "${playlist.numSongs} songs", style = MaterialTheme.typography.bodySmall,
+                "${playlist.songs.count()} songs", style = MaterialTheme.typography.bodySmall,
                 color = appColors.textMuted
             )
             // TODO: Total duration ?
@@ -192,13 +198,15 @@ private fun PlaylistPreview() {
         PlaylistScreen(
             state = PlaylistUiState(
                 playlist = Playlist(
-                    title = "Title", numSongs = 30, songs = listOf(
-                        Song(
-                            url = "item.url",
-                            title = "Currently Playing Song",
-                            artist = "Artist",
-                            thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                            duration = 3000L
+                    name = "Title", id = "", thumbnailUrl = "", songs = listOf(
+                        PlaylistSong(
+                            song = Song(
+                                url = "item.url",
+                                title = "Currently Playing Song",
+                                artist = "Artist",
+                                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                                duration = 3000L
+                            ), position = 0, id = ""
                         )
                     )
                 )
@@ -215,7 +223,7 @@ private fun NoSongPreview() {
     AppPreview {
         PlaylistScreen(
             state = PlaylistUiState(
-                playlist = Playlist(title = "Title", numSongs = 30)
+                playlist = Playlist(name = "Title", id = "", thumbnailUrl = "", songs = listOfNotNull())
             ),
             onBackPressed = {},
             onAction = {}

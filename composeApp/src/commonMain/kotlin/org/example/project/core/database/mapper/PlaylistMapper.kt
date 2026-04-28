@@ -1,49 +1,44 @@
 package org.example.project.core.database.mapper
 
-import org.example.project.core.database.entity.PlaylistEntity
-import org.example.project.core.database.entity.PlaylistSongEntity
+import org.example.project.core.database.entity.PlaylistSongWithSong
 import org.example.project.core.database.entity.PlaylistWithSongs
+import org.example.project.core.database.entity.SongEntity
 import org.example.project.core.model.Playlist
+import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-fun Playlist.toEntity() = PlaylistEntity(uniqueId, title, thumbnailUrl)
+@OptIn(ExperimentalUuidApi::class)
+internal fun SongEntity.toSong() = Song(
+    uniqueId = Uuid.random().toString(),  // fresh queue instance ID
+    url = url,
+    title = title,
+    artist = artist,
+    thumbnailUrl = thumbnailUrl,
+    duration = duration
+)
 
-fun Song.toPlaylistSongEntity(playlistId: String, index: Int): PlaylistSongEntity {
-    return PlaylistSongEntity(
-        ownerPlaylistId = playlistId,
-        songUniqueId = this.uniqueId,
-        url = this.url,
-        title = this.title,
-        artist = this.artist,
-        thumbnailUrl = this.thumbnailUrl,
-        duration = this.duration,
-        orderIndex = index
-    )
-}
+internal fun Song.toSongEntity(firstAddedAt: Long) = SongEntity(
+    url = url,
+    title = title,
+    artist = artist,
+    thumbnailUrl = thumbnailUrl,
+    duration = duration,
+    firstAddedAt = firstAddedAt
+)
 
-// Convert UI Song -> Room Entity
-fun PlaylistSongEntity.toSong(): Song {
-    return Song(
-        uniqueId = this.songUniqueId,
-        url = this.url,
-        title = this.title,
-        artist = this.artist,
-        thumbnailUrl = this.thumbnailUrl,
-        duration = this.duration
-    )
-}
+internal fun PlaylistSongWithSong.toDomain() = PlaylistSong(
+    id = playlistSong.id,
+    song = song.toSong(),
+    position = playlistSong.position
+)
 
-
-// Convert Room result -> UI Playlist class
-fun PlaylistWithSongs.toUIModel(): Playlist {
-    return Playlist(
-        uniqueId = playlist.playlistId,
-        title = playlist.title,
-        thumbnailUrl = playlist.thumbnailUrl,
-        numSongs = songs.size,
-        // Map the database songs to UI songs and sort them by orderIndex
-        songs = songs
-            .sortedBy { it.orderIndex }
-            .map { it.toSong() }
-    )
-}
+internal fun PlaylistWithSongs.toDomain() = Playlist(
+    id = playlist.id,
+    name = playlist.name,
+    createdAt = playlist.createdAt,
+    updatedAt = playlist.updatedAt,
+    songs = songs.sortedBy { it.playlistSong.position }.map { it.toDomain() },
+    thumbnailUrl = playlist.thumbnailUrl
+)

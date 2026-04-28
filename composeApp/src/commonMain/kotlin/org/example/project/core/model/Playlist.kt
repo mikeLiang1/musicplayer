@@ -5,9 +5,10 @@ import java.util.UUID
 
 @Serializable
 data class Playlist(
-    val uniqueId: String = UUID.randomUUID().toString(),
-    val title: String,
-    val thumbnailUrl: String? = null,
-    val numSongs: Int,
-    val songs: List<Song> = listOf()
+    val id: String,
+    val name: String,
+    val songs: List<PlaylistSong>,
+    val createdAt: Long? = null,
+    val updatedAt: Long? = null,
+    val thumbnailUrl: String
 )

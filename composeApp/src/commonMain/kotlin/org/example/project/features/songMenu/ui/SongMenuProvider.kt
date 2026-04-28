@@ -11,6 +11,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SongMenuProvider(
     selectedSong: Song?,
+    playlistSongId: String?,
     resetSelectSong: () -> Unit,
     songMenuOptions: List<SongMenuAction>
 ) {
@@ -19,8 +20,10 @@ fun SongMenuProvider(
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
 
     LaunchedEffect(selectedSong) {
-        selectedSong?.let { viewModel.onMenuClicked(it) }
-        resetSelectSong()
+        selectedSong?.let {
+            viewModel.onMenuClicked(song = it, playlistSongId)
+            resetSelectSong()
+        }
     }
 
     SongMenuBottomSheet(

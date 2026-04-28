@@ -2,7 +2,6 @@ package org.example.project.features.songMenu.ui
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,11 +43,9 @@ fun AddToPlaylistBottomSheet(
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                items(playlists, key = { it.uniqueId }) { playlist ->
+                items(playlists, key = { it.id }) { playlist ->
                     PlaylistItem(
                         playlist = playlist,
                         onClick = {
@@ -57,7 +54,7 @@ fun AddToPlaylistBottomSheet(
                                     onCloseBottomSheet() // This sets the boolean to false
                                 }
                             }
-                            onPlaylistClicked(playlist.uniqueId)
+                            onPlaylistClicked(playlist.id)
                         }
                     )
                 }

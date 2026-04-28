@@ -10,13 +10,14 @@ import org.example.project.core.database.entity.PlaybackStateEntity
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.entity.PlaylistSongEntity
 import org.example.project.core.database.entity.QueueEntity
+import org.example.project.core.database.entity.SongEntity
 
 @Database(
     entities = [
         QueueEntity::class, PlaybackStateEntity::class, PlaylistEntity::class,
-        PlaylistSongEntity::class,
+        PlaylistSongEntity::class, SongEntity::class,
     ],
-    version = 2
+    version = 3
 )
 abstract class MusicDatabase : RoomDatabase() {
     abstract fun playbackDao(): PlaybackDao

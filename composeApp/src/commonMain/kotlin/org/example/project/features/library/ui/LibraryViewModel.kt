@@ -18,6 +18,7 @@ import org.example.project.core.model.Playlist
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.playlist.repository.PlaylistRepository
+import org.schabi.newpipe.extractor.timeago.patterns.it
 
 class LibraryViewModel constructor(
     private val repository: YouTubeRepository,
@@ -36,7 +37,7 @@ class LibraryViewModel constructor(
 
     // 2. Combine Room data with the Filter flow
     val uiState: StateFlow<LibraryUiState> = combine(
-        playlistRepository.allPlaylists,
+        playlistRepository.getPlaylists(),
         _selectedFilter
     ) { playlists, filter ->
 
@@ -75,9 +76,7 @@ class LibraryViewModel constructor(
 
             LibraryAction.OnAddPlaylist -> {
                 viewModelScope.launch {
-                    playlistRepository.saveEntirePlaylist(
-                        playlist = Playlist(title = "title1", thumbnailUrl = null, numSongs = 0)
-                    )
+                    playlistRepository.createPlaylist("playlist")
                 }
             }
         }

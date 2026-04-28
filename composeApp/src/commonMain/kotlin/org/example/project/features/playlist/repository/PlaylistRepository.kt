@@ -1,50 +1,81 @@
 package org.example.project.features.playlist.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.example.project.core.database.MusicDatabase
-import org.example.project.core.database.mapper.toEntity
-import org.example.project.core.database.mapper.toPlaylistSongEntity
-import org.example.project.core.database.mapper.toUIModel
+import org.example.project.core.database.entity.PlaylistEntity
+import org.example.project.core.database.mapper.toDomain
+import org.example.project.core.database.mapper.toSongEntity
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-class PlaylistRepository(database: MusicDatabase) {
+class PlaylistRepository(database: MusicDatabase, private val clock: Clock = Clock.System) {
     private val dao = database.playlistDao()
 
-    // 1. Observe playlists (Updates UI in real-time)
-    val allPlaylists: Flow<List<Playlist>> = dao.getAllPlaylists()
-        .map { list -> list.map { it.toUIModel() } }
+    fun getPlaylists(): Flow<List<Playlist>> =
+        dao.getAllPlaylistsWithSongs().map { list -> list.map { it.toDomain() } }
 
-    // 2. Add a new playlist
-    suspend fun saveEntirePlaylist(playlist: Playlist) {
-        val playlistEntity = playlist.toEntity()
-        val songEntities = playlist.songs.mapIndexed { index, song ->
-            song.toPlaylistSongEntity(playlistId = playlist.uniqueId, index = index)
+    fun getPlaylist(id: String): Flow<Playlist?> =
+        dao.getPlaylistWithSongs(id).map { it?.toDomain() }
+
+    @OptIn(ExperimentalUuidApi::class)
+    suspend fun createPlaylist(name: String): Playlist {
+        val now = clock.now().toEpochMilliseconds()
+        val playlist = PlaylistEntity(
+            id = Uuid.random().toString(),
+            name = name,
+            createdAt = now,
+            updatedAt = now,
+            thumbnailUrl = ""
+        )
+        dao.insertPlaylist(playlist)
+        return Playlist(
+            id = playlist.id,
+            name = playlist.name,
+            songs = emptyList(),
+            createdAt = playlist.createdAt,
+            updatedAt = playlist.updatedAt,
+            thumbnailUrl = playlist.thumbnailUrl
+        )
+    }
+
+    suspend fun renamePlaylist(id: String, name: String) {
+        dao.renamePlaylist(id, name, clock.now().toEpochMilliseconds())
+    }
+
+    suspend fun deletePlaylist(id: String) {
+        dao.deletePlaylist(id)
+    }
+
+    suspend fun addSong(playlistId: String, song: Song) {
+        val now = clock.now().toEpochMilliseconds()
+        dao.addSongToPlaylist(
+            playlistId = playlistId,
+            song = song.toSongEntity(firstAddedAt = now),
+            timestamp = now
+        )
+    }
+
+    suspend fun removePlaylistSong(playlistSongId: String) {
+        dao.deletePlaylistSong(playlistSongId)
+    }
+
+    suspend fun reorderSongs(playlistId: String, playlistSongIds: List<String>) {
+        val current = dao.getPlaylistWithSongs(playlistId).first() ?: return
+        val byId = current.songs.associateBy { it.playlistSong.id }
+        val reordered = playlistSongIds.mapIndexedNotNull { index, id ->
+            byId[id]?.playlistSong?.copy(position = index)
         }
-        dao.saveFullPlaylist(playlistEntity, songEntities)
+        dao.replaceAllPlaylistSongs(
+            playlistId = playlistId,
+            playlistSongs = reordered,
+            timestamp = clock.now().toEpochMilliseconds()
+        )
     }
-
-    suspend fun addSongToPlaylist(playlistId: String, song: Song) {
-        // 1. Find the current last position (if empty, start at -1)
-        val currentMaxIndex = dao.getMaxOrderIndex(playlistId) ?: -1
-        val nextIndex = currentMaxIndex + 1
-
-        // 2. Convert your UI Song model to the Database Entity
-        val entity = song.toPlaylistSongEntity(playlistId = playlistId, index = nextIndex)
-
-        // 3. Save it
-        dao.insertPlaylistSong(entity)
-    }
-
-    fun getSongsFromPlaylist(playListId: String): Flow<Playlist?> {
-        return dao.getSongsFromPlaylist(playListId).map { it?.toUIModel() }
-    }
-
-    suspend fun deleteSongFromPlaylist(playlistId: String, songId: String) {
-        dao.deleteSongFromPlaylist(playlistId, songId)
-    }
-
 }
 
 

@@ -2,22 +2,18 @@ package org.example.project.features.songMenu.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.core.model.Song
+import org.koin.compose.viewmodel.koinViewModel
 
 
-data class SelectedMenuTarget(
-    val song: Song,
-    val playlistSongId: String? = null
-)
-
-class SongMenuController internal constructor(
-    private val onShow: (Song, String?) -> Unit
+class SongMenuController(
+    private val viewModel: SongMenuViewModel
 ) {
     fun show(song: Song, playlistSongId: String? = null) {
-        onShow(song, playlistSongId)
+        // Direct call to the "Source of Truth"
+        viewModel.onMenuClicked(song, playlistSongId)
     }
 }
 
@@ -26,18 +22,28 @@ class SongMenuController internal constructor(
 fun rememberSongMenuController(
     options: List<SongMenuAction>
 ): SongMenuController {
-    var target by remember { mutableStateOf<SelectedMenuTarget?>(null) }
+    val viewModel: SongMenuViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val playlists by viewModel.playlists.collectAsStateWithLifecycle()
 
     val controller = remember {
-        SongMenuController { song, playlistSongId ->
-            target = SelectedMenuTarget(song, playlistSongId)
-        }
+        SongMenuController(viewModel = viewModel)
     }
 
-    SongMenuProvider(
-        selectedMenuTarget = target,
-        onTargetConsumed = { target = null },
-        songMenuOptions = options
+    SongMenuBottomSheet(
+        isMenuBottomSheetVisible = uiState.isMenuSheetVisible,
+        onCloseBottomSheet = {
+            viewModel.onCloseMenuSheet()
+        },
+        handleBottomSheetAction = viewModel::handleAction,
+        songMenuActions = options
+    )
+
+    AddToPlaylistBottomSheet(
+        isBottomSheetVisible = uiState.isPlaylistSheetVisible,
+        onCloseBottomSheet = viewModel::onClosePlaylistSheet,
+        playlists = playlists,
+        onPlaylistClicked = viewModel::addSongToSelectedPlaylist
     )
 
     return controller

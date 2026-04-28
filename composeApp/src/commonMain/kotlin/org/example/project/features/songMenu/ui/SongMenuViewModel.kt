@@ -1,5 +1,6 @@
 package org.example.project.features.songMenu.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,10 @@ class SongMenuViewModel constructor(
     private val playlistRepository: PlaylistRepository,
     private val queueManager: QueueManager
 ) : ViewModel() {
+
+    init {
+        Log.d("logging", "songmenu init")
+    }
 
     private val _uiState = MutableStateFlow(SongMenuState())
     val uiState = _uiState.asStateFlow()

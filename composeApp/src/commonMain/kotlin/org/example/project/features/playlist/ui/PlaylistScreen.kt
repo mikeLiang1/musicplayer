@@ -27,10 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,7 +36,7 @@ import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
 import org.example.project.features.dashboard.navigation.bottomBarDp
 import org.example.project.features.songMenu.ui.SongMenuAction
-import org.example.project.features.songMenu.ui.SongMenuProvider
+import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.component.SongItem
@@ -92,13 +88,8 @@ fun PlaylistScreen(
                 Text("Playlist not found")
             } else {
 
-                var selectedSong by remember { mutableStateOf<Song?>(null) }
-                var playlistSongId by remember { mutableStateOf<String?>(null) }
-                SongMenuProvider(
-                    selectedSong = selectedSong,
-                    playlistSongId = playlistSongId,
-                    resetSelectSong = { selectedSong = null },
-                    songMenuOptions = listOf(
+                val songMenu = rememberSongMenuController(
+                    listOf(
                         SongMenuAction.AddToQueue,
                         SongMenuAction.AddToPlaylist,
                         SongMenuAction.GoToArtist,
@@ -124,8 +115,7 @@ fun PlaylistScreen(
                     } else {
                         items(state.playlist.songs, key = { it.id }) { song ->
                             SongItem(song = song.song, onClick = {}, onMenuClicked = {
-                                selectedSong = song.song
-                                playlistSongId = song.id
+                                songMenu.show(song.song, playlistSongId = song.id)
                             })
                         }
                     }

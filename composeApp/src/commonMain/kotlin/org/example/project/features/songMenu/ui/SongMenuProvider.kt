@@ -4,25 +4,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.example.project.core.model.Song
 import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun SongMenuProvider(
-    selectedSong: Song?,
-    playlistSongId: String?,
-    resetSelectSong: () -> Unit,
+    selectedMenuTarget: SelectedMenuTarget?,
+    onTargetConsumed: () -> Unit,
     songMenuOptions: List<SongMenuAction>
 ) {
     val viewModel: SongMenuViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
 
-    LaunchedEffect(selectedSong) {
-        selectedSong?.let {
-            viewModel.onMenuClicked(song = it, playlistSongId)
-            resetSelectSong()
+    LaunchedEffect(selectedMenuTarget) {
+        selectedMenuTarget?.let {
+            viewModel.onMenuClicked(song = it.song, it.playlistSongId)
+            onTargetConsumed()
         }
     }
 

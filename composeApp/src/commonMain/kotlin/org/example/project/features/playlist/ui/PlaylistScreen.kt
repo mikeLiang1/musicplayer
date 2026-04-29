@@ -74,13 +74,11 @@ fun PlaylistScreen(
                 }
             }
         }
-    ) {
-
-
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(innerPadding)
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator()

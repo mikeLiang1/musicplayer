@@ -47,9 +47,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.manager.PlaybackMode
-import org.example.project.features.songMenu.ui.AddToPlaylistBottomSheet
 import org.example.project.features.songMenu.ui.SongMenuAction
-import org.example.project.features.songMenu.ui.SongMenuBottomSheet
+import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.component.SongItemState
 import org.example.project.ui.theme.appColors
@@ -65,7 +64,6 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
     val listState = rememberLazyListState()
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
     val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
-    val playlists by viewModel.playlists.collectAsStateWithLifecycle()
 
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.onMove(from.key as String, to.key as String)
@@ -121,23 +119,14 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
         }
     }
 
-
-    SongMenuBottomSheet(
-        isMenuBottomSheetVisible = uiState.isMenuBottomSheetVisible,
-        onCloseBottomSheet = {
-            viewModel.onCloseMenuBottomSheet()
-        },
-        handleBottomSheetAction = { viewModel.handleBottomSheetAction(it) },
-        songMenuActions = listOf(
-            SongMenuAction.AddToPlaylist
+    val songMenu = rememberSongMenuController(
+        listOf(
+            SongMenuAction.AddToQueue,
+            SongMenuAction.AddToPlaylist,
+            SongMenuAction.GoToArtist,
+            SongMenuAction.GoToAlbum,
+            SongMenuAction.RemoveFromQueue
         )
-    )
-
-    AddToPlaylistBottomSheet(
-        isBottomSheetVisible = uiState.isAddToPlaylistBottomSheetVisible,
-        onCloseBottomSheet = viewModel::onClosePlaylistBottomSheet,
-        playlists = playlists,
-        onPlaylistClicked = viewModel::addSongToSelectedPlaylist
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -147,8 +136,8 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
             SongItem(
                 song = currentSong,
                 state = SongItemState.Current(playerState.isPlaying),
-                onClick = { viewModel.onMenuClicked(currentSong) },
-                onMenuClicked = { viewModel.onMenuClicked(currentSong) })
+                onClick = { },
+                onMenuClicked = { songMenu.show(currentSong) })
         }
 
         // ── Scrollable queue ─────────────────────────────
@@ -170,7 +159,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                             song = song,
                             state = SongItemState.Previous,
                             dragHandleModifier = Modifier,
-                            onMenuClicked = { viewModel.onMenuClicked(song) },
+                            onMenuClicked = { songMenu.show(song) },
                         ) { viewModel.changePlayingToSong(song.uniqueId) }
                     }
                 }
@@ -185,7 +174,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                             song = currentSong,
                             state = SongItemState.Current(playerState.isPlaying),
                             dragHandleModifier = Modifier,
-                            onMenuClicked = { viewModel.onMenuClicked(currentSong) }
+                            onMenuClicked = { songMenu.show(currentSong) }
                         ) { /* can't tap current to change, already playing */ }
                     }
                 }
@@ -208,7 +197,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                                 state = SongItemState.Manual,
                                 isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
-                                onMenuClicked = { viewModel.onMenuClicked(song) },
+                                onMenuClicked = { songMenu.show(song) },
                                 onRemoveClicked = { viewModel.removeSong(song.uniqueId) }
                             ) { viewModel.changePlayingToSong(song.uniqueId) }
                         }
@@ -226,7 +215,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                                 song = song,
                                 isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
-                                onMenuClicked = { viewModel.onMenuClicked(song) },
+                                onMenuClicked = { songMenu.show(song) },
                                 onRemoveClicked = { viewModel.removeSong(song.uniqueId) }
                             ) { viewModel.changePlayingToSong(song.uniqueId) }
                         }

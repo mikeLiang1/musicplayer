@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -69,7 +68,6 @@ class SongMenuViewModel constructor(
                 val playlistSongId = _uiState.value.playlistSongId ?: return
                 viewModelScope.launch {
                     playlistRepository.removePlaylistSong(playlistSongId)
-//                    playlistRepository.deleteSongFromPlaylist(playlistId = action.playlistId, songId = song.uniqueId)
                 }
             }
 

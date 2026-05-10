@@ -7,16 +7,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,14 +22,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
-import org.example.project.features.dashboard.navigation.bottomBarDp
 import org.example.project.ui.component.MusicSearchBar
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.AppPreview
@@ -41,44 +39,28 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
 
-//    LaunchedEffect(Unit) {
-//        searchViewModel.effect.collect { effect ->
-//            when (effect) {
-//                is SearchEffect.NavigateToResult -> {
-//                    navigateToResult()
-//                }
-//            }
-//        }
-//    }
-
     BackHandler(enabled = !state.onSearchScreen) { onAction(SearchAction.OnBackPressed) }
 
     val focusManager = LocalFocusManager.current
 
-    val interactionSource = remember { MutableInteractionSource() }
-
-// This block listens for a "Release" event, which is effectively a click
-    LaunchedEffect(interactionSource) {
-        interactionSource.interactions.collect { interaction ->
-            if (interaction is PressInteraction.Release) {
-                onAction(SearchAction.OnBackPressed)
-            }
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .padding(top = 16.dp)
     ) {
         // Search Bar
         MusicSearchBar(
             query = state.searchQuery,
             onQueryChange = { onAction(SearchAction.OnQueryChanged(it)) },
             onVoiceSearch = {},
-            onSuggestionPressed = { onAction(SearchAction.OnSuggestionClicked(it)) }
+            onSuggestionPressed = { onAction(SearchAction.OnSuggestionClicked(it)) },
+            onTextCleared = { onAction(SearchAction.OnTextCleared) },
         )
+
+        if (state.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
 
         val listState = rememberLazyListState()
 
@@ -91,11 +73,10 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
             }
                 .distinctUntilChanged()
                 .collect { shouldLoadMore ->
-                    if (shouldLoadMore && !state.isLoadingMore && !state.onSearchScreen && !state.isLoading) {
-                        onAction(SearchAction.SearchMoreSongs)
-                    }
+                    if (shouldLoadMore) onAction(SearchAction.SearchMoreSongs)
                 }
         }
+
 
         // Results List
         AnimatedContent(
@@ -106,9 +87,21 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
         ) { onSearchScreen ->
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 16.dp, bottom = bottomBarDp + 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        // awaitEachGesture is the modern way to listen for touch events
+                        awaitEachGesture {
+                            // 1. Wait for the initial "Down" (finger hits screen)
+                            // 2. We use PointerEventPass.Initial to see the event BEFORE the
+                            //    clickable rows inside the list can consume it.
+                            awaitFirstDown(pass = PointerEventPass.Initial)
+
+                            // 3. The moment the touch happens, hide the keyboard
+                            focusManager.clearFocus()
+                        }
+                    },
             ) {
                 if (onSearchScreen) {
                     // --- SEARCH SUGGESTIONS SCREEN ---
@@ -128,17 +121,6 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
                     }
 
                 } else {
-                    // --- RESULTS SCREEN ---
-                    if (state.isLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier.fillParentMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-                    }
                     items(state.songList) { song ->
                         SongItem(
                             song = song,

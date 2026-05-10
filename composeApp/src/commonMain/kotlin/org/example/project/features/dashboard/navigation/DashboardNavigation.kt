@@ -5,21 +5,21 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -42,8 +42,6 @@ import org.example.project.ui.theme.appColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-val bottomBarDp = 125.dp
-
 @Composable
 fun DashboardNavigation() {
     val navigationState = rememberNavigationState(
@@ -60,59 +58,51 @@ fun DashboardNavigation() {
         musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
     }.collectAsStateWithLifecycle(initialValue = false)
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(appColors.backgroundPrimary)) {
-
-        val entryProvider = entryProvider<NavKey> {
-            entry<Route.DashboardRoutes.Home> { HomeScreen() }
-            entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
-            entry<Route.DashboardRoutes.LibraryRoutes> {
-                LibraryNavigation(
-                    navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }
-                )
-            }
-            entry<Route.DashboardRoutes.Playlist> { key ->
-                val playlistViewModel: PlaylistViewModel = koinViewModel(
-                    parameters = { parametersOf(key.playlistId) }
-                )
-                val state by playlistViewModel.uiState.collectAsStateWithLifecycle()
-                PlaylistScreen(
-                    state,
-                    onBackPressed = { navigator.goBack() },
-                    onAction = playlistViewModel::handleAction
-                )
-            }
-        }
-
-        NavDisplay(
-            modifier = Modifier
-                .fillMaxSize(),
-            entries = navigationState.toEntries(entryProvider),
-            onBack = { navigator.goBack() }
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                // Gradient makes it look like Spotify (fading from transparent to dark)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            appColors.backgroundPrimary.copy(alpha = 0.9f),
-                            appColors.backgroundPrimary
-                        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = appColors.backgroundPrimary,
+            bottomBar = {
+                Column(modifier = Modifier.navigationBarsPadding()) {
+                    MusicPlayerBar(viewModel = musicPlayerViewModel)
+                    if (isBottomBarVisible) {
+                        BottomNavigationBar(
+                            navigationState = navigationState,
+                            navigate = { navigator.navigateToTopLevelRoute(it) })
+                    }
+                }
+            },
+            contentWindowInsets = ScaffoldDefaults
+                .contentWindowInsets
+                .union(WindowInsets.ime),
+        ) { innerPadding ->
+            val entryProvider = entryProvider<NavKey> {
+                entry<Route.DashboardRoutes.Home> { HomeScreen() }
+                entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
+                entry<Route.DashboardRoutes.LibraryRoutes> {
+                    LibraryNavigation(
+                        navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }
                     )
-                )
-                .navigationBarsPadding()
-        ) {
-            MusicPlayerBar(viewModel = musicPlayerViewModel)
-            if (isBottomBarVisible) {
-                BottomNavigationBar(
-                    navigationState = navigationState,
-                    navigate = { navigator.navigateToTopLevelRoute(it) })
+                }
+                entry<Route.DashboardRoutes.Playlist> { key ->
+                    val playlistViewModel: PlaylistViewModel = koinViewModel(
+                        parameters = { parametersOf(key.playlistId) }
+                    )
+                    val state by playlistViewModel.uiState.collectAsStateWithLifecycle()
+                    PlaylistScreen(
+                        state,
+                        onBackPressed = { navigator.goBack() },
+                        onAction = playlistViewModel::handleAction
+                    )
+                }
             }
+
+            NavDisplay(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                entries = navigationState.toEntries(entryProvider),
+                onBack = { navigator.goBack() }
+            )
         }
 
         AnimatedVisibility(
@@ -138,7 +128,4 @@ fun DashboardNavigation() {
             }
         }
     }
-
 }
-
-

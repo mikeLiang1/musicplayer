@@ -59,6 +59,7 @@ fun MusicSearchBar(
     onQueryChange: (String) -> Unit,
     onVoiceSearch: () -> Unit,
     openKeyboardOnLaunch: Boolean = false,
+    onTextCleared: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -153,7 +154,7 @@ fun MusicSearchBar(
                                 tint = appColors.iconMuted,
                                 modifier = Modifier
                                     .size(16.dp)
-                                    .clickable { onQueryChange("") }
+                                    .clickable { onTextCleared() }
                             )
                         } else if (isActive) {
                             Icon(
@@ -189,7 +190,7 @@ fun MusicSearchBar(
                 color = appColors.accentPrimary,
                 modifier = Modifier
                     .clickable {
-                        onQueryChange("")
+                        onTextCleared()
                         focusManager.clearFocus()
                         keyboardController?.hide()
                     }
@@ -204,9 +205,9 @@ fun MusicSearchBar(
 private fun SearchBarPreview() {
     AppPreview {
         Column {
-            MusicSearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {})
-            MusicSearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {})
-            MusicSearchBar(query = "asd", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {})
+            MusicSearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {},onTextCleared = {})
+            MusicSearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {},onTextCleared = {})
+            MusicSearchBar(query = "asd", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {} ,onTextCleared = {})
         }
     }
 }

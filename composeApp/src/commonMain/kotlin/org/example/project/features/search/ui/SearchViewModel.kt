@@ -11,9 +11,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
@@ -40,18 +42,24 @@ class SearchViewModel constructor(
     init {
         viewModelScope.launch {
             searchQuery
-                .debounce(500L)
+                .debounce(300L)
+                .distinctUntilChanged()
                 .flatMapLatest { query ->
                     if (query.isBlank()) {
-                        flowOf(emptyList())
+                        flowOf(Result.success(emptyList()))
                     } else {
-                        flow {
-                            emit(repository.getSearchSuggestion(query))
-                        }.catch { emit(emptyList()) }
+                        flow { emit(Result.success(repository.getSearchSuggestion(query))) }
+                            .catch { emit(Result.failure(it)) }
+                            .onStart { _uiState.update { it.copy(isLoading = true) } }
                     }
                 }
-                .collect { suggestions ->
-                    _uiState.update { it.copy(suggestions = suggestions) }
+                .collect { result ->
+                    _uiState.update {
+                        it.copy(
+                            suggestions = result.getOrDefault(emptyList()),
+                            isLoading = false
+                        )
+                    }
                 }
         }
     }
@@ -61,6 +69,12 @@ class SearchViewModel constructor(
             SearchAction.OnBackPressed -> {
                 _uiState.update {
                     it.copy(songList = listOf(), onSearchScreen = true)
+                }
+            }
+
+            SearchAction.OnTextCleared -> {
+                _uiState.update {
+                    it.copy(searchQuery = "", onSearchScreen = true, suggestions = listOf())
                 }
             }
 
@@ -93,6 +107,7 @@ class SearchViewModel constructor(
             }
 
             SearchAction.SearchMoreSongs -> {
+                if (uiState.value.isLoadingMore || uiState.value.onSearchScreen || uiState.value.isLoading) return
                 viewModelScope.launch {
                     _uiState.update {
                         it.copy(isLoadingMore = true)
@@ -106,52 +121,6 @@ class SearchViewModel constructor(
         }
     }
 
-    fun onSuggestionClicked(suggestion: String) {
-        _uiState.update {
-            it.copy(searchQuery = suggestion, onSearchScreen = false, isLoading = true)
-        }
-        viewModelScope.launch {
-            // TODO: Try catch
-            val songList = repository.searchSongs(suggestion)
-            _uiState.update {
-                it.copy(songList = songList, isLoading = false)
-            }
-        }
-    }
-
-    fun searchMoreSongs() {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoadingMore = true)
-            }
-            val songList = repository.searchMoreSongs(_uiState.value.searchQuery)
-            _uiState.update {
-                it.copy(songList = _uiState.value.songList + songList, isLoadingMore = false)
-            }
-        }
-    }
-
-    fun onBackPressed() {
-        _uiState.update {
-            it.copy(songList = listOf(), onSearchScreen = true)
-        }
-    }
-
-
-    fun onQueryChanged(query: String) {
-        searchQuery.value = query
-        _uiState.update {
-            it.copy(searchQuery = query)
-        }
-    }
-
-    fun onSongClicked(song: Song) {
-        viewModelScope.launch {
-            val relatedSongs = repository.getPlaylistRadio(song.url)
-            queueManager.setBaseQueue(relatedSongs)
-        }
-    }
-
 }
 
 sealed interface SearchEffect {
@@ -160,6 +129,7 @@ sealed interface SearchEffect {
 
 sealed interface SearchAction {
     data object OnBackPressed : SearchAction
+    data object OnTextCleared : SearchAction
     data object SearchMoreSongs : SearchAction
     data class OnQueryChanged(val query: String) : SearchAction
     data class OnSongClicked(val song: Song) : SearchAction

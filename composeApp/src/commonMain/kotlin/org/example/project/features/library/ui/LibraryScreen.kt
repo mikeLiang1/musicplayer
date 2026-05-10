@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -36,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.core.model.Playlist
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.library.model.stableKey
 import org.example.project.ui.component.PlaylistItem
@@ -47,9 +45,9 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun LibraryScreen(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = WindowInsets(0,0,0,0),
         topBar = {
-            Column(modifier = Modifier.statusBarsPadding()) {
+            Column {
                 HeaderSection(onAction = onAction, state = state)
                 HorizontalDivider(color = appColors.divider)
             }
@@ -65,7 +63,7 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
     ) {
         Row(
             modifier = Modifier

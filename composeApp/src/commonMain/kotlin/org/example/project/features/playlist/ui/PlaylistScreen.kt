@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
-import org.example.project.features.dashboard.navigation.bottomBarDp
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.CoverImage
@@ -52,13 +51,13 @@ fun PlaylistScreen(
     onAction: (PlaylistAction) -> Unit
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets(0,0,0,0),
         topBar = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .background(color = appColors.backgroundElevated)
-                    .statusBarsPadding()
                     .fillMaxWidth()
             ) {
                 IconButton(
@@ -95,9 +94,8 @@ fun PlaylistScreen(
                         SongMenuAction.RemoveFromPlaylist
                     )
                 )
-
                 LazyColumn(
-                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomBarDp + 16.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     item {

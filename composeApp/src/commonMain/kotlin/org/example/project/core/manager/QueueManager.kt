@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
+import org.schabi.newpipe.extractor.timeago.patterns.hi
 import java.util.UUID
 
 
@@ -96,7 +97,8 @@ class QueueManager {
                 isShuffled = false,
                 preShuffleBaseQueue = null,
                 preShuffleBaseIndex = null,
-                autoPlay = true
+                autoPlay = true,
+                currentManualSong = null
             )
         }
         _intent.trySend(QueueIntent.NewQueue())

@@ -56,6 +56,56 @@ class SearchViewModel constructor(
         }
     }
 
+    fun handleAction(searchAction: SearchAction) {
+        when (searchAction) {
+            SearchAction.OnBackPressed -> {
+                _uiState.update {
+                    it.copy(songList = listOf(), onSearchScreen = true)
+                }
+            }
+
+            is SearchAction.OnQueryChanged -> {
+                searchQuery.value = searchAction.query
+                _uiState.update {
+                    it.copy(searchQuery = searchAction.query, onSearchScreen = true)
+                }
+            }
+
+            is SearchAction.OnSongClicked -> {
+                viewModelScope.launch {
+                    val relatedSongs = repository.getPlaylistRadio(searchAction.song.url)
+                    queueManager.setBaseQueue(relatedSongs)
+                }
+            }
+
+            is SearchAction.OnSuggestionClicked -> {
+                _uiState.update {
+                    it.copy(searchQuery = searchAction.suggestion, onSearchScreen = false, isLoading = true)
+                }
+                viewModelScope.launch {
+                    // TODO: Try catch
+                    val songList = repository.searchSongs(searchAction.suggestion)
+                    _uiState.update {
+                        it.copy(songList = songList, isLoading = false)
+                    }
+                }
+
+            }
+
+            SearchAction.SearchMoreSongs -> {
+                viewModelScope.launch {
+                    _uiState.update {
+                        it.copy(isLoadingMore = true)
+                    }
+                    val songList = repository.searchMoreSongs(_uiState.value.searchQuery)
+                    _uiState.update {
+                        it.copy(songList = _uiState.value.songList + songList, isLoadingMore = false)
+                    }
+                }
+            }
+        }
+    }
+
     fun onSuggestionClicked(suggestion: String) {
         _uiState.update {
             it.copy(searchQuery = suggestion, onSearchScreen = false, isLoading = true)
@@ -102,13 +152,18 @@ class SearchViewModel constructor(
         }
     }
 
-    fun openSongMenu(song: Song) {
-        queueManager.addToManualQueue(song)
-    }
 }
 
 sealed interface SearchEffect {
     data object NavigateToResult : SearchEffect
+}
+
+sealed interface SearchAction {
+    data object OnBackPressed : SearchAction
+    data object SearchMoreSongs : SearchAction
+    data class OnQueryChanged(val query: String) : SearchAction
+    data class OnSongClicked(val song: Song) : SearchAction
+    data class OnSuggestionClicked(val suggestion: String) : SearchAction
 }
 
 

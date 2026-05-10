@@ -20,35 +20,26 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
+import org.example.project.features.dashboard.navigation.bottomBarDp
+import org.example.project.ui.component.MusicSearchBar
 import org.example.project.ui.component.SongItem
+import org.example.project.ui.theme.AppPreview
+import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.appColors
 
 @Composable
-fun SearchScreen(searchViewModel: SearchViewModel) {
-    val state by searchViewModel.uiState.collectAsStateWithLifecycle()
+fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
 
 //    LaunchedEffect(Unit) {
 //        searchViewModel.effect.collect { effect ->
@@ -60,7 +51,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
 //        }
 //    }
 
-    BackHandler(enabled = !state.onSearchScreen) { searchViewModel.onBackPressed() }
+    BackHandler(enabled = !state.onSearchScreen) { onAction(SearchAction.OnBackPressed) }
 
     val focusManager = LocalFocusManager.current
 
@@ -70,7 +61,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
     LaunchedEffect(interactionSource) {
         interactionSource.interactions.collect { interaction ->
             if (interaction is PressInteraction.Release) {
-                searchViewModel.onBackPressed()
+                onAction(SearchAction.OnBackPressed)
             }
         }
     }
@@ -82,36 +73,11 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             .padding(top = 16.dp)
     ) {
         // Search Bar
-        TextField(
-            value = state.searchQuery,
-            onValueChange = { searchViewModel.onQueryChanged(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            placeholder = { Text("Search on YouTube Music...") },
-            trailingIcon = {
-                IconButton(onClick = {
-                    if (state.searchQuery.isNotEmpty()) {
-                        searchViewModel.onSuggestionClicked(state.searchQuery)
-                        focusManager.clearFocus()
-                    }
-                }) {
-                    Icon(Icons.Default.Search, contentDescription = null)
-                }
-            },
-            interactionSource = interactionSource,
-            keyboardActions = KeyboardActions {
-                if (state.searchQuery.isNotEmpty()) {
-                    searchViewModel.onSuggestionClicked(state.searchQuery)
-                    focusManager.clearFocus()
-                }
-            },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Search
-            ),
-            singleLine = true
+        MusicSearchBar(
+            query = state.searchQuery,
+            onQueryChange = { onAction(SearchAction.OnQueryChanged(it)) },
+            onVoiceSearch = {},
+            onSuggestionPressed = { onAction(SearchAction.OnSuggestionClicked(it)) }
         )
 
         val listState = rememberLazyListState()
@@ -126,7 +92,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                 .distinctUntilChanged()
                 .collect { shouldLoadMore ->
                     if (shouldLoadMore && !state.isLoadingMore && !state.onSearchScreen && !state.isLoading) {
-                        searchViewModel.searchMoreSongs()
+                        onAction(SearchAction.SearchMoreSongs)
                     }
                 }
         }
@@ -141,7 +107,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 16.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = bottomBarDp + 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (onSearchScreen) {
@@ -151,7 +117,7 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    searchViewModel.onSuggestionClicked(suggestion)
+                                    onAction(SearchAction.OnSuggestionClicked(suggestion))
                                     focusManager.clearFocus()
                                 }
                                 .padding(8.dp),
@@ -174,11 +140,14 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                         }
                     }
                     items(state.songList) { song ->
-                        SongItem(song = song, onMenuClicked = {
-                            searchViewModel.openSongMenu(song)
-                        }) {
-                            searchViewModel.onSongClicked(song)
-                        }
+                        SongItem(
+                            song = song,
+                            onMenuClicked = {
+
+                            }, onClick = {
+                                onAction(SearchAction.OnSongClicked(song))
+                            }
+                        )
                     }
                     if (state.isLoadingMore) {
                         item {
@@ -188,6 +157,15 @@ fun SearchScreen(searchViewModel: SearchViewModel) {
                 }
             }
         }
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun SearchBarPreview() {
+    AppPreview {
+        SearchScreen(state = SearchUiState()) { }
+
     }
 }
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -142,12 +143,15 @@ fun SongItem(
                 text = song.title,
                 maxLines = 1,
                 fontWeight = FontWeight.SemiBold,
-                color = titleColor
+                color = titleColor,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${song.artist} • ${formatTime(song.duration)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = appColors.textMuted
+                color = appColors.textMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 

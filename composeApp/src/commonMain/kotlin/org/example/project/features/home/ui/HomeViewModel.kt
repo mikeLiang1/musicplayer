@@ -5,23 +5,22 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.example.project.core.database.entity.RecentlyPlayedType
 import org.example.project.core.database.mapper.toRecentlyPlayedItem
 import org.example.project.core.model.RecentlyPlayedItem
-import org.example.project.core.model.Song
-import org.example.project.core.model.mockSongList
 import org.example.project.core.repository.RecentlyPlayedRepository
-import org.example.project.core.repository.YouTubeRepository
+import org.example.project.core.usecase.PlaySongUseCase
+import org.example.project.features.playlist.repository.PlaylistRepository
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class HomeViewModel constructor(
-    private val repository: YouTubeRepository,
-    private val recentlyPlayedRepository: RecentlyPlayedRepository
+    private val recentlyPlayedRepository: RecentlyPlayedRepository,
+    private val playSongUseCase: PlaySongUseCase,
+    private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
 
@@ -38,9 +37,19 @@ class HomeViewModel constructor(
     }
 
     fun onHomeAction(action: HomeAction) {
-        when(action) {
+        when (action) {
             is HomeAction.OnRecentPlayedClicked -> {
+                when (action.recentlyPlayedItem.contentType) {
+                    RecentlyPlayedType.SONG -> {
+                        viewModelScope.launch {
+                            playSongUseCase(action.recentlyPlayedItem.contentId)
+                        }
+                    }
 
+                    RecentlyPlayedType.PLAYLIST -> {
+
+                    }
+                }
             }
         }
     }
@@ -54,5 +63,5 @@ data class HomeUiState(
 )
 
 sealed interface HomeAction {
-    data class OnRecentPlayedClicked(val recentlyPlayedItem: RecentlyPlayedItem): HomeAction
+    data class OnRecentPlayedClicked(val recentlyPlayedItem: RecentlyPlayedItem) : HomeAction
 }

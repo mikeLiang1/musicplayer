@@ -14,11 +14,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
-import org.example.project.core.model.Playlist
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.playlist.repository.PlaylistRepository
-import org.schabi.newpipe.extractor.timeago.patterns.it
 
 class LibraryViewModel constructor(
     private val repository: YouTubeRepository,

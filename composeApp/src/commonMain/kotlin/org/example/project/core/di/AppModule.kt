@@ -10,6 +10,7 @@ import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.RecentlyPlayedRepository
 import org.example.project.core.repository.YouTubeRepository
+import org.example.project.core.usecase.PlaySongUseCase
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.ui.LibraryViewModel
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
@@ -42,11 +43,15 @@ val databaseModule = module {
     single<MusicDatabase> { getRoomDatabase(get()) }
 }
 
+val useCaseModule = module {
+    single { PlaySongUseCase(get(), get()) }
+}
+
 // 4. ViewModels Module (UI Layer)
 val viewModelModule = module {
-    viewModel { HomeViewModel(get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { SongMenuViewModel(get(), get()) }
-    viewModel { SearchViewModel(get(), get(), get(), get()) }
+    viewModel { SearchViewModel(get(), get(), get()) }
     viewModel { LibraryViewModel(get(), get(), get(), get()) }
     viewModel { MusicPlayerViewModel(get(), get(), get(), get()) }
     viewModel { params -> PlaylistViewModel(params.get(), get()) }

@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.map
 import org.example.project.core.database.MusicDatabase
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.mapper.toDomain
+import org.example.project.core.database.mapper.toSong
 import org.example.project.core.database.mapper.toSongEntity
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.Song
@@ -49,6 +50,10 @@ class PlaylistRepository(database: MusicDatabase, private val clock: Clock = Clo
 
     suspend fun deletePlaylist(id: String) {
         dao.deletePlaylist(id)
+    }
+
+    suspend fun getSong(id: String): Song? {
+        return dao.getSong(id)?.toSong()
     }
 
     suspend fun addSong(playlistId: String, song: Song) {

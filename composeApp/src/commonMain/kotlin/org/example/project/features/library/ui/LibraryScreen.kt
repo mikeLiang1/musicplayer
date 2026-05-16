@@ -87,7 +87,6 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
             }
         }
     }
-
 }
 
 @Composable

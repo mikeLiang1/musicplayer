@@ -81,7 +81,7 @@ fun DashboardNavigation() {
                 entry<Route.DashboardRoutes.Home> {
                     val homeViewModel = koinViewModel<HomeViewModel>()
                     val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
-                    HomeScreen(homeState, onAction = {})
+                    HomeScreen(homeState, onAction = homeViewModel::onHomeAction)
                 }
                 entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
                 entry<Route.DashboardRoutes.LibraryRoutes> {

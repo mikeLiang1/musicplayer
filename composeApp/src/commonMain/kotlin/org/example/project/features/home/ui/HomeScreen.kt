@@ -25,8 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.example.project.core.model.Song
-import org.example.project.core.model.mockSongList
+import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
@@ -87,7 +86,7 @@ private fun RecentlyPlayedSection(
     ) {
         items(state.recentlyPlayed) {
             RecentlyPlayedItem(
-                song = it,
+                recentlyPlayedItem = it,
                 onClick = { onAction(HomeAction.OnRecentPlayedClicked(it)) }
             )
         }
@@ -96,21 +95,21 @@ private fun RecentlyPlayedSection(
 }
 
 @Composable
-private fun RecentlyPlayedItem(song: Song, onClick: () -> Unit) {
+private fun RecentlyPlayedItem(recentlyPlayedItem: RecentlyPlayedItem, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(150.dp)
             .clickable(onClick = onClick)
     ) {
-        CoverImage(data = song.thumbnailUrl, modifier = Modifier.fillMaxWidth())
+        CoverImage(data = recentlyPlayedItem.thumbnailUrl, modifier = Modifier.fillMaxWidth())
         Text(
-            text = song.title,
+            text = recentlyPlayedItem.title,
             maxLines = 1,
             fontWeight = FontWeight.SemiBold,
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = song.artist,
+            text = recentlyPlayedItem.subTitle,
             style = MaterialTheme.typography.bodySmall,
             color = appColors.textMuted,
             maxLines = 1,
@@ -126,7 +125,6 @@ private fun HomeScreenPreview() {
     AppPreview {
         HomeScreen(
             state = HomeUiState(
-                recentlyPlayed = mockSongList
             ),
             onAction = {}
         )

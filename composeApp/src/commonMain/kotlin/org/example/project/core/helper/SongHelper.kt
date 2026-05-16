@@ -9,6 +9,7 @@ fun Song.toMediaItem(): MediaItem {
     val metadata = MediaMetadata.Builder()
         .setTitle(title)
         .setArtist(artist)
+        .setSubtitle(artist)
         .setDisplayTitle(title)
         .setArtworkUri(thumbnailUrl?.toUri())
         .setDurationMs(duration)

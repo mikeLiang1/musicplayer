@@ -28,6 +28,7 @@ import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
 import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeScreen
+import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.navigation.LibraryNavigation
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
@@ -41,6 +42,7 @@ import org.example.project.navigation.dashboardAllRoutes
 import org.example.project.ui.theme.appColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.schabi.newpipe.extractor.timeago.patterns.vi
 
 @Composable
 fun DashboardNavigation() {
@@ -76,7 +78,11 @@ fun DashboardNavigation() {
                 .union(WindowInsets.ime),
         ) { innerPadding ->
             val entryProvider = entryProvider<NavKey> {
-                entry<Route.DashboardRoutes.Home> { HomeScreen() }
+                entry<Route.DashboardRoutes.Home> {
+                    val homeViewModel = koinViewModel<HomeViewModel>()
+                    val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                    HomeScreen(homeState, onAction = {})
+                }
                 entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
                 entry<Route.DashboardRoutes.LibraryRoutes> {
                     LibraryNavigation(

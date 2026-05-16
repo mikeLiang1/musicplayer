@@ -45,7 +45,7 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun LibraryScreen(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0,0,0,0),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             Column {
                 HeaderSection(onAction = onAction, state = state)
@@ -63,12 +63,12 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {

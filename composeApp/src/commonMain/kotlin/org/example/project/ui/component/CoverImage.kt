@@ -1,5 +1,6 @@
 package org.example.project.ui.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Refresh
@@ -17,8 +18,6 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import coil3.size.Size
-import kotlinx.serialization.Serializable
 
 @Composable
 fun CoverImage(
@@ -27,6 +26,7 @@ fun CoverImage(
     size: Dp = Dp.Unspecified,
     shape: Shape = MaterialTheme.shapes.small,
     icon: VectorPainter = rememberVectorPainter(Icons.Sharp.Refresh),
+    onClick: (() -> Unit)? = null
 ) {
     val context = LocalPlatformContext.current
     val request = remember(data) {
@@ -45,5 +45,12 @@ fun CoverImage(
         modifier = modifier
             .size(size)
             .clip(shape)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
     )
 }

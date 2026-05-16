@@ -12,3 +12,12 @@ data class Song(
     val thumbnailUrl: String?,
     val duration: Long
 )
+
+private val mockSong =  Song(
+    url = "item.url",
+    title = "Currently Playing Song",
+    artist = "Artist",
+    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+    duration = 3000L
+)
+val mockSongList = listOf(mockSong, mockSong, mockSong, mockSong)

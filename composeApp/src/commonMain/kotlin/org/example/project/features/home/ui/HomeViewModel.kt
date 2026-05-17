@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -14,6 +17,7 @@ import org.example.project.core.database.mapper.toRecentlyPlayedItem
 import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.core.repository.RecentlyPlayedRepository
 import org.example.project.core.usecase.PlaySongUseCase
+import org.example.project.features.library.ui.LibraryEffect
 import org.example.project.features.playlist.repository.PlaylistRepository
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -23,8 +27,10 @@ class HomeViewModel constructor(
     private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
-
     val uiState = _uiState.asStateFlow()
+
+    private val _effect = MutableSharedFlow<HomeEffect>()
+    val effect: SharedFlow<HomeEffect> = _effect.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -47,7 +53,9 @@ class HomeViewModel constructor(
                     }
 
                     RecentlyPlayedType.PLAYLIST -> {
-
+                        viewModelScope.launch {
+                            _effect.emit(HomeEffect.NavigateToPlaylist(""))
+                        }
                     }
                 }
             }
@@ -64,4 +72,8 @@ data class HomeUiState(
 
 sealed interface HomeAction {
     data class OnRecentPlayedClicked(val recentlyPlayedItem: RecentlyPlayedItem) : HomeAction
+}
+
+sealed interface HomeEffect {
+    data class NavigateToPlaylist(val playlistId: String) : HomeEffect
 }

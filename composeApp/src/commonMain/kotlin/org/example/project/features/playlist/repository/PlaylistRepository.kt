@@ -52,9 +52,9 @@ class PlaylistRepository(database: MusicDatabase, private val clock: Clock = Clo
         dao.deletePlaylist(id)
     }
 
-    suspend fun getSong(id: String): Song? {
-        return dao.getSong(id)?.toSong()
-    }
+//    suspend fun getSong(id: String): Song? {
+//        return dao.getSong(id)?.toSong()
+//    }
 
     suspend fun addSong(playlistId: String, song: Song) {
         val now = clock.now().toEpochMilliseconds()

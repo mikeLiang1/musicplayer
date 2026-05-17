@@ -9,15 +9,6 @@ import org.example.project.core.model.Song
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
-internal fun SongEntity.toSong() = Song(
-    uniqueId = Uuid.random().toString(),  // fresh queue instance ID
-    url = url,
-    title = title,
-    artist = artist,
-    thumbnailUrl = thumbnailUrl,
-    duration = duration
-)
 
 internal fun Song.toSongEntity(firstAddedAt: Long) = SongEntity(
     url = url,
@@ -30,8 +21,17 @@ internal fun Song.toSongEntity(firstAddedAt: Long) = SongEntity(
 
 internal fun PlaylistSongWithSong.toDomain() = PlaylistSong(
     id = playlistSong.id,
-    song = song.toSong(),
+    song = song.toSong(idOverride = playlistSong.id), // Pass the persistent ID
     position = playlistSong.position
+)
+
+internal fun SongEntity.toSong(idOverride: String) = Song(
+    uniqueId = idOverride, // Use the DB ID instead of random()
+    url = url,
+    title = title,
+    artist = artist,
+    thumbnailUrl = thumbnailUrl,
+    duration = duration
 )
 
 internal fun PlaylistWithSongs.toDomain() = Playlist(

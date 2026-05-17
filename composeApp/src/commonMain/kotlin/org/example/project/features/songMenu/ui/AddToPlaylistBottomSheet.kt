@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,25 +42,28 @@ fun AddToPlaylistBottomSheet(
             sheetState = sheetState,
             containerColor = appColors.backgroundElevated
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(bottom = 16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(playlists, key = { it.id }) { playlist ->
-                    PlaylistItem(
-                        playlist = playlist,
-                        onClick = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    onCloseBottomSheet() // This sets the boolean to false
+            if (playlists.isEmpty()) {
+                Text("No Playlist, TODO: Add playlist ?")
+            } else {
+
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(playlists, key = { it.id }) { playlist ->
+                        PlaylistItem(
+                            playlist = playlist,
+                            onClick = {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        onCloseBottomSheet() // This sets the boolean to false
+                                    }
                                 }
+                                onPlaylistClicked(playlist.id)
                             }
-                            onPlaylistClicked(playlist.id)
-                        }
-                    )
+                        )
+                    }
                 }
-
-
             }
         }
     }

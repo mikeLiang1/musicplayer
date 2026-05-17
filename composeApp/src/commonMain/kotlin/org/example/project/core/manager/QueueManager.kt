@@ -32,7 +32,8 @@ data class QueueState(
     val preShuffleBaseQueue: List<Song>? = null,     // snapshot before shuffle
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
     val playbackMode: PlaybackMode = PlaybackMode.OFF,
-    val autoPlay: Boolean = false
+    val autoPlay: Boolean = false,
+    val contextId: String? = null
 ) {
     // Computed properties for UI consumption (formerly in ResolvedQueue)
     val history: List<Song>
@@ -86,7 +87,7 @@ class QueueManager {
     /**
      * Sets the base queue and starts playback from the specified index.
      */
-    fun setBaseQueue(songs: List<Song>) {
+    fun setBaseQueue(songs: List<Song>, contextId: String? = null) {
         // Songs already have uniqueId (from search or persistence)
         // We don't generate new ones here to preserve persistence IDs
         _queueState.update { state ->
@@ -98,7 +99,8 @@ class QueueManager {
                 preShuffleBaseQueue = null,
                 preShuffleBaseIndex = null,
                 autoPlay = true,
-                currentManualSong = null
+                currentManualSong = null,
+                contextId = contextId
             )
         }
         _intent.trySend(QueueIntent.NewQueue())

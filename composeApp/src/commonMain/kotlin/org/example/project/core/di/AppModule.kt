@@ -54,5 +54,6 @@ val viewModelModule = module {
     viewModel { SearchViewModel(get(), get(), get()) }
     viewModel { LibraryViewModel(get(), get(), get(), get()) }
     viewModel { MusicPlayerViewModel(get(), get(), get(), get()) }
-    viewModel { params -> PlaylistViewModel(params.get(), get()) }
+    viewModel { params -> PlaylistViewModel(params.get(),
+        get(), get(), get(), get()) }
 }

@@ -61,7 +61,7 @@ class SongMenuViewModel constructor(
 
             SongMenuAction.RemoveFromQueue -> {
                 val song = _uiState.value.selectedSong ?: return
-                removeSong(song)
+                queueManager.removeSong(song.uniqueId)
             }
 
             is SongMenuAction.RemoveFromPlaylist -> {
@@ -71,12 +71,9 @@ class SongMenuViewModel constructor(
                 }
             }
 
-            else -> {}
+            SongMenuAction.GoToAlbum -> {}
+            SongMenuAction.GoToArtist -> {}
         }
-    }
-
-    fun removeSong(song: Song) {
-        queueManager.removeSong(song.uniqueId)
     }
 
     fun addSongToSelectedPlaylist(playlistId: String) {

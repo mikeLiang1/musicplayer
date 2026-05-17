@@ -96,15 +96,18 @@ private fun RecentlyPlayedSection(
 
 @Composable
 private fun RecentlyPlayedItem(recentlyPlayedItem: RecentlyPlayedItem, onClick: () -> Unit) {
+    // TODO: Change the hover / interaction source
     Column(
         modifier = Modifier
-            .width(150.dp)
+            .width(130.dp)
             .clickable(onClick = onClick)
     ) {
         CoverImage(
             data = recentlyPlayedItem.thumbnailUrl,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(8.dp)
         )
         Text(
             text = recentlyPlayedItem.title,

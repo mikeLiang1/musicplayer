@@ -39,6 +39,7 @@ import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.component.SongItem
+import org.example.project.ui.component.SongItemState
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.appColors
@@ -51,7 +52,7 @@ fun PlaylistScreen(
     onAction: (PlaylistAction) -> Unit
 ) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0,0,0,0),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -99,7 +100,7 @@ fun PlaylistScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     item {
-                        PlaylistHeader(playlist = state.playlist, onAction = onAction)
+                        PlaylistHeader(playlist = state.playlist, onAction = onAction, state.isPlaying)
                     }
                     item {
                         HorizontalDivider(color = appColors.divider, modifier = Modifier.padding(vertical = 12.dp))
@@ -110,9 +111,17 @@ fun PlaylistScreen(
                         }
                     } else {
                         items(state.playlist.songs, key = { it.id }) { song ->
-                            SongItem(song = song.song, onClick = {}, onMenuClicked = {
-                                songMenu.show(song.song, playlistSongId = song.id)
-                            })
+                            SongItem(
+                                song = song.song,
+                                onClick = {
+                                    onAction(PlaylistAction.OnPlaylistSongPressed(song.song))
+                                },
+                                onMenuClicked = {
+                                    songMenu.show(song.song, playlistSongId = song.id)
+                                },
+                                state = if (state.currentlyPlayingSongId == song.song.uniqueId && state.isPlaylistActive)
+                                    SongItemState.Current(state.isPlaying) else SongItemState.Default
+                            )
                         }
                     }
                 }
@@ -122,7 +131,7 @@ fun PlaylistScreen(
 }
 
 @Composable
-private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Unit) {
+private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Unit, isPlaying: Boolean) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -170,7 +179,7 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
 
             PlayPauseButton(
                 onPressed = { onAction(PlaylistAction.OnPlayPressed) },
-                isPlaying = false,
+                isPlaying = isPlaying,
                 modifier = Modifier.padding(end = 12.dp)
             )
         }

@@ -56,6 +56,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.musicPlayer.model.PlayerQueue
+import org.example.project.features.songMenu.ui.SongMenuAction
+import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.theme.appColors
 
@@ -191,11 +193,24 @@ private fun PlayerHeader(
                 }
             }
         }
+        val songMenu = rememberSongMenuController(
+            listOf(
+                SongMenuAction.AddToQueue,
+                SongMenuAction.AddToPlaylist,
+                SongMenuAction.GoToArtist,
+                SongMenuAction.GoToAlbum
+            )
+        )
+
         if (pagerState.currentPage == 0) {
-            IconButton(onClick = {}) {
+            IconButton(onClick = {
+                displayQueue.current?.let {
+                    songMenu.show(it)
+                }
+            }) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More",
+                    contentDescription = "Menu",
                     tint = appColors.iconSecondary
                 )
             }

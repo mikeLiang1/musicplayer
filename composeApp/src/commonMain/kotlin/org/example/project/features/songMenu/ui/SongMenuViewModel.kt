@@ -13,7 +13,7 @@ import org.example.project.core.manager.QueueManager
 import org.example.project.core.model.Song
 import org.example.project.features.playlist.repository.PlaylistRepository
 
-class SongMenuViewModel constructor(
+class SongMenuViewModel(
     private val playlistRepository: PlaylistRepository,
     private val queueManager: QueueManager
 ) : ViewModel() {

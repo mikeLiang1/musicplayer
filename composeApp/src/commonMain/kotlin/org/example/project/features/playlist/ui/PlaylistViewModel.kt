@@ -1,5 +1,6 @@
 package org.example.project.features.playlist.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,13 +16,14 @@ import org.example.project.core.model.Song
 import org.example.project.core.repository.RecentlyPlayedRepository
 import org.example.project.features.playlist.repository.PlaylistRepository
 
-class PlaylistViewModel constructor(
+class PlaylistViewModel(
     private val playlistId: String,
     private val playlistRepository: PlaylistRepository,
     private val recentlyPlaylistRepository: RecentlyPlayedRepository,
     private val queueManager: QueueManager,
     private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
+
 
     val uiState: StateFlow<PlaylistUiState> = combine(
         playlistRepository.getPlaylist(playlistId),

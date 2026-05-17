@@ -28,7 +28,7 @@ import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 
 @OptIn(FlowPreview::class)
-class MusicPlayerViewModel constructor(
+class MusicPlayerViewModel(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,

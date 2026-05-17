@@ -24,7 +24,7 @@ import org.example.project.core.repository.YouTubeRepository
 import org.example.project.core.usecase.PlaySongUseCase
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-class SearchViewModel constructor(
+class SearchViewModel(
     private val repository: YouTubeRepository,
     private val playSongUseCase: PlaySongUseCase,
     private val recentlyPlayedRepository: RecentlyPlayedRepository

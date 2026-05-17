@@ -18,7 +18,7 @@ import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.playlist.repository.PlaylistRepository
 
-class LibraryViewModel constructor(
+class LibraryViewModel(
     private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,

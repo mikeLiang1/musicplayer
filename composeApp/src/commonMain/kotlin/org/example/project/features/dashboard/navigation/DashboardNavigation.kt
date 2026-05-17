@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.budget.navigation.rememberNavigationState
 import com.example.budget.navigation.toEntries
 import kotlinx.coroutines.flow.map
+import org.example.project.features.home.ui.HomeEffect
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.navigation.LibraryNavigation
@@ -42,7 +44,6 @@ import org.example.project.navigation.dashboardAllRoutes
 import org.example.project.ui.theme.appColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import org.schabi.newpipe.extractor.timeago.patterns.vi
 
 @Composable
 fun DashboardNavigation() {
@@ -81,6 +82,15 @@ fun DashboardNavigation() {
                 entry<Route.DashboardRoutes.Home> {
                     val homeViewModel = koinViewModel<HomeViewModel>()
                     val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                    LaunchedEffect(Unit) {
+                        homeViewModel.effect.collect { effect ->
+                            when (effect) {
+                                is HomeEffect.NavigateToPlaylist -> {
+                                    navigator.navigate(Route.DashboardRoutes.Playlist(effect.playlistId))
+                                }
+                            }
+                        }
+                    }
                     HomeScreen(homeState, onAction = homeViewModel::onHomeAction)
                 }
                 entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }

@@ -17,11 +17,10 @@ import org.example.project.core.database.mapper.toRecentlyPlayedItem
 import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.core.repository.RecentlyPlayedRepository
 import org.example.project.core.usecase.PlaySongUseCase
-import org.example.project.features.library.ui.LibraryEffect
 import org.example.project.features.playlist.repository.PlaylistRepository
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-class HomeViewModel constructor(
+class HomeViewModel(
     private val recentlyPlayedRepository: RecentlyPlayedRepository,
     private val playSongUseCase: PlaySongUseCase,
     private val playlistRepository: PlaylistRepository
@@ -54,7 +53,7 @@ class HomeViewModel constructor(
 
                     RecentlyPlayedType.PLAYLIST -> {
                         viewModelScope.launch {
-                            _effect.emit(HomeEffect.NavigateToPlaylist(""))
+                            _effect.emit(HomeEffect.NavigateToPlaylist(action.recentlyPlayedItem.contentId))
                         }
                     }
                 }

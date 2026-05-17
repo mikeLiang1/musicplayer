@@ -73,12 +73,12 @@ class MusicPlayerManagerImpl(
                     override fun onPlaybackStateChanged(state: Int) {
                         when (state) {
                             Player.STATE_BUFFERING -> {
-                                // Show loading state if needed
+                                _playerState.update { it.copy(isBuffering = true) }
                             }
 
                             Player.STATE_READY -> {
                                 // Update duration when ready
-                                _playerState.update { it.copy(durationMs = controller?.duration ?: 0L) }
+                                _playerState.update { it.copy(durationMs = controller?.duration ?: 0L, isBuffering = false) }
                             }
                         }
                     }

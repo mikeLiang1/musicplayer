@@ -130,6 +130,7 @@ class MusicPlayerViewModel constructor(
 
     // ── Playback ──────────────────────────────────────
     fun onPlayPauseClicked() {
+        if (playerState.value.isBuffering) return
         if (playerState.value.isPlaying) musicPlayerManager.pause()
         else musicPlayerManager.play()
     }

@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
@@ -111,11 +113,14 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                             onClick = viewModel::onPlayPauseClicked
                         ) {
                             Icon(
-                                imageVector = if (state.isPlaying) {
-                                    Icons.Filled.Pause
-                                } else {
-                                    Icons.Filled.PlayArrow
-                                },
+                                imageVector =
+                                    if (state.isBuffering) Icons.Default.Refresh else {
+                                        if (state.isPlaying) {
+                                            Icons.Filled.Pause
+                                        } else {
+                                            Icons.Filled.PlayArrow
+                                        }
+                                    },
                                 contentDescription = if (state.isPlaying) "Pause" else "Play",
                                 tint = appColors.iconPrimary
                             )

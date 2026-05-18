@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
+import org.example.project.core.repository.YouTubeRepository
 import org.schabi.newpipe.extractor.timeago.patterns.hi
 import java.util.UUID
 
@@ -70,7 +71,9 @@ data class QueueState(
  * Manages dual-queue architecture with separate manual and normal queues.
  * Pure Kotlin with no platform dependencies.
  */
-class QueueManager {
+class QueueManager(
+    private val youTubeRepository: YouTubeRepository
+) {
 
     init {
         Log.d("logging", "queue manager int")

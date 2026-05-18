@@ -9,6 +9,7 @@ import org.example.project.core.database.getRoomDatabase
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.RecentlyPlayedRepository
+import org.example.project.core.repository.YouTubeMusicRepository
 import org.example.project.core.repository.YouTubeRepository
 import org.example.project.core.usecase.PlaySongUseCase
 import org.example.project.features.home.ui.HomeViewModel
@@ -26,8 +27,9 @@ val repositoryModule = module {
     single { YouTubeRepository() }
     single { PlaybackRepository(get()) }
     single { PlaylistRepository(get()) }
-    single { QueueManager() }
+    single { QueueManager(get()) }
     single { RecentlyPlayedRepository(get()) }
+    single { YouTubeMusicRepository() }
 }
 
 // 2. Infrastructure/Core Module (Threading & Scopes)
@@ -44,7 +46,7 @@ val databaseModule = module {
 }
 
 val useCaseModule = module {
-    single { PlaySongUseCase(get(), get()) }
+    single { PlaySongUseCase(get(), get(), get()) }
 }
 
 // 4. ViewModels Module (UI Layer)

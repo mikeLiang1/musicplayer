@@ -1,5 +1,6 @@
 package org.example.project.features.search.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,7 +26,7 @@ import org.example.project.core.usecase.PlaySongUseCase
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class SearchViewModel(
-    private val repository: YouTubeRepository,
+    private val youTubeRepository: YouTubeRepository,
     private val playSongUseCase: PlaySongUseCase,
     private val recentlyPlayedRepository: RecentlyPlayedRepository
 ) : ViewModel() {
@@ -48,7 +49,7 @@ class SearchViewModel(
                     if (query.isBlank()) {
                         flowOf(Result.success(emptyList()))
                     } else {
-                        flow { emit(Result.success(repository.getSearchSuggestion(query))) }
+                        flow { emit(Result.success(youTubeRepository.getSearchSuggestion(query))) }
                             .catch { emit(Result.failure(it)) }
                             .onStart { _uiState.update { it.copy(isLoading = true) } }
                     }
@@ -99,7 +100,7 @@ class SearchViewModel(
                 }
                 viewModelScope.launch {
                     // TODO: Try catch
-                    val songList = repository.searchSongs(searchAction.suggestion)
+                    val songList = youTubeRepository.searchSongs(searchAction.suggestion)
                     _uiState.update {
                         it.copy(songList = songList, isLoading = false)
                     }
@@ -113,7 +114,7 @@ class SearchViewModel(
                     _uiState.update {
                         it.copy(isLoadingMore = true)
                     }
-                    val songList = repository.searchMoreSongs(_uiState.value.searchQuery)
+                    val songList = youTubeRepository.searchMoreSongs(_uiState.value.searchQuery)
                     _uiState.update {
                         it.copy(songList = _uiState.value.songList + songList, isLoadingMore = false)
                     }

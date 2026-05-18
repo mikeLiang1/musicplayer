@@ -64,6 +64,7 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
+            .padding(bottom = 12.dp)
     ) {
         Row(
             modifier = Modifier

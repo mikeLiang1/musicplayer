@@ -78,19 +78,15 @@ class MusicPlayerManagerImpl(
 
                             Player.STATE_READY -> {
                                 // Update duration when ready
-                                _playerState.update { it.copy(durationMs = controller?.duration ?: 0L, isBuffering = false) }
+                                _playerState.update {
+                                    it.copy(
+                                        durationMs = controller?.duration ?: 0L,
+                                        isBuffering = false
+                                    )
+                                }
                             }
                         }
                     }
-
-//                    override fun onPositionDiscontinuity(
-//                        oldPosition: Player.PositionInfo,
-//                        newPosition: Player.PositionInfo,
-//                        reason: Int
-//                    ) {
-//                        // Update position on seek
-//                        _currentPosition.value = newPosition.positionMs
-//                    }
                 })
             }
         }, MoreExecutors.directExecutor())

@@ -4,6 +4,7 @@ import android.app.Application
 import org.example.project.core.di.androidModule
 import org.example.project.core.di.coreModule
 import org.example.project.core.di.databaseModule
+import org.example.project.core.di.networkModule
 import org.example.project.core.di.repositoryModule
 import org.example.project.core.di.useCaseModule
 import org.example.project.core.di.viewModelModule
@@ -16,7 +17,10 @@ open class MainApplication : Application() {
 
         startKoin {
             androidContext(this@MainApplication)
-            modules(androidModule, viewModelModule, coreModule, repositoryModule, databaseModule, useCaseModule)
+            modules(
+                androidModule, viewModelModule, coreModule, repositoryModule,
+                databaseModule, useCaseModule, networkModule
+            )
         }
     }
 }

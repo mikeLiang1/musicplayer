@@ -56,7 +56,8 @@ class PlaylistViewModel(
                         state.playlist?.let { playlist ->
                             queueManager.setBaseQueue(
                                 songs = playlist.songs.map { it.song },
-                                contextId = playlistId
+                                contextId = playlistId,
+                                currentBaseIndex = playlistAction.index
                             )
                             recentlyPlaylistRepository.recordPlaylist(playlist)
                         }
@@ -91,7 +92,7 @@ sealed interface PlaylistAction {
     data object OnMenuPressed : PlaylistAction
     data object OnPlayPressed : PlaylistAction
     data object OnSearchPressed : PlaylistAction
-    data class OnPlaylistSongPressed(val song: Song) : PlaylistAction
+    data class OnPlaylistSongPressed(val song: Song, val index: Int) : PlaylistAction
 }
 
 data class PlaylistUiState(

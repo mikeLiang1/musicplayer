@@ -10,7 +10,7 @@ import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class DownloaderImpl private constructor(builder: OkHttpClient.Builder) : Downloader() {
+class DownloaderImpl(builder: OkHttpClient.Builder) : Downloader() {
 
     private val client: OkHttpClient = builder
         .readTimeout(30, TimeUnit.SECONDS)

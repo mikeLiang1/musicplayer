@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -110,11 +110,11 @@ fun PlaylistScreen(
                             Text("No songs in playlist")
                         }
                     } else {
-                        items(state.playlist.songs, key = { it.id }) { song ->
+                        itemsIndexed(state.playlist.songs, key = { _, item -> item.id }) { index, song ->
                             SongItem(
                                 song = song.song,
                                 onClick = {
-                                    onAction(PlaylistAction.OnPlaylistSongPressed(song.song))
+                                    onAction(PlaylistAction.OnPlaylistSongPressed(song.song, index))
                                 },
                                 onMenuClicked = {
                                     songMenu.show(song.song, playlistSongId = song.id)

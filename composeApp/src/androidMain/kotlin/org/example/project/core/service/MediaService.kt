@@ -27,8 +27,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.repository.NewPipeRepository
 import org.example.project.core.repository.PlaybackRepository
-import org.example.project.core.repository.YouTubeRepository
 import org.koin.android.ext.android.inject
 
 @OptIn(UnstableApi::class)
@@ -41,7 +41,7 @@ class MediaService : MediaLibraryService() {
     private var mediaSession: MediaLibrarySession? = null
 
     private val repo by inject<PlaybackRepository>()
-    private val youtubeRepository by inject<YouTubeRepository>()
+    private val newPipeRepository by inject<NewPipeRepository>()
     private val queueManager by inject<QueueManager>()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -65,7 +65,7 @@ class MediaService : MediaLibraryService() {
                     // Fetch fresh URL
                     runBlocking(Dispatchers.IO) {
                         try {
-                            youtubeRepository.getStreamUrl(youtubeId)?.also { url ->
+                            newPipeRepository.getStreamUrl(youtubeId)?.also { url ->
                                 urlCache[youtubeId] = url to System.currentTimeMillis()
                             } ?: ""
                         } catch (e: Exception) {

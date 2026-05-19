@@ -9,8 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
-import org.example.project.core.repository.YouTubeRepository
-import org.schabi.newpipe.extractor.timeago.patterns.hi
+import org.example.project.core.model.SongPage
 import java.util.UUID
 
 
@@ -34,7 +33,8 @@ data class QueueState(
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
     val playbackMode: PlaybackMode = PlaybackMode.OFF,
     val autoPlay: Boolean = false,
-    val contextId: String? = null
+    val contextId: String? = null,
+    val seenIds: Set<String> = emptySet()
 ) {
     // Computed properties for UI consumption (formerly in ResolvedQueue)
     val history: List<Song>
@@ -71,13 +71,7 @@ data class QueueState(
  * Manages dual-queue architecture with separate manual and normal queues.
  * Pure Kotlin with no platform dependencies.
  */
-class QueueManager(
-    private val youTubeRepository: YouTubeRepository
-) {
-
-    init {
-        Log.d("logging", "queue manager int")
-    }
+class QueueManager() {
 
     private val _queueState = MutableStateFlow(QueueState())
     val queueState: StateFlow<QueueState> = _queueState.asStateFlow()
@@ -90,24 +84,36 @@ class QueueManager(
     /**
      * Sets the base queue and starts playback from the specified index.
      */
-    fun setBaseQueue(songs: List<Song>, contextId: String? = null) {
-        // Songs already have uniqueId (from search or persistence)
-        // We don't generate new ones here to preserve persistence IDs
+    fun setBaseQueue(songs: List<Song>, contextId: String? = null, currentBaseIndex: Int = 0) {
         _queueState.update { state ->
             state.copy(
                 baseQueue = songs,
-                currentBaseIndex = 0,
+                currentBaseIndex = currentBaseIndex,
                 manualQueue = emptyList(),
                 isShuffled = false,
                 preShuffleBaseQueue = null,
                 preShuffleBaseIndex = null,
                 autoPlay = true,
                 currentManualSong = null,
-                contextId = contextId
+                contextId = contextId,
+                seenIds = songs.map { it.uniqueId }.toSet()
             )
         }
         _intent.trySend(QueueIntent.NewQueue())
     }
+
+
+    fun appendRadioSongs(songs: List<Song>) {
+        _queueState.update { state ->
+            val newSongs = songs.filter { it.uniqueId !in state.seenIds }
+            state.copy(
+                baseQueue = state.baseQueue + newSongs,
+                seenIds = state.seenIds + newSongs.map { it.uniqueId },
+            )
+        }
+        _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
+    }
+
 
     // ── Playback Navigation ─────────────────────────────────────────────────
 

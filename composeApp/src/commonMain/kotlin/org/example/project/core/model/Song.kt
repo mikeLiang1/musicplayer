@@ -13,6 +13,11 @@ data class Song(
     val duration: Long
 )
 
+data class SongPage(
+    val songs: List<Song>,
+    val continuationToken: String? // null = no more pages
+)
+
 private val mockSong =  Song(
     url = "item.url",
     title = "Currently Playing Song",

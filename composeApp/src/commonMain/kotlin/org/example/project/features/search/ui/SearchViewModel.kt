@@ -1,6 +1,5 @@
 package org.example.project.features.search.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,15 +19,17 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.model.Song
+import org.example.project.core.repository.InnerTubeRepository
+import org.example.project.core.repository.NewPipeRepository
 import org.example.project.core.repository.RecentlyPlayedRepository
-import org.example.project.core.repository.YouTubeRepository
 import org.example.project.core.usecase.PlaySongUseCase
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class SearchViewModel(
-    private val youTubeRepository: YouTubeRepository,
+    private val newPipeRepository: NewPipeRepository,
     private val playSongUseCase: PlaySongUseCase,
-    private val recentlyPlayedRepository: RecentlyPlayedRepository
+    private val recentlyPlayedRepository: RecentlyPlayedRepository,
+    private val innerTubeRepository: InnerTubeRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -49,7 +50,7 @@ class SearchViewModel(
                     if (query.isBlank()) {
                         flowOf(Result.success(emptyList()))
                     } else {
-                        flow { emit(Result.success(youTubeRepository.getSearchSuggestion(query))) }
+                        flow { emit(Result.success(newPipeRepository.getSearchSuggestions(query))) }
                             .catch { emit(Result.failure(it)) }
                             .onStart { _uiState.update { it.copy(isLoading = true) } }
                     }
@@ -100,9 +101,9 @@ class SearchViewModel(
                 }
                 viewModelScope.launch {
                     // TODO: Try catch
-                    val songList = youTubeRepository.searchSongs(searchAction.suggestion)
+                    val songList = innerTubeRepository.searchSongs(searchAction.suggestion)
                     _uiState.update {
-                        it.copy(songList = songList, isLoading = false)
+                        it.copy(songList = songList.songs, isLoading = false, searchToken = songList.continuationToken)
                     }
                 }
 
@@ -110,13 +111,19 @@ class SearchViewModel(
 
             SearchAction.SearchMoreSongs -> {
                 if (uiState.value.isLoadingMore || uiState.value.onSearchScreen || uiState.value.isLoading) return
+                val searchToken = _uiState.value.searchToken
+                if (searchToken == null) return
                 viewModelScope.launch {
                     _uiState.update {
                         it.copy(isLoadingMore = true)
                     }
-                    val songList = youTubeRepository.searchMoreSongs(_uiState.value.searchQuery)
+                    val songList = innerTubeRepository.searchMoreSongs(searchToken)
                     _uiState.update {
-                        it.copy(songList = _uiState.value.songList + songList, isLoadingMore = false)
+                        it.copy(
+                            songList = _uiState.value.songList + songList.songs,
+                            isLoadingMore = false,
+                            searchToken = songList.continuationToken
+                        )
                     }
                 }
             }
@@ -145,5 +152,6 @@ data class SearchUiState(
     val songList: List<Song> = listOf(),
     val onSearchScreen: Boolean = true,
     val isLoading: Boolean = false,
-    val isLoadingMore: Boolean = false
+    val isLoadingMore: Boolean = false,
+    val searchToken: String? = null
 )

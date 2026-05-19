@@ -14,13 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
-import org.example.project.core.model.Song
-import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.playlist.repository.PlaylistRepository
 
 class LibraryViewModel(
-    private val youTubeRepository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,
     private val playlistRepository: PlaylistRepository

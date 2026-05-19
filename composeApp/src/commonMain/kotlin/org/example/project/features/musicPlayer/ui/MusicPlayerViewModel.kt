@@ -24,12 +24,10 @@ import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueIntent
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.PlaybackRepository
-import org.example.project.core.repository.YouTubeRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 
 @OptIn(FlowPreview::class)
 class MusicPlayerViewModel(
-    private val repository: YouTubeRepository,
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,
     private val playbackRepository: PlaybackRepository

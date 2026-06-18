@@ -1,25 +1,36 @@
 package org.example.project.core.repository
 
-import org.example.project.core.helper.findFlexText
-import org.example.project.core.helper.findObjectWithKey
-import org.example.project.core.helper.getRunsText
-import org.example.project.core.helper.parseTimeToMillis
-
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.*
-import org.example.project.core.model.Song
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.putJsonObject
+import org.example.project.core.helper.applyHeaders
+import org.example.project.core.helper.buildContinuationBody
+import org.example.project.core.helper.buildNextBody
+import org.example.project.core.helper.buildSearchBody
+import org.example.project.core.helper.extractVideoId
+import org.example.project.core.model.SearchResult
 import org.example.project.core.model.SongPage
+import org.example.project.core.parsers.parseQueuePage
+import org.example.project.core.parsers.parseSearchPage
+import org.schabi.newpipe.extractor.ServiceList.YouTube
+import org.schabi.newpipe.extractor.timeago.patterns.it
+import org.slf4j.MDC.put
 
 class InnerTubeRepository(private val client: HttpClient) {
 
-    // ─────────────────────────────────────────────────────────────
-    // QUEUE / RADIO
-    // ─────────────────────────────────────────────────────────────
 
     suspend fun getRecommendations(url: String): SongPage = withContext(Dispatchers.IO) {
         val videoId = extractVideoId(url) ?: return@withContext SongPage(emptyList(), null)
@@ -54,7 +65,7 @@ class InnerTubeRepository(private val client: HttpClient) {
     // SEARCH
     // ─────────────────────────────────────────────────────────────
 
-    suspend fun searchSongs(query: String): SongPage = withContext(Dispatchers.IO) {
+    suspend fun searchSongs(query: String): SearchResult = withContext(Dispatchers.IO) {
         try {
             val response: JsonObject = client.post(SEARCH_URL) {
                 contentType(ContentType.Application.Json)
@@ -64,11 +75,11 @@ class InnerTubeRepository(private val client: HttpClient) {
             parseSearchPage(response)
         } catch (e: Exception) {
             println("searchSongs error: ${e.message}")
-            SongPage(emptyList(), null)
+            SearchResult()
         }
     }
 
-    suspend fun searchMoreSongs(token: String): SongPage = withContext(Dispatchers.IO) {
+    suspend fun searchMoreSongs(token: String): SearchResult = withContext(Dispatchers.IO) {
         try {
             val response: JsonObject = client.post(SEARCH_URL) {
                 contentType(ContentType.Application.Json)
@@ -78,219 +89,65 @@ class InnerTubeRepository(private val client: HttpClient) {
             parseSearchPage(response)
         } catch (e: Exception) {
             println("searchMoreSongs error: ${e.message}")
-            SongPage(emptyList(), null)
+            SearchResult()
         }
     }
+//
+//    suspend fun getStreamUrl(videoId: String): String? = withContext(Dispatchers.IO) {
+//        val response = YouTube.player(
+//            videoId,
+//            playlistId = null,
+//            client = MAIN_CLIENT,   // pick ONE client for now
+//            signatureTimestamp = null,
+//            poToken = null
+//        ).getOrNull() ?: return@withContext null
+//
+//        val streamingData = response.streamingData ?: return@withContext null
+//        val formats = streamingData.adaptiveFormats ?: return@withContext null
+//
+//        val best = formats
+//            .filter { it.audioQuality != null }
+//            .maxByOrNull { it.bitrate ?: 0 }
+//            ?: return@withContext null
+//
+//        // 1. direct URL
+//        best.url?.takeIf { it.startsWith("http") }?.let { return@withContext it }
+//
+//        // 2. fallback: signatureCipher (IMPORTANT)
+//        best.signatureCipher
+//            ?.let { decodeCipher(it) }
+//            ?.takeIf { it.startsWith("http") }
+//            ?.let { return@withContext it }
+//
+//        null
+//    }
 
-    // ─────────────────────────────────────────────────────────────
-    // REQUEST BUILDERS
-    // ─────────────────────────────────────────────────────────────
+    fun buildPlayerBody(videoId: String): JsonObject {
+        return buildJsonObject {
+            put("videoId", videoId)
 
-    private fun HttpRequestBuilder.applyHeaders() {
-        header("X-YouTube-Client-Name", "67")
-        header("X-YouTube-Client-Version", CLIENT_VERSION)
-        header(
-            "User-Agent",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
-        header("Referer", "https://music.youtube.com/")
-        header("Origin", "https://music.youtube.com")
-    }
-
-    private fun buildNextBody(videoId: String): JsonObject = buildJsonObject {
-        putJsonObject("context") {
-            putJsonObject("client") {
-                put("clientName", "WEB_REMIX")
-                put("clientVersion", CLIENT_VERSION)
-                put("hl", "en")
-                put("gl", "US")
-                put(
-                    "userAgent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36,gzip(gfe)"
-                )
-                put("platform", "DESKTOP")
+            putJsonObject("context") {
+                putJsonObject("client") {
+                    put("clientName", "ANDROID_MUSIC")
+                    put("clientVersion", InnerTubeRepository.CLIENT_VERSION)
+                }
             }
         }
-        put("videoId", videoId)
-        put("playlistId", "RDAMVM$videoId")
-        put("params", "wAEB") // returns full radio queue
     }
 
-    private fun buildSearchBody(query: String): JsonObject = buildJsonObject {
-        putJsonObject("context") {
-            putJsonObject("client") {
-                put("clientName", "WEB_REMIX")
-                put("clientVersion", CLIENT_VERSION)
-                put("hl", "en")
-                put("gl", "US")
-            }
-        }
-        put("query", query)
-        put("params", "EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D") // music songs filter
-    }
+    fun decodeSignatureCipher(cipher: String?): String? {
+        if (cipher.isNullOrBlank()) return null
 
-    // Shared between queue pagination and search pagination
-    private fun buildContinuationBody(token: String): JsonObject = buildJsonObject {
-        putJsonObject("context") {
-            putJsonObject("client") {
-                put("clientName", "WEB_REMIX")
-                put("clientVersion", CLIENT_VERSION)
-                put("hl", "en")
-                put("gl", "US")
-            }
-        }
-        put("continuation", token)
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // QUEUE PARSING
-    // ─────────────────────────────────────────────────────────────
-
-    private fun parseQueuePage(root: JsonObject): SongPage {
-        val playlistPanel = root.findObjectWithKey("playlistPanelRenderer")
-            ?: return SongPage(emptyList(), null)
-
-        val contents = playlistPanel["contents"]?.jsonArray
-            ?: return SongPage(emptyList(), null)
-
-        val songs = contents.mapNotNull { parseQueueItem(it.jsonObject) }
-
-        val token = playlistPanel["continuations"]
-            ?.jsonArray
-            ?.firstOrNull()
-            ?.jsonObject
-            ?.get("nextRadioContinuationData")
-            ?.jsonObject
-            ?.get("continuation")
-            ?.jsonPrimitive
-            ?.content
-
-        return SongPage(songs, token)
-    }
-
-    private fun parseQueueItem(item: JsonObject): Song? {
-        val renderer = item["playlistPanelVideoRenderer"]?.jsonObject
-            ?: return null
-
-        val videoId = renderer["videoId"]?.jsonPrimitive?.content
-            ?: return null
-
-        return Song(
-            uniqueId = videoId,
-            url = "https://www.youtube.com/watch?v=$videoId",
-            title = renderer["title"]?.jsonObject.getRunsText(),
-            artist = renderer["longBylineText"]?.jsonObject
-                .getRunsText()
-                .split(" • ")
-                .first(),
-            thumbnailUrl = renderer["thumbnail"]
-                ?.jsonObject
-                ?.get("thumbnails")
-                ?.jsonArray
-                ?.lastOrNull()
-                ?.jsonObject
-                ?.get("url")
-                ?.jsonPrimitive
-                ?.content,
-            duration = renderer["lengthText"]
-                ?.jsonObject
-                ?.get("runs")
-                ?.jsonArray
-                ?.firstOrNull()
-                ?.jsonObject
-                ?.get("text")
-                ?.jsonPrimitive
-                ?.content
-                ?.parseTimeToMillis() ?: 0L
-        )
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // SEARCH PARSING
-    // ─────────────────────────────────────────────────────────────
-
-    private fun parseSearchPage(root: JsonObject): SongPage {
-        val shelf = root.findObjectWithKey("musicShelfRenderer")
-            ?: return SongPage(emptyList(), null)
-
-        val contents = shelf["contents"]?.jsonArray
-            ?: return SongPage(emptyList(), null)
-
-        val songs = contents.mapNotNull { item ->
-            val renderer = item.jsonObject["musicResponsiveListItemRenderer"]?.jsonObject
-                ?: return@mapNotNull null
-            parseSearchItem(renderer)
+        val params = cipher.split("&").associate {
+            val parts = it.split("=")
+            parts[0] to parts.getOrNull(1)
         }
 
-        val token = shelf["continuations"]
-            ?.jsonArray
-            ?.firstOrNull()
-            ?.jsonObject
-            ?.get("nextContinuationData")
-            ?.jsonObject
-            ?.get("continuation")
-            ?.jsonPrimitive
-            ?.content
+        val url = params["url"] ?: return null
 
-        return SongPage(songs, token)
+        return url // ⚠️ real Metrolist also appends decoded "s" signature
     }
 
-    private fun parseSearchItem(renderer: JsonObject): Song? {
-        val videoId = renderer
-            .findObjectWithKey("watchEndpoint")
-            ?.get("videoId")
-            ?.jsonPrimitive
-            ?.content
-            ?: return null
-
-        val columns = renderer["flexColumns"]?.jsonArray ?: return null
-
-        val title = columns.getOrNull(0)?.jsonObject.findFlexText()
-        val artist = columns.getOrNull(1)?.jsonObject.findFlexText()
-        val durationText = columns.getOrNull(2)?.jsonObject.findFlexText()
-
-        val thumbnail = renderer["thumbnail"]
-            ?.jsonObject
-            ?.findObjectWithKey("thumbnails")
-            ?.let { obj ->
-                // findObjectWithKey returns JsonObject but thumbnails is an array
-                // so fall back to searching for the array directly
-                null
-            }
-            ?: renderer
-                .findObjectWithKey("musicThumbnailRenderer")
-                ?.get("thumbnail")
-                ?.jsonObject
-                ?.get("thumbnails")
-                ?.jsonArray
-                ?.lastOrNull()
-                ?.jsonObject
-                ?.get("url")
-                ?.jsonPrimitive
-                ?.content
-
-        return Song(
-            uniqueId = videoId,
-            url = "https://www.youtube.com/watch?v=$videoId",
-            title = title ?: return null,
-            artist = artist ?: "Unknown",
-            thumbnailUrl = thumbnail,
-            duration = durationText?.parseTimeToMillis() ?: 0L
-        )
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // HELPERS
-    // ─────────────────────────────────────────────────────────────
-
-    private fun extractVideoId(url: String): String? = when {
-        url.contains("v=") ->
-            url.substringAfter("v=").substringBefore("&").takeIf { it.isNotBlank() }
-        url.contains("youtu.be/") ->
-            url.substringAfter("youtu.be/").substringBefore("?").takeIf { it.isNotBlank() }
-        url.length == 11 -> url // raw video ID passed directly
-        else -> null
-    }
 
     companion object {
         private const val NEXT_URL = "https://music.youtube.com/youtubei/v1/next"

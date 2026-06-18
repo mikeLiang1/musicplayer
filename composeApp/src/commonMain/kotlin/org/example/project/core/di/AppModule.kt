@@ -2,7 +2,10 @@ package org.example.project.core.di
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -48,10 +51,63 @@ val coreModule = module {
 val networkModule = module {
     single {
         HttpClient(OkHttp) {
+            expectSuccess = true
+
             install(ContentNegotiation) {
                 json(Json {
                     ignoreUnknownKeys = true
+                    explicitNulls = false
+                    encodeDefaults = true
                 })
+            }
+
+            // Enhanced network configuration for better performance
+            engine {
+                config {
+                    // Connection pool settings for better connection reuse
+                    connectionPool(
+                        okhttp3.ConnectionPool(
+                            10, // maxIdleConnections
+                            5, // keepAliveDuration
+                            java.util.concurrent.TimeUnit.MINUTES
+                        )
+                    )
+
+                    // Timeout configurations
+                    connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                    readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                    writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+
+                    // Enable HTTP/2 for better performance
+                    protocols(listOf(okhttp3.Protocol.HTTP_2, okhttp3.Protocol.HTTP_1_1))
+
+                    // Retry on connection failure
+                    retryOnConnectionFailure(true)
+
+                    // Cache configuration for better performance
+                    cache(
+                        okhttp3.Cache(
+                            directory = java.io.File(System.getProperty("java.io.tmpdir"), "http_cache"),
+                            maxSize = 50L * 1024L * 1024L // 50 MB
+                        )
+                    )
+
+                }
+            }
+
+            // Request timeout configuration
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000
+                connectTimeoutMillis = 30000
+                socketTimeoutMillis = 60000
+            }
+
+            defaultRequest {
+                url("https://music.youtube.com/youtubei/v1/")
+                // Add common headers for better compatibility
+                header("Accept", "application/json")
+                header("Accept-Language", "en-US,en;q=0.9")
+                header("Cache-Control", "no-cache")
             }
         }
     }

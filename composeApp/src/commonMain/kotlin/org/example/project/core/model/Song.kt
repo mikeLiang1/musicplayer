@@ -10,7 +10,8 @@ data class Song(
     val title: String,
     val artist: String,
     val thumbnailUrl: String?,
-    val duration: Long
+    val duration: Long,
+    val album: String? = null
 )
 
 data class SongPage(

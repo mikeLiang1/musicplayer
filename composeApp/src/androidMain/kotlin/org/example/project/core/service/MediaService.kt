@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.repository.InnerTubeRepository
 import org.example.project.core.repository.NewPipeRepository
 import org.example.project.core.repository.PlaybackRepository
 import org.koin.android.ext.android.inject
@@ -42,6 +43,8 @@ class MediaService : MediaLibraryService() {
 
     private val repo by inject<PlaybackRepository>()
     private val newPipeRepository by inject<NewPipeRepository>()
+
+    private val innerTubeRepository by inject<InnerTubeRepository>()
     private val queueManager by inject<QueueManager>()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

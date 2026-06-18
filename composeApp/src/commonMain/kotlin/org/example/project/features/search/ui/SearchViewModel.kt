@@ -1,5 +1,6 @@
 package org.example.project.features.search.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -101,10 +102,12 @@ class SearchViewModel(
                 }
                 viewModelScope.launch {
                     // TODO: Try catch
-                    val songList = innerTubeRepository.searchSongs(searchAction.suggestion)
+                    val searchResult = innerTubeRepository.searchSongs(searchAction.suggestion)
                     _uiState.update {
-                        it.copy(songList = songList.songs, isLoading = false, searchToken = songList.continuationToken)
+                        it.copy(songList = searchResult.songs, isLoading = false, searchToken = searchResult.continuationToken)
                     }
+                    Log.d("Logging", searchResult.albums.toString())
+                    Log.d("Logging", searchResult.artists.toString())
                 }
 
             }
@@ -117,12 +120,12 @@ class SearchViewModel(
                     _uiState.update {
                         it.copy(isLoadingMore = true)
                     }
-                    val songList = innerTubeRepository.searchMoreSongs(searchToken)
+                    val searchResult = innerTubeRepository.searchMoreSongs(searchToken)
                     _uiState.update {
                         it.copy(
-                            songList = _uiState.value.songList + songList.songs,
+                            songList = _uiState.value.songList + searchResult.songs,
                             isLoadingMore = false,
-                            searchToken = songList.continuationToken
+                            searchToken = searchResult.continuationToken
                         )
                     }
                 }

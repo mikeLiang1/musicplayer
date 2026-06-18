@@ -35,30 +35,50 @@ fun JsonObject?.getRunsText(): String {
     }
 }
 
+fun JsonObject?.getRuns(): List<JsonObject>? {
+    return this?.get("musicResponsiveListItemFlexColumnRenderer")?.jsonObject
+        ?.get("text")?.jsonObject
+        ?.get("runs")?.jsonArray
+        ?.map { it.jsonObject }
+}
+
+fun List<JsonObject>.chunkedBySeparator(): List<List<JsonObject>> {
+    val result = mutableListOf<MutableList<JsonObject>>()
+    var current = mutableListOf<JsonObject>()
+
+    for (run in this) {
+        val text = run["text"]?.jsonPrimitive?.content ?: ""
+        if (text == " • ") {
+            result.add(current)
+            current = mutableListOf()
+        } else {
+            current.add(run)
+        }
+    }
+    result.add(current)
+    return result
+}
+
 /**
  * Parses a YouTube duration string ("3:45", "1:02:30") into milliseconds.
  */
 fun String.parseTimeToMillis(): Long {
-    return try {
-        val parts = trim().split(":").map { it.toLong() }
-        when (parts.size) {
-            2 -> (parts[0] * 60 + parts[1]) * 1000
-            3 -> (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000
-            else -> 0L
-        }
-    } catch (e: NumberFormatException) {
-        0L
+    val parts = this.split(":").map { it.toLongOrNull() ?: 0L }
+    return when (parts.size) {
+        3 -> (parts[0] * 3600000) + (parts[1] * 60000) + (parts[2] * 1000) // HH:MM:SS
+        2 -> (parts[0] * 60000) + (parts[1] * 1000)                         // MM:SS
+        else -> 0L
     }
 }
 
-/**
- * Extracts text from a flexColumn entry in search results.
- */
-fun JsonObject?.findFlexText(): String? {
-    return this
-        ?.findObjectWithKey("musicResponsiveListItemFlexColumnRenderer")
-        ?.get("text")
-        ?.jsonObject
-        .getRunsText()
-        .takeIf { it != "Unknown" }
+
+fun extractVideoId(url: String): String? = when {
+    url.contains("v=") ->
+        url.substringAfter("v=").substringBefore("&").takeIf { it.isNotBlank() }
+
+    url.contains("youtu.be/") ->
+        url.substringAfter("youtu.be/").substringBefore("?").takeIf { it.isNotBlank() }
+
+    url.length == 11 -> url // raw video ID passed directly
+    else -> null
 }

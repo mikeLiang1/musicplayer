@@ -6,7 +6,19 @@
       "WebFetch(domain:github.com)",
       "Bash(git check-ignore:*)",
       "Bash(./gradlew:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\androidMain\\*.kt\")",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\commonMain\\kotlin\\org\\example\\project\\core\\repository\\*.kt\")",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\commonMain\\kotlin\\org\\example\\project\\core\\manager\\*.kt\")",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\commonMain\\kotlin\\org\\example\\project\\core\\di\\*.kt\")",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\androidMain\\kotlin\\org\\example\\project\\core\\service\\MediaService.kt\")",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\androidMain\\kotlin\\org\\example\\project\\core\\manager\\MusicPlayerManagerImpl.kt\")",
+      "Bash(dir /s /b \"D:\\Projects\\musicplayer\\composeApp\\src\\commonMain\\*.kt\")",
+      "Bash(dir:*)",
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(findstr:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

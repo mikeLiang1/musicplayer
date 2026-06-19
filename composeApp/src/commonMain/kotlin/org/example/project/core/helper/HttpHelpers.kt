@@ -51,6 +51,21 @@ fun buildSearchBody(query: String): JsonObject = buildJsonObject {
     put("params", "EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D") // music songs filter
 }
 
+fun buildPlayerBody(videoId: String): JsonObject = buildJsonObject {
+    putJsonObject("context") {
+        putJsonObject("client") {
+            put("clientName", "WEB_REMIX")
+            put("clientVersion", CLIENT_VERSION)
+            put("hl", "en")
+            put("gl", "US")
+            put("platform", "DESKTOP")
+        }
+    }
+    put("videoId", videoId)
+    put("contentCheckOk", true)
+    put("racyCheckOk", true)
+}
+
 // Shared between queue pagination and search pagination
 fun buildContinuationBody(token: String): JsonObject = buildJsonObject {
     putJsonObject("context") {

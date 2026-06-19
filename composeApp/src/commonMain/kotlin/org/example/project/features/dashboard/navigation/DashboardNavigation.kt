@@ -25,8 +25,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import com.example.budget.navigation.rememberNavigationState
-import com.example.budget.navigation.toEntries
+import org.example.project.navigation.rememberNavigationState
+import org.example.project.navigation.toEntries
 import kotlinx.coroutines.flow.map
 import org.example.project.features.home.ui.HomeEffect
 import org.example.project.features.home.ui.HomeScreen

@@ -9,8 +9,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import com.example.budget.navigation.rememberNavigationState
-import com.example.budget.navigation.toEntries
+import org.example.project.navigation.rememberNavigationState
+import org.example.project.navigation.toEntries
 import org.example.project.features.search.ui.SearchScreen
 import org.example.project.features.search.ui.SearchViewModel
 import org.example.project.navigation.Navigator

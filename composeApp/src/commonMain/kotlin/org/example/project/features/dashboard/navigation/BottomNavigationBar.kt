@@ -24,7 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.example.budget.navigation.NavigationState
+import org.example.project.navigation.NavigationState
 import org.example.project.navigation.Route
 import org.example.project.ui.theme.appColors
 

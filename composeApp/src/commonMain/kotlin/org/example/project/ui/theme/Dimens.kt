@@ -1,4 +1,4 @@
-package com.example.budget.ui.theme
+package org.example.project.ui.theme
 
 import androidx.compose.ui.unit.dp
 

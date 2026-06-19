@@ -1,4 +1,4 @@
-package com.example.budget.navigation
+package org.example.project.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState

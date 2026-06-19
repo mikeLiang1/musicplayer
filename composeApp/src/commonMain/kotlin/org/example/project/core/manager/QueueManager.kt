@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import org.example.project.core.model.Song
-import org.example.project.core.model.SongPage
 import java.util.UUID
 
 
@@ -123,11 +122,11 @@ class QueueManager() {
      * If empty: currentBaseIndex++. Handles repeat at end.
      */
     fun playNext(fromAutoAdvanced: Boolean = false) {
-        Log.d("QueueManager", "playNext() called")
 
         var hasStructureChanged = false
 
         _queueState.update { state ->
+            // If current song is manual, need to remove it from manual queue and tell exoplayer to rebuild
             if (state.currentManualSong != null) {
                 hasStructureChanged = true
                 if (state.manualQueue.isNotEmpty()) {
@@ -141,6 +140,7 @@ class QueueManager() {
                     val newIndex = (state.currentBaseIndex + 1).coerceAtMost(state.baseQueue.lastIndex)
                     state.copy(currentBaseIndex = newIndex, currentManualSong = null)
                 }
+                // We are moving into a manual song from normal song
             } else if (state.manualQueue.isNotEmpty()) {
                 state.copy(
                     manualQueue = state.manualQueue.drop(1),
@@ -153,13 +153,11 @@ class QueueManager() {
             }
         }
 
-        if (fromAutoAdvanced) return
-
         val pci = _queueState.value.playbackCurrentIndex
-        // Emit AFTER update is complete
+
         if (hasStructureChanged) {
             _intent.trySend(QueueIntent.SeekAndRebuild(mediaIndex = pci + 1, queueIndex = pci))
-        } else {
+        } else if (!fromAutoAdvanced) {
             _intent.trySend(QueueIntent.SeekToItem(pci))
         }
     }

@@ -1,6 +1,5 @@
 package org.example.project.core.manager
 
-import android.util.Log
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,7 +74,7 @@ class QueueManager() {
     private val _queueState = MutableStateFlow(QueueState())
     val queueState: StateFlow<QueueState> = _queueState.asStateFlow()
 
-    private val _intent = Channel<QueueIntent>(Channel.UNLIMITED)
+    val _intent = Channel<QueueIntent>(Channel.UNLIMITED)
     val intent: Flow<QueueIntent> = _intent.receiveAsFlow()
 
     // ── Queue Setup ──────────────────────────────────────────────────────────
@@ -415,7 +414,6 @@ class QueueManager() {
      * Should be called during app initialization.
      */
     fun restoreState(state: QueueState, positionMs: Long) {
-        Log.d("logging", "queuestate restored $state")
         _queueState.value = state
         _intent.trySend(QueueIntent.NewQueue(positionMs))
     }

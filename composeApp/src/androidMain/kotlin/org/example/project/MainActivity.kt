@@ -1,5 +1,6 @@
 package org.example.project
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,17 +13,20 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import okhttp3.OkHttpClient
 import org.example.project.core.manager.MusicPlayerManager
+import org.example.project.core.manager.PlayerNavigator
 import org.koin.android.ext.android.inject
 import org.schabi.newpipe.extractor.NewPipe
 
 
 class MainActivity : ComponentActivity() {
     private val musicPlayerManager by inject<MusicPlayerManager>()
+    private val playerNavigator by inject<PlayerNavigator>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
+        handleOpenPlayerIntent(intent)
         setContent {
             var isInitialized by rememberSaveable { mutableStateOf(false) }
 
@@ -37,6 +41,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleOpenPlayerIntent(intent)
+    }
+
     override fun onStart() {
         super.onStart()
         musicPlayerManager.initialise()
@@ -49,9 +58,19 @@ class MainActivity : ComponentActivity() {
 
     }
 
+    private fun handleOpenPlayerIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_PLAYER, false) == true) {
+            playerNavigator.requestOpenPlayer()
+        }
+    }
+
     private fun getDownloader(): DownloaderImpl {
         return DownloaderImpl.init(OkHttpClient.Builder())
 
+    }
+
+    companion object {
+        const val EXTRA_OPEN_PLAYER = "open_player"
     }
 }
 

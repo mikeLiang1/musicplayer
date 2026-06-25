@@ -1,5 +1,6 @@
 package org.example.project.core.service
 
+import android.app.PendingIntent
 import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
@@ -25,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.example.project.MainActivity
 import org.example.project.core.helper.toMediaItem
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.InnerTubeRepository
@@ -112,8 +114,19 @@ class MediaService : MediaLibraryService() {
             }
         })
 
+        val sessionActivityPendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java).apply {
+                putExtra(MainActivity.EXTRA_OPEN_PLAYER, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         val forwardingPlayer = QueueForwardingPlayer(player, queueManager)
         mediaSession = MediaLibrarySession.Builder(this, forwardingPlayer, PlayerCallback())
+            .setSessionActivity(sessionActivityPendingIntent)
             .build()
     }
 

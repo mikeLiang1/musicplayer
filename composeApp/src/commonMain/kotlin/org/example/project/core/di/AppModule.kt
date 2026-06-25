@@ -14,6 +14,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.example.project.core.database.MusicDatabase
 import org.example.project.core.database.getRoomDatabase
+import org.example.project.core.manager.PlayerNavigator
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.repository.InnerTubeRepository
 import org.example.project.core.repository.NewPipeRepository
@@ -37,6 +38,7 @@ val repositoryModule = module {
     single { PlaybackRepository(get()) }
     single { PlaylistRepository(get()) }
     single { QueueManager() }
+    single { PlayerNavigator() }
     single { RecentlyPlayedRepository(get()) }
     single { NewPipeRepository() }
 }

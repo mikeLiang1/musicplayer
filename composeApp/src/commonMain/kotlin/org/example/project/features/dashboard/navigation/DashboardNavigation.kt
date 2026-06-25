@@ -35,6 +35,7 @@ import org.example.project.features.library.navigation.LibraryNavigation
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
 import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
+import org.example.project.core.manager.PlayerNavigator
 import org.example.project.features.playlist.ui.PlaylistScreen
 import org.example.project.features.playlist.ui.PlaylistViewModel
 import org.example.project.features.search.navigtion.SearchNavigation
@@ -42,6 +43,7 @@ import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
 import org.example.project.ui.theme.appColors
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -60,6 +62,13 @@ fun DashboardNavigation() {
     val isFullScreenVisible by remember {
         musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
     }.collectAsStateWithLifecycle(initialValue = false)
+
+    val playerNavigator = koinInject<PlayerNavigator>()
+    LaunchedEffect(Unit) {
+        playerNavigator.openPlayerEvents.collect {
+            musicPlayerViewModel.setFullScreen(true)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

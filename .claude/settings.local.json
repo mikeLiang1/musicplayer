@@ -21,7 +21,10 @@
       "Bash(git checkout:*)",
       "Bash(gradle:*)",
       "Bash(timeout:*)",
-      "Bash(./gradlew :composeApp:assembleDebug)"
+      "Bash(./gradlew :composeApp:assembleDebug)",
+      "Skill(update-config)",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\(process.env.HOME + '/.claude/settings.json', 'utf8'\\)\\), null, 2\\)\\)\")",
+      "Bash(python -c 'import json; print\\(json.load\\(open\\('\\\\''C:\\\\Users\\\\TechFast Australia/.claude/settings.json'\\\\''\\)\\)\\)')"
     ]
   }
 }

@@ -33,13 +33,19 @@ import org.example.project.core.repository.InnerTubeRepository
 import org.example.project.core.repository.NewPipeRepository
 import org.example.project.core.repository.PlaybackRepository
 import org.koin.android.ext.android.inject
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(UnstableApi::class)
 class MediaService : MediaLibraryService() {
 
     companion object {
         private const val CACHE_DURATION = 60 * 60 * 1000L
+        private const val EXPIRY_SAFETY_MARGIN = 5 * 60 * 1000L
+        private const val MAX_CACHE_SIZE = 100
     }
+
+    private data class CachedUrl(val url: String, val expiresAt: Long)
 
     private var mediaSession: MediaLibrarySession? = null
 
@@ -51,7 +57,7 @@ class MediaService : MediaLibraryService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val urlCache = mutableMapOf<String, Pair<String, Long>>()
+    private val urlCache = ConcurrentHashMap<String, CachedUrl>()
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
@@ -61,24 +67,7 @@ class MediaService : MediaLibraryService() {
             DefaultHttpDataSource.Factory()
         ) { dataSpec ->
             val youtubeId = dataSpec.uri.toString() // This is the YouTube ID
-
-            val cached = urlCache[youtubeId]
-            val streamUrl =
-                if (cached != null && System.currentTimeMillis() - cached.second < CACHE_DURATION) {
-                    cached.first // Use cached URL
-                } else {
-                    // Fetch fresh URL
-                    runBlocking(Dispatchers.IO) {
-                        try {
-                            newPipeRepository.getStreamUrl(youtubeId)?.also { url ->
-                                urlCache[youtubeId] = url to System.currentTimeMillis()
-                            } ?: ""
-                        } catch (e: Exception) {
-                            Log.e("MediaService", "Failed to resolve: $youtubeId", e)
-                            ""
-                        }
-                    }
-                }
+            val streamUrl = resolveStreamUrl(youtubeId)
 
             // Swap the YouTube ID for the real Stream URL
             dataSpec.withUri(streamUrl.toUri())
@@ -231,6 +220,58 @@ class MediaService : MediaLibraryService() {
                 .setIsPlayable(false)
                 .build()
         ).build()
+
+    private fun resolveStreamUrl(youtubeId: String): String {
+        purgeCache()
+
+        val cached = urlCache[youtubeId]
+        if (cached != null && System.currentTimeMillis() < cached.expiresAt) {
+            return cached.url
+        }
+
+        // Fetch fresh URL, retrying once if the first attempt fails
+        val resolved = fetchAndCacheStreamUrl(youtubeId) ?: fetchAndCacheStreamUrl(youtubeId)
+        if (resolved != null) {
+            return resolved
+        }
+
+        Log.e("MediaService", "Giving up resolving stream URL for: $youtubeId, skipping track")
+        serviceScope.launch { queueManager.playNext() }
+        throw IOException("Unable to resolve stream URL for $youtubeId")
+    }
+
+    private fun fetchAndCacheStreamUrl(youtubeId: String): String? = runBlocking(Dispatchers.IO) {
+        try {
+            newPipeRepository.getStreamUrl(youtubeId)?.also { url ->
+                urlCache[youtubeId] = CachedUrl(url, parseExpiry(url))
+            }
+        } catch (e: Exception) {
+            Log.e("MediaService", "Failed to resolve: $youtubeId", e)
+            null
+        }
+    }
+
+    private fun parseExpiry(url: String): Long {
+        val expireSeconds = url.toUri().getQueryParameter("expire")?.toLongOrNull()
+        return if (expireSeconds != null) {
+            expireSeconds * 1000L - EXPIRY_SAFETY_MARGIN
+        } else {
+            System.currentTimeMillis() + CACHE_DURATION
+        }
+    }
+
+    private fun purgeCache() {
+        val now = System.currentTimeMillis()
+        urlCache.entries.removeAll { it.value.expiresAt < now }
+
+        val overflow = urlCache.size - MAX_CACHE_SIZE
+        if (overflow > 0) {
+            urlCache.entries
+                .sortedBy { it.value.expiresAt }
+                .take(overflow)
+                .forEach { urlCache.remove(it.key) }
+        }
+    }
 
     private fun saveData() {
         val currentPos = mediaSession?.player?.currentPosition

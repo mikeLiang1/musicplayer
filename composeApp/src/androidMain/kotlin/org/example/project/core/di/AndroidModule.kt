@@ -7,6 +7,8 @@ import org.example.project.core.database.MusicDatabase
 import org.example.project.core.dao.getDatabaseBuilder
 import org.example.project.core.helper.createDataStore
 import org.example.project.core.helper.dataStoreFileName
+import org.example.project.core.SpeechRecognizer
+import org.example.project.core.SpeechRecognizerImpl
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.MusicPlayerManagerImpl
 import org.koin.android.ext.koin.androidContext
@@ -27,6 +29,10 @@ val androidModule = module {
         createDataStore {
             androidContext().filesDir.resolve(dataStoreFileName).absolutePath
         }
+    }
+
+    single<SpeechRecognizer> {
+        SpeechRecognizerImpl(androidContext())
     }
 
 }

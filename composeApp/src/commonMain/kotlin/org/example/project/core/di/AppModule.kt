@@ -19,6 +19,7 @@ import org.example.project.core.repository.InnerTubeRepository
 import org.example.project.core.repository.NewPipeRepository
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.RecentlyPlayedRepository
+import org.example.project.core.SpeechRecognizer
 import org.example.project.core.usecase.PlaySongUseCase
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.ui.LibraryViewModel
@@ -126,7 +127,7 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { SongMenuViewModel(get(), get()) }
-    viewModel { SearchViewModel(get(), get(), get(), get()) }
+    viewModel { SearchViewModel(get(), get(), get(), get(), getOrNull<SpeechRecognizer>()) }
     viewModel { LibraryViewModel(get(), get(), get()) }
     viewModel { MusicPlayerViewModel(get(), get(), get()) }
     viewModel { params ->

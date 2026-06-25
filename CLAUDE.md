@@ -2,14 +2,14 @@
 
 ## What it is
 
-A Kotlin Multiplatform (KMP) music player that streams audio from YouTube Music. It uses InnerTube (YouTube Music's internal API) for search, recommendations, and radio playlists, and NewPipe Extractor to resolve streaming URLs. The UI is built entirely with Compose Multiplatform and targets Android (iOS setup exists but the Kotlin iOS source set and build targets are commented out). Users can search for songs, view and manage playlists (via Room), play songs with radio-generated queues, reorder the queue, shuffle/repeat, and see recently played items.
+A Kotlin Multiplatform (KMP) music player that streams audio from YouTube Music. It uses InnerTube (YouTube Music's internal API) for search, recommendations, and radio playlists, and NewPipe Extractor to resolve streaming URLs. The UI is built entirely with Compose Multiplatform and targets Android (iOS setup exists but the Kotlin iOS source set and build targets are commented out). Users can search for songs (including voice search via the device speech recognizer), view and manage playlists (via Room), play songs with radio-generated queues, reorder the queue, shuffle/repeat, and see recently played items.
 
 ## Module structure
 
 The project is a single KMP module (`:composeApp`) under `composeApp/src/`:
 
-- **`commonMain/`** (79 Kotlin files) — All shared code: data models, Room database + DAOs + entities, Koin DI modules, Ktor-based InnerTube repository, NewPipe repository, queue management engine (pure Kotlin), use cases, Compose UI (features/home, search, library, playlist, musicPlayer, songMenu, dashboard), shared UI components, theming, and navigation.
-- **`androidMain/`** (9 Kotlin files) — Platform-specific: `MainActivity`, `MainApplication` (Koin init), `MusicPlayerManagerImpl` (ExoPlayer via `MediaController`), `MediaService` (Android `MediaLibraryService` that resolves stream URLs via NewPipe), an OkHttp-based `DownloaderImpl` for NewPipe, and the Room database builder.
+- **`commonMain/`** (85 Kotlin files) — All shared code: data models, Room database + DAOs + entities, Koin DI modules, Ktor-based InnerTube repository, NewPipe repository, queue management engine (pure Kotlin), the `SpeechRecognizer` expect-style interface for voice search, use cases, Compose UI (features/home, search, library, playlist, musicPlayer, songMenu, dashboard), shared UI components, theming, and navigation.
+- **`androidMain/`** (11 Kotlin files) — Platform-specific: `MainActivity`, `MainApplication` (Koin init), `MusicPlayerManagerImpl` (ExoPlayer via `MediaController`), `MediaService` (Android `MediaLibraryService` that resolves stream URLs via NewPipe), `SpeechRecognizerImpl` (wraps `android.speech.SpeechRecognizer`), the `actual RequestVoicePermissionEffect` (RECORD_AUDIO flow), an OkHttp-based `DownloaderImpl` for NewPipe, and the Room database builder.
 - **`iosMain/`** (2 Kotlin files) — `MainViewController.kt` (wraps `App()` in `ComposeUIViewController`) and `Platform.ios.kt`. The iOS Kotlin targets are commented out in `build.gradle.kts`, so this is currently non-functional scaffolding.
 - **`commonTest/`** — Shared tests (minimal).
 - **`iosApp/`** — Standalone Xcode project wrapper (not wired to the KMP build).
@@ -64,6 +64,7 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 | `core/helper/InnerTubeExtensions.kt` | JSON traversal utilities for InnerTube responses |
 | `core/helper/HttpHelpers.kt` | InnerTube request body builders |
 | `core/helper/SongHelper.kt` | Song → MediaItem conversion |
+| `core/SpeechRecognizer.kt` | Platform-agnostic voice recognition interface (`startListening(): Flow<String>`); Android impl in androidMain |
 | `core/usecase/PlaySongUseCase.kt` | Fetches radio queue for a song and sets it as the active queue |
 | `core/di/AppModule.kt` | All Koin module definitions combined |
 
@@ -77,8 +78,9 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 | `features/musicPlayer/ui/QueueScreen.kt` | Queue list with drag-reorder, history, repeat mode |
 | `features/home/ui/HomeScreen.kt` | Home tab: greeting + recently played horizontal row |
 | `features/home/ui/HomeViewModel.kt` | Observes recently played, dispatches play/navigation |
-| `features/search/ui/SearchScreen.kt` | Suggestions + search results with pagination |
-| `features/search/ui/SearchViewModel.kt` | Debounced search: NewPipe suggestions → InnerTube results |
+| `features/search/ui/SearchScreen.kt` | Suggestions + search results with pagination; voice-search mic + listening UI |
+| `features/search/ui/SearchViewModel.kt` | Debounced search: NewPipe suggestions → InnerTube results; drives voice search via injected `SpeechRecognizer?` |
+| `features/search/ui/VoiceSearchPermission.kt` | `@Composable expect RequestVoicePermissionEffect` — `actual` in androidMain requests RECORD_AUDIO before listening |
 | `features/library/ui/LibraryScreen.kt` | Library tab: filter tabs + playlist list |
 | `features/library/ui/LibraryViewModel.kt` | Combines Room playlist data + filter state |
 | `features/playlist/ui/PlaylistScreen.kt` | Playlist detail: songs with playback and editing |
@@ -94,7 +96,7 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 | `navigation/Navigator.kt` | Navigate, goBack, replaceRoot, per-tab back stacks |
 | `navigation/AppNavigation.kt` | Top-level NavDisplay wiring |
 | `ui/component/SongItem.kt` | Reusable song row (5 visual states, equalizer, drag handle) |
-| `ui/component/MusicSearchBar.kt` | Search bar with debounced input and suggestions |
+| `ui/component/SearchBar.kt` | Search bar with debounced input and suggestions |
 | `ui/component/CoverImage.kt` | Async image loader (Coil) |
 | `ui/component/PlayPauseButton.kt` | Animated play/pause FAB |
 | `ui/theme/Theme.kt` | BudgetTheme composable + color scheme |
@@ -106,6 +108,7 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 | `androidMain/MainActivity.kt` | Android entry, EdgeToEdge, NewPipe init |
 | `androidMain/MainApplication.kt` | Koin `startKoin` |
 | `androidMain/core/manager/MusicPlayerManagerImpl.kt` | ExoPlayer via MediaController |
+| `androidMain/core/SpeechRecognizerImpl.kt` | Wraps `android.speech.SpeechRecognizer` as a `callbackFlow` of partial/final transcriptions |
 | `androidMain/core/service/MediaService.kt` | MediaLibraryService: stream URL resolution, ExoPlayer, notifications |
 | `androidMain/core/di/AndroidModule.kt` | Platform Koin module (Room builder, ExoPlayer, DataStore) |
 | `iosMain/MainViewController.kt` | `ComposeUIViewController { App() }` (non-functional — targets commented out) |
@@ -122,7 +125,7 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 5. `features/musicPlayer/ui/SongScreen.kt` — 271 lines
 6. `features/musicPlayer/ui/MusicPlayerViewModel.kt` — 242 lines
 7. `features/playlist/ui/PlaylistScreen.kt` — 227 lines
-8. `ui/component/MusicSearchBar.kt` — 213 lines
+8. `ui/component/SearchBar.kt` — 213 lines
 9. `features/library/ui/LibraryScreen.kt` — 209 lines
 10. `features/search/ui/SearchViewModel.kt` — 160 lines
 

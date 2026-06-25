@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,21 +44,27 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.appColors
 
+private enum class TrailingIconState { Stop, Clear, Mic, None }
+
 @Composable
-fun MusicSearchBar(
+fun SearchBar(
     modifier: Modifier = Modifier,
     query: String,
     onSuggestionPressed: (String) -> Unit,
     onQueryChange: (String) -> Unit,
     onVoiceSearch: () -> Unit,
+    isListening: Boolean = false,
+    onVoiceSearchCancel: () -> Unit = {},
     openKeyboardOnLaunch: Boolean = false,
     onTextCleared: () -> Unit
 ) {
@@ -66,6 +73,18 @@ fun MusicSearchBar(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     var isActive by remember { mutableStateOf(false) }
+
+    // Tracks cursor/selection locally. When query changes externally (voice transcript,
+    // cleared, suggestion picked) rather than from the user typing, push the cursor to the
+    // end instead of leaving it wherever it last was.
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = query, selection = TextRange(query.length)))
+    }
+    LaunchedEffect(query) {
+        if (textFieldValue.text != query) {
+            textFieldValue = TextFieldValue(text = query, selection = TextRange(query.length))
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (openKeyboardOnLaunch) {
@@ -82,8 +101,14 @@ fun MusicSearchBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         BasicTextField(
-            value = query,
-            onValueChange = onQueryChange,
+            value = textFieldValue,
+            onValueChange = { newValue ->
+                textFieldValue = newValue
+                if (newValue.text != query) {
+                    onQueryChange(newValue.text)
+                }
+            },
+            readOnly = isListening,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = appColors.textPrimary
@@ -134,7 +159,7 @@ fun MusicSearchBar(
                     Box(modifier = Modifier.weight(1f)) {
                         if (query.isEmpty()) {
                             Text(
-                                text = "Artists, songs, podcasts",
+                                text = if (isListening) "Listening..." else "Artists, songs, podcasts",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = appColors.textDim
                             )
@@ -142,13 +167,27 @@ fun MusicSearchBar(
                         innerTextField()
                     }
 
-                    // Trailing icon: clear when typing, mic when active + empty
+                    // Trailing icon: stop when listening, clear when typing, mic when active + empty
+                    val trailingIconState = when {
+                        isListening -> TrailingIconState.Stop
+                        query.isNotEmpty() -> TrailingIconState.Clear
+                        isActive -> TrailingIconState.Mic
+                        else -> TrailingIconState.None
+                    }
                     AnimatedContent(
-                        targetState = query.isNotEmpty(),
+                        targetState = trailingIconState,
                         label = "trailing_icon"
-                    ) { hasText ->
-                        if (hasText) {
-                            Icon(
+                    ) { state ->
+                        when (state) {
+                            TrailingIconState.Stop -> Icon(
+                                imageVector = Icons.Rounded.Stop,
+                                contentDescription = "Stop listening",
+                                tint = appColors.accentPrimary,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable { onVoiceSearchCancel() }
+                            )
+                            TrailingIconState.Clear -> Icon(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = "Clear search",
                                 tint = appColors.iconMuted,
@@ -156,8 +195,7 @@ fun MusicSearchBar(
                                     .size(16.dp)
                                     .clickable { onTextCleared() }
                             )
-                        } else if (isActive) {
-                            Icon(
+                            TrailingIconState.Mic -> Icon(
                                 imageVector = Icons.Rounded.Mic,
                                 contentDescription = "Voice search",
                                 tint = appColors.iconMuted,
@@ -168,6 +206,7 @@ fun MusicSearchBar(
                                         onVoiceSearch()
                                     }
                             )
+                            TrailingIconState.None -> {}
                         }
                     }
                 }
@@ -190,6 +229,7 @@ fun MusicSearchBar(
                 color = appColors.accentPrimary,
                 modifier = Modifier
                     .clickable {
+                        if (isListening) onVoiceSearchCancel()
                         onTextCleared()
                         focusManager.clearFocus()
                         keyboardController?.hide()
@@ -205,9 +245,9 @@ fun MusicSearchBar(
 private fun SearchBarPreview() {
     AppPreview {
         Column {
-            MusicSearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {},onTextCleared = {})
-            MusicSearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {},onTextCleared = {})
-            MusicSearchBar(query = "asd", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {} ,onTextCleared = {})
+            SearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {},onTextCleared = {})
+            SearchBar(query = "", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {},onTextCleared = {})
+            SearchBar(query = "asd", onQueryChange = {}, onVoiceSearch = {}, onSuggestionPressed = {} ,onTextCleared = {})
         }
     }
 }

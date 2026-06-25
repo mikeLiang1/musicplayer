@@ -22,15 +22,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
-import org.example.project.ui.component.MusicSearchBar
+import org.example.project.ui.component.SearchBar
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
@@ -42,16 +47,35 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
     BackHandler(enabled = !state.onSearchScreen) { onAction(SearchAction.OnBackPressed) }
 
     val focusManager = LocalFocusManager.current
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showPermissionDialog) {
+        RequestVoicePermissionEffect {
+            showPermissionDialog = false
+            onAction(SearchAction.OnVoiceSearch)
+        }
+    }
+
+    // Drop focus/keyboard whenever a search (text or voice) actually lands on the results
+    // screen. Cancelling or erroring out of voice search never flips onSearchScreen, so focus
+    // is left alone in that case and the user can keep typing.
+    LaunchedEffect(state.onSearchScreen) {
+        if (!state.onSearchScreen) {
+            focusManager.clearFocus()
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
         // Search Bar
-        MusicSearchBar(
+        SearchBar(
             query = state.searchQuery,
             onQueryChange = { onAction(SearchAction.OnQueryChanged(it)) },
-            onVoiceSearch = {},
+            onVoiceSearch = { showPermissionDialog = true },
+            isListening = state.isListening,
+            onVoiceSearchCancel = { onAction(SearchAction.OnVoiceSearchCancelled) },
             onSuggestionPressed = { onAction(SearchAction.OnSuggestionClicked(it)) },
             onTextCleared = { onAction(SearchAction.OnTextCleared) },
         )
@@ -111,7 +135,6 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
                                 .fillMaxWidth()
                                 .clickable {
                                     onAction(SearchAction.OnSuggestionClicked(suggestion))
-                                    focusManager.clearFocus()
                                 }
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically

@@ -25,7 +25,19 @@
       "Skill(update-config)",
       "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\(process.env.HOME + '/.claude/settings.json', 'utf8'\\)\\), null, 2\\)\\)\")",
       "Bash(python -c 'import json; print\\(json.load\\(open\\('\\\\''C:\\\\Users\\\\TechFast Australia/.claude/settings.json'\\\\''\\)\\)\\)')",
-      "PowerShell(.\\\\gradlew :composeApp:compileDebugKotlinAndroid --console=plain 2>&1 | Select-Object -Last 60)"
+      "PowerShell(.\\\\gradlew :composeApp:compileDebugKotlinAndroid --console=plain 2>&1 | Select-Object -Last 60)",
+      "PowerShell(.\\\\gradlew :composeApp:compileDebugKotlinAndroid 2>&1 | Select-Object -Last 25)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(.\\\\gradlew :composeApp:assembleDebug 2>&1 | Select-Object -Last 12)",
+      "PowerShell($adb = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\"; if \\(-not \\(Test-Path $adb\\)\\) { $adb = \"adb\" }; & $adb devices)",
+      "PowerShell($adb = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\"; if \\(-not \\(Test-Path $adb\\)\\) { $adb = \"adb\" }; & $adb install -r \"composeApp\\\\build\\\\outputs\\\\apk\\\\debug\\\\composeApp-debug.apk\")",
+      "PowerShell(.\\\\gradlew :composeApp:assembleDebug 2>&1 | Select-Object -Last 6)",
+      "PowerShell(Tee-Object *)",
+      "PowerShell(.\\\\gradlew :composeApp:assembleDebug 2>&1 | Select-Object -Last 10)",
+      "Bash(head -n 153 \"composeApp/src/commonMain/kotlin/org/example/project/features/dashboard/navigation/DashboardNavigation.kt\")",
+      "Bash(mv /tmp/dn.kt \"composeApp/src/commonMain/kotlin/org/example/project/features/dashboard/navigation/DashboardNavigation.kt\")",
+      "Read(//d/d/Projects/musicplayer/**)"
     ]
   }
 }

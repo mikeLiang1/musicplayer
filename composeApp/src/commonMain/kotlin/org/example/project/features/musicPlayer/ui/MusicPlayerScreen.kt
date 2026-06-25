@@ -1,11 +1,8 @@
 package org.example.project.features.musicPlayer.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,9 +62,9 @@ import org.example.project.ui.theme.appColors
 @Composable
 fun MusicPlayerScreen(
     viewModel: MusicPlayerViewModel,
-    navigateBack: () -> Unit
+    onDismissRequest: () -> Unit
 ) {
-    BackHandler { navigateBack() }
+    BackHandler { onDismissRequest() }
 
     val state by viewModel.playerState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,9 +79,9 @@ fun MusicPlayerScreen(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // ── Header ──────────────────────────────────────
+        // ── Header (close · drag handle · menu) ─────────
         PlayerHeader(
-            navigateBack = navigateBack,
+            navigateBack = onDismissRequest,
             pagerState = pagerState,
             displayQueue = displayQueue,
             uiState = uiState,
@@ -125,6 +123,17 @@ fun MusicPlayerScreen(
 }
 
 @Composable
+private fun DragHandle() {
+    Box(
+        modifier = Modifier
+            .width(36.dp)
+            .height(4.dp)
+            .clip(RoundedCornerShape(99.dp))
+            .background(appColors.dividerSubtle)
+    )
+}
+
+@Composable
 private fun PlayerHeader(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
@@ -147,50 +156,39 @@ private fun PlayerHeader(
             )
         }
 
-        // center content swaps based on page
+        // center content: drag handle, or the history pill on the queue page
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.weight(1f)
         ) {
-            if (pagerState.currentPage == 0) {
-                Text(
-                    text = "Playing from TODO:",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = appColors.textMuted,
-                    fontFamily = FontFamily.Monospace
-                )
-            } else {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = displayQueue.history.isNotEmpty(),
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+            if (pagerState.currentPage == 1 && displayQueue.history.isNotEmpty()) {
+                Surface(
+                    onClick = onHistoryClick, // viewModel handles toggle logic
+                    color = appColors.backgroundElevated,
+                    shape = RoundedCornerShape(99.dp),
+                    border = BorderStroke(1.dp, appColors.divider)
                 ) {
-                    Surface(
-                        onClick = onHistoryClick, // viewModel handles toggle logic
-                        color = appColors.backgroundElevated,
-                        shape = RoundedCornerShape(99.dp),
-                        border = BorderStroke(1.dp, appColors.divider)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = if (uiState.showHistory) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = appColors.iconMuted
-                            )
-                            Text(
-                                text = if (uiState.showHistory) "Hide history" else "${displayQueue.history.size} previous songs",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = appColors.textMuted,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
+                        Icon(
+                            imageVector = if (uiState.showHistory) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = appColors.iconMuted
+                        )
+                        Text(
+                            text = if (uiState.showHistory) "Hide history" else "${displayQueue.history.size} previous songs",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = appColors.textMuted,
+                            fontFamily = FontFamily.Monospace
+                        )
                     }
                 }
+            } else {
+                DragHandle()
             }
         }
         val songMenu = rememberSongMenuController(

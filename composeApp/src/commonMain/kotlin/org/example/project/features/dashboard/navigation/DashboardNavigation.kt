@@ -1,10 +1,5 @@
 package org.example.project.features.dashboard.navigation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -15,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,23 +19,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import org.example.project.navigation.rememberNavigationState
-import org.example.project.navigation.toEntries
 import kotlinx.coroutines.flow.map
+import org.example.project.core.manager.PlayerNavigator
 import org.example.project.features.home.ui.HomeEffect
 import org.example.project.features.home.ui.HomeScreen
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.navigation.LibraryNavigation
+import org.example.project.features.musicPlayer.ui.DismissiblePlayerOverlay
 import org.example.project.features.musicPlayer.ui.MusicPlayerBar
-import org.example.project.features.musicPlayer.ui.MusicPlayerScreen
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
-import org.example.project.core.manager.PlayerNavigator
 import org.example.project.features.playlist.ui.PlaylistScreen
 import org.example.project.features.playlist.ui.PlaylistViewModel
 import org.example.project.features.search.navigtion.SearchNavigation
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
 import org.example.project.navigation.dashboardAllRoutes
+import org.example.project.navigation.rememberNavigationState
+import org.example.project.navigation.toEntries
 import org.example.project.ui.theme.appColors
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -130,27 +124,9 @@ fun DashboardNavigation() {
             )
         }
 
-        AnimatedVisibility(
+        DismissiblePlayerOverlay(
             visible = isFullScreenVisible,
-            enter = slideInVertically(
-                initialOffsetY = { it }, // Start from bottom
-                animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
-            ),
-            exit = slideOutVertically(
-                targetOffsetY = { it }, // Slide back down
-                animationSpec = tween(durationMillis = 400)
-            )
-        ) {
-            Surface(
-                // padding at top to immitate bottomsheet
-                modifier = Modifier.fillMaxSize(),
-                color = appColors.backgroundSecondary,
-            ) {
-                MusicPlayerScreen(
-                    viewModel = musicPlayerViewModel,
-                    navigateBack = { musicPlayerViewModel.setFullScreen(false) }
-                )
-            }
-        }
+            viewModel = musicPlayerViewModel
+        )
     }
 }

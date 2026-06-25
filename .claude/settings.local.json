@@ -24,7 +24,8 @@
       "Bash(./gradlew :composeApp:assembleDebug)",
       "Skill(update-config)",
       "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\(process.env.HOME + '/.claude/settings.json', 'utf8'\\)\\), null, 2\\)\\)\")",
-      "Bash(python -c 'import json; print\\(json.load\\(open\\('\\\\''C:\\\\Users\\\\TechFast Australia/.claude/settings.json'\\\\''\\)\\)\\)')"
+      "Bash(python -c 'import json; print\\(json.load\\(open\\('\\\\''C:\\\\Users\\\\TechFast Australia/.claude/settings.json'\\\\''\\)\\)\\)')",
+      "PowerShell(.\\\\gradlew :composeApp:compileDebugKotlinAndroid --console=plain 2>&1 | Select-Object -Last 60)"
     ]
   }
 }

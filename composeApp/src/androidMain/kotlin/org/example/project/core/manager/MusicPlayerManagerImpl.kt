@@ -3,6 +3,7 @@ package org.example.project.core.manager
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -87,13 +88,17 @@ class MusicPlayerManagerImpl(
                             }
                         }
                     }
+
+                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED) {
+                            _currentPosition.value = 0L
+                        }
+                    }
                 })
             }
         }, MoreExecutors.directExecutor())
     }
 
-    // Queue restoration is now handled by QueueManager via ViewModel
-    // This method is kept for potential position restoration in the future
     override fun setPlaylist(songs: List<Song>, startIndex: Int, positionMs: Long, autoPlay: Boolean) {
         val mediaItems = songs.map { it.toMediaItem() }
         controller?.apply {
@@ -159,10 +164,12 @@ class MusicPlayerManagerImpl(
     }
 
     override fun seekToDefaultPosition(index: Int) {
+        _currentPosition.value = 0L
         controller?.seekToDefaultPosition(index)
     }
 
     private fun startPositionUpdates() {
+        positionUpdateJob?.cancel()
         positionUpdateJob = coroutineScope.launch {
             while (true) {
                 controller?.currentPosition?.let { position ->

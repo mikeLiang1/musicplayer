@@ -53,18 +53,8 @@ import org.example.project.ui.theme.appColors
 import kotlin.math.roundToInt
 
 @Composable
-fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
+fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel, swipe: SongSwipeState) {
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
-
-    // The current art slides out + fades while the adjacent song slides in. The draggable
-    // also consumes the horizontal drag so the parent HorizontalPager (Now Playing ↔ Queue)
-    // doesn't steal the gesture on the art.
-    val swipe = rememberSongSwipeState(
-        maxDrag = 150.dp,
-        swipeThreshold = 70.dp,
-        onNext = viewModel::onNextClicked,
-        onPrevious = viewModel::onPreviousClicked,
-    )
 
     song?.let { current ->
         Column(

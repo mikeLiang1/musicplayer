@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import kotlinx.coroutines.launch
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
@@ -46,6 +48,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
 
+    val scope = rememberCoroutineScope()
     val swipe = rememberSongSwipeState(
         maxDrag = 120.dp,
         swipeThreshold = 56.dp,
@@ -95,7 +98,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
-                            onClick = viewModel::onPreviousClicked
+                            onClick = { scope.launch { swipe.animatePrevious() } }
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
@@ -123,7 +126,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
                         // Next button
                         IconButton(
-                            onClick = viewModel::onNextClicked
+                            onClick = { scope.launch { swipe.animateNext() } }
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,

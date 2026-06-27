@@ -88,18 +88,33 @@ class SongSwipeState(
 
     suspend fun onDragStopped() {
         val dragged = offsetPx
-        settleAnimatable.snapTo(dragged)
         if (abs(dragged) > swipeThresholdPx) {
-            // Finish the slide in the direction it was already going (continues from the current
-            // position, no jump) so the preview is fully docked before we swap the song.
-            val target = if (dragged < 0) -maxDragPx else maxDragPx
-            settleAnimatable.animateTo(target, completeSpec) { offsetPx = value }
-            if (dragged < 0) onNext() else onPrevious()
-            // Geometry already matches the new current song at offset 0.
-            offsetPx = 0f
+            completeSwipe(forward = dragged < 0)
         } else {
+            settleAnimatable.snapTo(dragged)
             settleAnimatable.animateTo(0f, settleSpec) { offsetPx = value }
         }
+    }
+
+    /**
+     * Plays the full slide-and-swap animation as if the user had swiped past the threshold —
+     * used by the Next/Previous buttons so a tap looks the same as a swipe. Starts from wherever
+     * [offsetPx] currently is (usually 0 at rest).
+     */
+    suspend fun animateNext() = completeSwipe(forward = true)
+    suspend fun animatePrevious() = completeSwipe(forward = false)
+
+    /**
+     * Finish the slide in [forward]'s direction (continues from the current [offsetPx], no jump)
+     * so the preview is fully docked before we swap the song, then rest at 0 where the geometry
+     * already matches the new current song.
+     */
+    private suspend fun completeSwipe(forward: Boolean) {
+        settleAnimatable.snapTo(offsetPx)
+        val target = if (forward) -maxDragPx else maxDragPx
+        settleAnimatable.animateTo(target, completeSpec) { offsetPx = value }
+        if (forward) onNext() else onPrevious()
+        offsetPx = 0f
     }
 }
 

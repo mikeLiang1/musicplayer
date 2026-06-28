@@ -1,8 +1,5 @@
 package org.example.project.features.musicPlayer.ui
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,10 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,19 +27,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.songMenu.ui.SongMenuAction
@@ -57,7 +46,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QueueScreen(viewModel: MusicPlayerViewModel) {
+fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -111,10 +100,14 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                 displayQueue.history + listOfNotNull(displayQueue.current) + displayQueue.manual + displayQueue.upcoming
             val currentIndex = allSongs.indexOf(displayQueue.current)
             val index = if (uiState.showHistory) currentIndex else 0
+            // Instant reposition always (cheap, no frames) so the list is correct when opened;
+            // only animate when the page is actually visible to avoid scrolling an offscreen list.
             listState.requestScrollToItem(index)
-            try {
-                listState.animateScrollToItem(index)
-            } catch (e: CancellationException) {
+            if (isActivePage) {
+                try {
+                    listState.animateScrollToItem(index)
+                } catch (e: CancellationException) {
+                }
             }
         }
     }
@@ -135,7 +128,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
         displayQueue.current?.let { currentSong ->
             SongItem(
                 song = currentSong,
-                state = SongItemState.Current(playerState.isPlaying),
+                state = SongItemState.Current(playerState.isPlaying && isActivePage),
                 onClick = { },
                 onMenuClicked = { songMenu.show(currentSong) })
         }
@@ -172,7 +165,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                     item(key = currentSong.uniqueId) {
                         SongItem(
                             song = currentSong,
-                            state = SongItemState.Current(playerState.isPlaying),
+                            state = SongItemState.Current(playerState.isPlaying && isActivePage),
                             dragHandleModifier = Modifier,
                             onMenuClicked = { songMenu.show(currentSong) }
                         ) { /* can't tap current to change, already playing */ }
@@ -180,12 +173,9 @@ fun QueueScreen(viewModel: MusicPlayerViewModel) {
                 }
             }
 
-            val combinedQueue = displayQueue.manual + displayQueue.upcoming
-            val manualCount = displayQueue.manual.size
+            if (displayQueue.manual.isNotEmpty() || displayQueue.upcoming.isNotEmpty()) {
 
-            if (combinedQueue.isNotEmpty()) {
-
-                if (manualCount > 0) {
+                if (displayQueue.manual.isNotEmpty()) {
                     stickyHeader(key = "header_manual") {
                         SectionDivider(label = "Playing Next")
                     }
@@ -259,122 +249,6 @@ private fun SectionDivider(label: String) {
     }
 }
 
-//@Composable
-//private fun CurrentSongRow(song: Song, isPlaying: Boolean) {
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .background(appColors.accentContainer.copy(alpha = 0.3f))
-//            .padding(horizontal = 16.dp, vertical = 10.dp),
-//        verticalAlignment = Alignment.CenterVertically,
-//        horizontalArrangement = Arrangement.spacedBy(12.dp)
-//    ) {
-//        // Artwork with eq overlay
-//        Box(modifier = Modifier.size(48.dp)) {
-//            CoverImage(
-//                data = song.thumbnailUrl,
-//                modifier = Modifier.fillMaxSize(),
-//                shape = RoundedCornerShape(8.dp)
-//            )
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .clip(RoundedCornerShape(8.dp))
-//                    .background(Color.Black.copy(alpha = 0.45f)),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                EqualizerBars(isPlaying)
-//            }
-//        }
-//
-//        // Left accent bar
-//        Box(
-//            modifier = Modifier
-//                .width(3.dp)
-//                .height(48.dp)
-//                .clip(RoundedCornerShape(99.dp))
-//                .background(appColors.accentPrimary)
-//        )
-//
-//        Column(modifier = Modifier.weight(1f)) {
-//            Text(
-//                text = song.title,
-//                style = MaterialTheme.typography.bodyMedium,
-//                fontWeight = FontWeight.SemiBold,
-//                color = appColors.accentPrimary,
-//                maxLines = 1,
-//                overflow = TextOverflow.Ellipsis
-//            )
-//            Text(
-//                text = "${song.artist} • ${formatTime(song.duration)}",
-//                style = MaterialTheme.typography.bodySmall,
-//                color = appColors.textMuted
-//            )
-//        }
-//        IconButton(
-//            onClick = { ) }
-//        ) {
-//            Icon(
-//                imageVector = Icons.Filled.MoreVert,
-//                contentDescription = "Song menu",
-//                tint = appColors.iconSecondary
-//            )
-//        }
-//    }
-//}
-
-@Composable
-private fun EqualizerBars(isPlaying: Boolean) {
-    val bars = listOf(0.3f, 0.7f, 1f, 0.5f)
-    val lifecycle = LocalLifecycleOwner.current
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.height(20.dp)
-    ) {
-        bars.forEachIndexed { i, base ->
-            val scale = remember { Animatable(base * 0.3f) }
-
-            LaunchedEffect(isPlaying) {
-                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    if (isPlaying) {
-                        while (true) {
-                            scale.animateTo(
-                                base,
-                                animationSpec = tween(
-                                    durationMillis = 500 + i * 80,
-                                    easing = FastOutSlowInEasing
-                                )
-                            )
-                            scale.animateTo(
-                                base * 0.3f,
-                                animationSpec = tween(
-                                    durationMillis = 500 + i * 80,
-                                    easing = FastOutSlowInEasing
-                                )
-                            )
-                        }
-                    } else {
-                        scale.stop()
-                    }
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(20.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .graphicsLayer {
-                        scaleY = scale.value
-                        transformOrigin = TransformOrigin(0.5f, 1f)
-                    }
-                    .background(appColors.accentPrimary)
-            )
-        }
-    }
-}
 
 @Composable
 private fun PlaybackModeFooter(playbackMode: PlaybackMode, onPlaybackModeClicked: () -> Unit) {

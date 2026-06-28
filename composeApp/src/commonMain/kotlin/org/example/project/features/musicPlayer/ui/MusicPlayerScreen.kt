@@ -91,12 +91,13 @@ fun MusicPlayerScreen(
 
         HorizontalPager(
             state = pagerState,
+            beyondViewportPageCount = 1,
             modifier = Modifier.weight(1f),
         ) { page ->
             when (page) {
                 0 -> SongScreen(song = displayQueue.current, viewModel = viewModel)
 
-                1 -> QueueScreen(viewModel = viewModel)
+                1 -> QueueScreen(viewModel = viewModel, isActivePage = pagerState.currentPage == 1)
             }
         }
 

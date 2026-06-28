@@ -53,7 +53,7 @@ import org.example.project.ui.theme.appColors
 import kotlin.math.roundToInt
 
 @Composable
-fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel, swipe: SongSwipeState) {
+fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
 
     song?.let { current ->
@@ -63,20 +63,17 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel, swipe: SongSwipeSta
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-            SongSwipeContent(
-                state = swipe,
+            SongPager(
                 queue = displayQueue,
+                onSongSelected = viewModel::changePlayingToSong,
                 modifier = Modifier
                     .padding(vertical = 8.dp)
                     .size(320.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .songSwipe(swipe)
-            ) { song, layerModifier ->
+            ) { song ->
                 CoverImage(
                     data = song.thumbnailUrl,
                     size = 320.dp,
-                    shape = RoundedCornerShape(32.dp),
-                    modifier = layerModifier
+                    shape = RoundedCornerShape(32.dp)
                 )
             }
 

@@ -27,7 +27,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +34,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import kotlinx.coroutines.launch
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.appColors
@@ -48,21 +46,12 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
     val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
 
-    val scope = rememberCoroutineScope()
-    val swipe = rememberSongSwipeState(
-        maxDrag = 120.dp,
-        swipeThreshold = 56.dp,
-        onNext = viewModel::onNextClicked,
-        onPrevious = viewModel::onPreviousClicked,
-    )
-
     displayQueue.current?.let { song ->
         Surface(
             color = appColors.backgroundElevated,
             modifier = modifier
                 .height(65.dp)
                 .clickable(indication = null, interactionSource = null) { viewModel.setFullScreen(true) }
-                .songSwipe(swipe)
         ) {
             Box(
                 modifier = Modifier
@@ -75,20 +64,17 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Song info with thumbnail — current song slides out while the
-                    // adjacent song slides in from the opposite edge as you swipe
-                    SongSwipeContent(
-                        state = swipe,
+                    // Song info with thumbnail — swipe the carousel to change songs
+                    SongPager(
                         queue = displayQueue,
+                        onSongSelected = viewModel::changePlayingToSong,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                    ) { song, layerModifier ->
+                    ) { song ->
                         SongInfoRow(
                             song = song,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .then(layerModifier)
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 
@@ -98,7 +84,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
-                            onClick = { scope.launch { swipe.animatePrevious() } }
+                            onClick = viewModel::onPreviousClicked
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
@@ -126,7 +112,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
                         // Next button
                         IconButton(
-                            onClick = { scope.launch { swipe.animateNext() } }
+                            onClick = viewModel::onNextClicked
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,

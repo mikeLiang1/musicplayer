@@ -73,16 +73,6 @@ fun MusicPlayerScreen(
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState { 2 }
 
-    // Shared by the album art (swipe) and the Next/Previous controls (tap) so a button press
-    // plays the same slide-and-swap animation on the artwork as a swipe does.
-    val scope = rememberCoroutineScope()
-    val swipe = rememberSongSwipeState(
-        maxDrag = 150.dp,
-        swipeThreshold = 70.dp,
-        onNext = viewModel::onNextClicked,
-        onPrevious = viewModel::onPreviousClicked,
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -104,7 +94,7 @@ fun MusicPlayerScreen(
             modifier = Modifier.weight(1f),
         ) { page ->
             when (page) {
-                0 -> SongScreen(song = displayQueue.current, viewModel = viewModel, swipe = swipe)
+                0 -> SongScreen(song = displayQueue.current, viewModel = viewModel)
 
                 1 -> QueueScreen(viewModel = viewModel)
             }
@@ -122,8 +112,8 @@ fun MusicPlayerScreen(
                 isShuffled = isShuffled,
                 playbackMode = playbackMode,
                 viewModel = viewModel,
-                onPrevious = { scope.launch { swipe.animatePrevious() } },
-                onNext = { scope.launch { swipe.animateNext() } },
+                onPrevious = viewModel::onPreviousClicked,
+                onNext = viewModel::onNextClicked,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
             )
 

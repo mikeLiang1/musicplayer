@@ -32,11 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @OptIn(UnstableApi::class)
@@ -51,13 +51,13 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
         Surface(
             color = appColors.backgroundElevated,
             modifier = modifier
-                .height(65.dp)
+                .height(Dimens.Size.miniPlayerHeight)
                 .clickable(indication = null, interactionSource = null) { viewModel.setFullScreen(true) }
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = Dimens.spaceM)
             ) {
                 Row(
                     modifier = Modifier
@@ -81,7 +81,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 
                     // Playback controls
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXs),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
@@ -99,9 +99,9 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                         ) {
                             if (state.isBuffering) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(Dimens.iconS),
                                     color = appColors.iconPrimary,
-                                    strokeWidth = 2.dp
+                                    strokeWidth = Dimens.strokeThick
                                 )
                             } else {
                                 Icon(
@@ -144,10 +144,10 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
 private fun SongInfoRow(song: Song, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        CoverImage(song.thumbnailUrl, size = 48.dp, shape = RoundedCornerShape(4.dp))
+        CoverImage(song.thumbnailUrl, size = Dimens.Size.coverThumb, shape = RoundedCornerShape(Dimens.radiusS))
 
         Column(
             modifier = Modifier.weight(1f)
@@ -160,7 +160,7 @@ private fun SongInfoRow(song: Song, modifier: Modifier = Modifier) {
                 overflow = TextOverflow.Ellipsis,
                 color = appColors.textPrimary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceXs))
             Text(
                 text = song.artist,
                 style = MaterialTheme.typography.bodySmall,

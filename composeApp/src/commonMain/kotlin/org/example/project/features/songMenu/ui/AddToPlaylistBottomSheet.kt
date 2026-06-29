@@ -12,10 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.example.project.core.model.Playlist
 import org.example.project.ui.component.PlaylistItem
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +47,7 @@ fun AddToPlaylistBottomSheet(
             } else {
 
                 LazyColumn(
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    contentPadding = PaddingValues(bottom = Dimens.spaceL),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(playlists, key = { it.id }) { playlist ->

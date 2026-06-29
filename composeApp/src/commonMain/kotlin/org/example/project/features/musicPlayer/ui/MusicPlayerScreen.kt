@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.PlaybackMode
@@ -57,6 +56,7 @@ import org.example.project.features.musicPlayer.model.PlayerQueue
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.PlayPauseButton
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -102,9 +102,9 @@ fun MusicPlayerScreen(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             HorizontalDivider(
                 color = appColors.dividerSubtle,
-                thickness = 1.dp
+                thickness = Dimens.strokeThin
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceL))
 
             PlayerControls(
                 isPlaying = state.isPlaying,
@@ -114,10 +114,10 @@ fun MusicPlayerScreen(
                 viewModel = viewModel,
                 onPrevious = viewModel::onPreviousClicked,
                 onNext = viewModel::onNextClicked,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                modifier = Modifier.padding(horizontal = Dimens.spaceXl, vertical = Dimens.spaceL)
             )
 
-            FooterButtons(modifier = Modifier.padding(vertical = 16.dp), pagerState = pagerState)
+            FooterButtons(modifier = Modifier.padding(vertical = Dimens.spaceL), pagerState = pagerState)
         }
 
     }
@@ -128,9 +128,9 @@ fun MusicPlayerScreen(
 private fun DragHandle() {
     Box(
         modifier = Modifier
-            .width(36.dp)
-            .height(4.dp)
-            .clip(RoundedCornerShape(99.dp))
+            .width(Dimens.Size.dragHandleWidth)
+            .height(Dimens.spaceXs)
+            .clip(RoundedCornerShape(Dimens.Size.pillWidth))
             .background(appColors.dividerSubtle)
     )
 }
@@ -167,18 +167,18 @@ private fun PlayerHeader(
                 Surface(
                     onClick = onHistoryClick, // viewModel handles toggle logic
                     color = appColors.backgroundElevated,
-                    shape = RoundedCornerShape(99.dp),
-                    border = BorderStroke(1.dp, appColors.divider)
+                    shape = RoundedCornerShape(Dimens.Size.pillWidth),
+                    border = BorderStroke(Dimens.strokeThin, appColors.divider)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.spaceL, vertical = Dimens.spaceXs),
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXs),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = if (uiState.showHistory) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(Dimens.iconL),
                             tint = appColors.iconMuted
                         )
                         Text(
@@ -340,7 +340,7 @@ private fun FooterButtons(
             )
         }
 
-        Spacer(modifier = Modifier.width(36.dp))
+        Spacer(modifier = Modifier.width(Dimens.Size.dragHandleWidth))
 
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable {
             scope.launch { pagerState.animateScrollToPage(1) }

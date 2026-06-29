@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -45,6 +44,7 @@ import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 sealed interface SongItemState {
@@ -88,10 +88,10 @@ fun SongItem(
             .background(backgroundColor)
             .clickable { onClick() }
             .alpha(contentAlpha)
-            .padding(vertical = 8.dp)
-            .padding(start = 12.dp),
+            .padding(vertical = Dimens.spaceS)
+            .padding(start = Dimens.spaceM),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM)
     ) {
         // 2. Conditional Drag Handle
         if (isEditMode) {
@@ -105,19 +105,19 @@ fun SongItem(
         }
 
         // 3. Cover Image + Equalizer Logic
-        Box(modifier = Modifier.size(48.dp)) {
+        Box(modifier = Modifier.size(Dimens.Size.coverThumb)) {
             CoverImage(
                 data = song.thumbnailUrl,
                 modifier = Modifier
                     .fillMaxSize(),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(Dimens.radiusM)
             )
 
             if (state is SongItemState.Current) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(Dimens.radiusM))
                         .background(Color.Black.copy(alpha = 0.45f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -130,8 +130,8 @@ fun SongItem(
         if (state is SongItemState.Current) {
             Box(
                 modifier = Modifier
-                    .width(3.dp)
-                    .height(48.dp)
+                    .width(Dimens.spaceXs)
+                    .height(Dimens.Size.coverThumb)
                     .clip(CircleShape)
                     .background(appColors.accentPrimary)
             )
@@ -172,9 +172,9 @@ private fun EqualizerBars(isPlaying: Boolean) {
     val lifecycle = LocalLifecycleOwner.current
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXxs),
         verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.height(20.dp)
+        modifier = Modifier.height(Dimens.Size.equalizerBarHeight)
     ) {
         bars.forEachIndexed { i, base ->
             val scale = remember { Animatable(base * 0.3f) }
@@ -206,9 +206,9 @@ private fun EqualizerBars(isPlaying: Boolean) {
 
             Box(
                 modifier = Modifier
-                    .width(3.dp)
-                    .height(20.dp)
-                    .clip(RoundedCornerShape(2.dp))
+                    .width(Dimens.spaceXs)
+                    .height(Dimens.Size.equalizerBarHeight)
+                    .clip(RoundedCornerShape(Dimens.radiusS))
                     .graphicsLayer {
                         scaleY = scale.value
                         transformOrigin = TransformOrigin(0.5f, 1f)
@@ -233,8 +233,8 @@ private fun SongItemPreview() {
 
     AppPreview {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(16.dp)
+            verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
+            modifier = Modifier.padding(Dimens.spaceL)
         ) {
             // 1. CURRENTLY PLAYING
             Text("Current State", style = MaterialTheme.typography.labelSmall)

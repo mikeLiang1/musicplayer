@@ -23,10 +23,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -41,21 +41,21 @@ fun PlaylistItem(
             .background(Color.Transparent)
             .clickable { onClick() }
             .alpha(1f)
-            .padding(8.dp),
+            .padding(Dimens.spaceS),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
         Box(
             // 1. Center all children within the Box
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(50.dp) // Match the size of the image
+            modifier = Modifier.size(Dimens.Size.coverThumb) // Match the size of the image
         ) {
             // 2. Draw the Image first (bottom layer)
-            CoverImage(playlist.thumbnailUrl, modifier = modifier.fillMaxSize(), shape = RoundedCornerShape(4.dp))
+            CoverImage(playlist.thumbnailUrl, modifier = modifier.fillMaxSize(), shape = RoundedCornerShape(Dimens.radiusS))
 
         }
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(Dimens.spaceM))
 
         Column(
             modifier = Modifier.weight(1f)
@@ -66,7 +66,7 @@ fun PlaylistItem(
                 fontWeight = FontWeight.SemiBold,
                 color = appColors.textPrimary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceXs))
             Text(
                 text = "Playlist • ${playlist.songs.count()} songs",
                 style = MaterialTheme.typography.bodySmall,

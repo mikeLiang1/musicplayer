@@ -33,13 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.library.model.stableKey
 import org.example.project.ui.component.PlaylistItem
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -63,13 +63,13 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 12.dp)
+            .padding(horizontal = Dimens.spaceL)
+            .padding(bottom = Dimens.spaceM)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(vertical = Dimens.spaceS),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -78,7 +78,7 @@ private fun HeaderSection(onAction: (LibraryAction) -> Unit, state: LibraryUiSta
                 Icon(Icons.Default.Add, tint = appColors.iconPrimary, contentDescription = "add playlist")
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceL)) {
             LibraryItemFilter.entries.forEach { it ->
                 LibraryFilterPill(
                     libraryItemFilter = it,
@@ -102,12 +102,12 @@ private fun LibraryFilterPill(
             .clip(CircleShape) // 1. Clip first to ensure the ripple and background are pill-shaped
             .background(if (isSelected) appColors.accentContainer else Color.Transparent)
             .border(
-                width = 1.dp,
+                width = Dimens.strokeThin,
                 color = if (isSelected) appColors.accentDark else appColors.divider,
                 shape = CircleShape // 2. Must match the clip shape
             )
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 16.dp) // 3. Padding inside the clickable area
+            .padding(vertical = Dimens.spaceS, horizontal = Dimens.spaceL) // 3. Padding inside the clickable area
     ) {
         Text(
             text = libraryItemFilter.name,
@@ -146,32 +146,32 @@ private fun LikedSongBanner(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(16.dp)
-            .height(100.dp), // Slightly taller to feel like a "Hero" item
-        shape = RoundedCornerShape(16.dp),
+            .padding(Dimens.spaceL)
+            .height(Dimens.Size.heroCardHeight), // Slightly taller to feel like a "Hero" item
+        shape = RoundedCornerShape(Dimens.radiusXl),
         color = appColors.accentContainer
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(Dimens.spaceL),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Icon Container
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(Dimens.Size.iconChip)
                     .background(
-                        color = appColors.onAccentContainer,
-                        shape = RoundedCornerShape(12.dp)
+                        color = appColors.accentDark,
+                        shape = RoundedCornerShape(Dimens.radiusL)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Favorite,
                     contentDescription = null,
-                    tint = appColors.iconPrimary,
-                    modifier = Modifier.size(32.dp)
+                    tint = appColors.onAccent,
+                    modifier = Modifier.size(Dimens.iconL)
                 )
             }
 
@@ -179,7 +179,7 @@ private fun LikedSongBanner(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = Dimens.spaceL)
             ) {
                 Text(
                     text = "Liked Songs",

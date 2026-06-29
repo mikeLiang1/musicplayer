@@ -10,8 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 
@@ -24,23 +23,23 @@ fun PlayPauseButton(
 ) {
     FilledIconButton(
         onClick = onPressed,
-        modifier = modifier.size(64.dp),
+        modifier = modifier.size(Dimens.Size.playButton),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = appColors.iconActive,
-            contentColor = Color.White
+            contentColor = appColors.onAccent
         )
     ) {
         if (isBuffering) {
             CircularProgressIndicator(
-                modifier = Modifier.size(28.dp),
-                color = Color.White,
-                strokeWidth = 2.dp
+                modifier = Modifier.size(Dimens.iconM),
+                color = appColors.onAccent,
+                strokeWidth = Dimens.strokeThick
             )
         } else {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription = if (isPlaying) "Pause" else "Play",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(Dimens.iconL)
             )
         }
     }

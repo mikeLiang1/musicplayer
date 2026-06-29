@@ -58,7 +58,7 @@ val DarkAppColors = AppColors(
     accentDark          = Color(0xFF6B5AE0),
     accentContainer     = Color(0xFF3D2EAD),
     onAccent            = Color(0xFF0F0F18),
-    onAccentContainer   = Color(0xFF9D8FFF),
+    onAccentContainer   = Color(0xFFE7E0FF),  // high-contrast on accentContainer (was 9D8FFF == accentPrimary)
 
     rose                = Color(0xFFF0A8BC),
     roseContainer       = Color(0xFF4A1A2E),

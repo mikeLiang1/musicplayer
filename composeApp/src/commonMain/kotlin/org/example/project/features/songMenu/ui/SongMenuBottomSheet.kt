@@ -14,10 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,11 +46,11 @@ fun SongMenuBottomSheet(
             dragHandle = {
                 Surface(
                     modifier =
-                        Modifier.padding(vertical = 12.dp),
+                        Modifier.padding(vertical = Dimens.spaceM),
                     color = appColors.divider,
                     shape = MaterialTheme.shapes.extraLarge,
                 ) {
-                    Box(Modifier.size(width = 32.dp, height = 4.dp))
+                    Box(Modifier.size(width = Dimens.Size.dragHandleWidth, height = Dimens.spaceXs))
                 }
             }
         ) {

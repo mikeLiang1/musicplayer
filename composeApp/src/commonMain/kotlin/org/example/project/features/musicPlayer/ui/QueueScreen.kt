@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.manager.PlaybackMode
@@ -40,6 +39,7 @@ import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.component.SongItemState
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -136,7 +136,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(bottom = 8.dp)
+            contentPadding = PaddingValues(bottom = Dimens.spaceS)
         ) {
 
             // ── History (only when showHistory = true) ───
@@ -227,9 +227,9 @@ private fun SectionDivider(label: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(appColors.backgroundSecondary) // solid bg so scrolling content doesn't bleed through
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = Dimens.spaceL, vertical = Dimens.spaceXs),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM)
     ) {
         HorizontalDivider(
             modifier = Modifier.weight(1f),
@@ -255,14 +255,14 @@ private fun PlaybackModeFooter(playbackMode: PlaybackMode, onPlaybackModeClicked
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = { onPlaybackModeClicked() })
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = Dimens.spaceXl, vertical = Dimens.spaceM),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(Dimens.spaceXxl)
+                .clip(RoundedCornerShape(Dimens.radiusM))
                 .background(appColors.accentContainer.copy(alpha = 0.3f)),
             contentAlignment = Alignment.Center
         ) {
@@ -274,7 +274,7 @@ private fun PlaybackModeFooter(playbackMode: PlaybackMode, onPlaybackModeClicked
                 },
                 contentDescription = null,
                 tint = appColors.accentPrimary,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(Dimens.spaceM)
             )
         }
         Column {

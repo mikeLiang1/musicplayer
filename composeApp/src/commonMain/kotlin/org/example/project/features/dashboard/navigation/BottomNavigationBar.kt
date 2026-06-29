@@ -23,9 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import org.example.project.navigation.NavigationState
 import org.example.project.navigation.Route
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -37,7 +37,7 @@ fun BottomNavigationBar(
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .height(Dimens.Size.bottomBarHeight)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(), // No horizontal padding here
@@ -67,13 +67,13 @@ fun CustomBottomNavItem(
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(Dimens.radiusM))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
                 onClick = onClick
             )
-            .padding(top = 8.dp), // Internal spacing
+            .padding(top = Dimens.spaceS), // Internal spacing
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -81,7 +81,7 @@ fun CustomBottomNavItem(
             imageVector = icon,
             contentDescription = label,
             tint = if (isSelected) appColors.accentPrimary else appColors.iconSecondary,
-            modifier = Modifier.size(26.dp)
+            modifier = Modifier.size(Dimens.iconS)
         )
         Text(
             text = label,

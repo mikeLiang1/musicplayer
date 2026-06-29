@@ -44,11 +44,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
 import org.example.project.ui.component.CoverImage
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 import kotlin.math.roundToInt
 
@@ -61,19 +61,19 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = Dimens.spaceL)
         ) {
             SongPager(
                 queue = displayQueue,
                 onSongSelected = viewModel::changePlayingToSong,
                 modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .size(320.dp)
+                    .padding(vertical = Dimens.spaceS)
+                    .size(Dimens.Size.albumArtLarge)
             ) { song ->
                 CoverImage(
                     data = song.thumbnailUrl,
-                    size = 320.dp,
-                    shape = RoundedCornerShape(32.dp)
+                    size = Dimens.Size.albumArtLarge,
+                    shape = RoundedCornerShape(Dimens.radius3xl)
                 )
             }
 
@@ -82,7 +82,7 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
                 viewModel = viewModel,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 24.dp)
+                    .padding(vertical = Dimens.spaceXxl)
             )
         }
     }
@@ -98,7 +98,7 @@ private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: M
 
         SongInfoRow(song.title, song.artist)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Dimens.spaceXxl))
 
         MusicPlayerProgressSlider(
             viewModel,
@@ -123,7 +123,7 @@ private fun SongInfoRow(title: String, artist: String) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceXs))
             Text(
                 text = artist,
                 style = MaterialTheme.typography.bodyMedium,
@@ -135,7 +135,7 @@ private fun SongInfoRow(title: String, artist: String) {
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = "Favorite",
                 tint = appColors.rose,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(Dimens.iconM)
             )
         }
     }
@@ -169,7 +169,7 @@ private fun ProgressSlider(
     var isSliding by remember { mutableStateOf(false) }
 
     val thumbSize by animateDpAsState(
-        targetValue = if (isSliding) 20.dp else 14.dp,
+        targetValue = if (isSliding) Dimens.Size.sliderThumbMax else Dimens.Size.sliderThumbMin,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -187,8 +187,8 @@ private fun ProgressSlider(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .height(28.dp)
+                .padding(horizontal = Dimens.spaceL)
+                .height(Dimens.Size.sliderThumbMax + Dimens.spaceXs)
         ) {
             val trackWidth = constraints.maxWidth.toFloat()
             val thumbSizePx = with(LocalDensity.current) { thumbSize.toPx() }
@@ -199,7 +199,7 @@ private fun ProgressSlider(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(20.dp)
+                    .height(Dimens.Size.equalizerBarHeight)
                     .align(Alignment.Center)
                     .pointerInput(duration) {
                         detectTapGestures { offset ->
@@ -211,7 +211,7 @@ private fun ProgressSlider(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(4.dp)
+                        .height(Dimens.spaceXs)
                         .clip(CircleShape)
                         .background(appColors.backgroundSurface)
                         .align(Alignment.Center)
@@ -222,7 +222,7 @@ private fun ProgressSlider(
             Box(
                 modifier = Modifier
                     .width(with(LocalDensity.current) { fillWidth.toDp() })
-                    .height(4.dp)
+                    .height(Dimens.spaceXs)
                     .clip(CircleShape)
                     .background(
                         brush = Brush.horizontalGradient(
@@ -237,7 +237,7 @@ private fun ProgressSlider(
                 modifier = Modifier
                     .offset { IntOffset(thumbOffset.roundToInt(), 0) }
                     .size(thumbSize)
-                    .shadow(4.dp, CircleShape)
+                    .shadow(Dimens.elevationMedium, CircleShape)
                     .background(appColors.iconPrimary, CircleShape)
                     .align(Alignment.CenterStart)
                     .pointerInput(duration) {
@@ -256,7 +256,7 @@ private fun ProgressSlider(
             )
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(Dimens.spaceXs))
 
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -24,11 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -49,7 +49,7 @@ fun HomeScreen(state: HomeUiState, onAction: (HomeAction) -> Unit) {
 private fun HeaderSection(onAction: (HomeAction) -> Unit, state: HomeUiState) {
     Row(
         modifier = Modifier
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = Dimens.spaceL)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +67,7 @@ private fun HomeContent(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit
 ) {
-    LazyColumn(modifier = modifier, contentPadding = PaddingValues(vertical = 12.dp)) {
+    LazyColumn(modifier = modifier, contentPadding = PaddingValues(vertical = Dimens.spaceM)) {
         item {
             RecentlyPlayedSection(state, onAction)
         }
@@ -79,10 +79,10 @@ private fun RecentlyPlayedSection(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit
 ) {
-    Text("Recently Played", modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodyLarge)
+    Text("Recently Played", modifier = Modifier.padding(Dimens.spaceM), style = MaterialTheme.typography.bodyLarge)
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(horizontal = Dimens.spaceM),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceL)
     ) {
         items(state.recentlyPlayed) {
             RecentlyPlayedItem(
@@ -99,15 +99,15 @@ private fun RecentlyPlayedItem(recentlyPlayedItem: RecentlyPlayedItem, onClick: 
     // TODO: Change the hover / interaction source
     Column(
         modifier = Modifier
-            .width(130.dp)
+            .width(Dimens.Size.coverCardWidth)
             .clickable(onClick = onClick)
     ) {
         CoverImage(
             data = recentlyPlayedItem.thumbnailUrl,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            shape = RoundedCornerShape(8.dp)
+                .padding(vertical = Dimens.spaceS),
+            shape = RoundedCornerShape(Dimens.radiusM)
         )
         Text(
             text = recentlyPlayedItem.title,

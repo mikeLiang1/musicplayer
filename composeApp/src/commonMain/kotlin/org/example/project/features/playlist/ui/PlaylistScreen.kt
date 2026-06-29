@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
@@ -42,6 +41,7 @@ import org.example.project.ui.component.SongItem
 import org.example.project.ui.component.SongItemState
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,14 +96,14 @@ fun PlaylistScreen(
                     )
                 )
                 LazyColumn(
-                    contentPadding = PaddingValues(vertical = 16.dp),
+                    contentPadding = PaddingValues(vertical = Dimens.spaceL),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     item {
                         PlaylistHeader(playlist = state.playlist, onAction = onAction, state.isPlaying)
                     }
                     item {
-                        HorizontalDivider(color = appColors.divider, modifier = Modifier.padding(vertical = 12.dp))
+                        HorizontalDivider(color = appColors.divider, modifier = Modifier.padding(vertical = Dimens.spaceM))
                     }
                     if (state.playlist.songs.isEmpty()) {
                         item {
@@ -138,19 +138,19 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
         CoverImage(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 80.dp), data = playlist.thumbnailUrl
+                .padding(horizontal = Dimens.Size.playlistCoverInset), data = playlist.thumbnailUrl
         )
 
         Text(
             playlist.name,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 12.dp)
+            modifier = Modifier.padding(horizontal = Dimens.spaceM)
         )
 
         Row(
             modifier = Modifier
-                .padding(top = 8.dp)
-                .padding(horizontal = 12.dp)
+                .padding(top = Dimens.spaceS)
+                .padding(horizontal = Dimens.spaceM)
         ) {
             Text(
                 "${playlist.songs.count()} songs", style = MaterialTheme.typography.bodySmall,
@@ -171,7 +171,7 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
                     Icon(Icons.Default.Shuffle, contentDescription = "shuffle")
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(Dimens.spaceM))
                 IconButton(onClick = { onAction(PlaylistAction.OnMenuPressed) }) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
                 }
@@ -180,7 +180,7 @@ private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Uni
             PlayPauseButton(
                 onPressed = { onAction(PlaylistAction.OnPlayPressed) },
                 isPlaying = isPlaying,
-                modifier = Modifier.padding(end = 12.dp)
+                modifier = Modifier.padding(end = Dimens.spaceM)
             )
         }
     }

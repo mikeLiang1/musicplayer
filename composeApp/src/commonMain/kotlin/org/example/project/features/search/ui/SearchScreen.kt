@@ -33,12 +33,12 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.example.project.ui.component.SearchBar
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -136,7 +136,7 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
                                 .clickable {
                                     onAction(SearchAction.OnSuggestionClicked(suggestion))
                                 }
-                                .padding(8.dp),
+                                .padding(Dimens.spaceS),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(suggestion, color = appColors.textPrimary)
@@ -156,7 +156,7 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
                     }
                     if (state.isLoadingMore) {
                         item {
-                            CircularProgressIndicator(modifier = Modifier.padding(8.dp))
+                            CircularProgressIndicator(modifier = Modifier.padding(Dimens.spaceS))
                         }
                     }
                 }

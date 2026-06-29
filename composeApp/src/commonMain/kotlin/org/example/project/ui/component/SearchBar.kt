@@ -49,9 +49,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 private enum class TrailingIconState { Stop, Clear, Mic, None }
@@ -96,9 +96,9 @@ fun SearchBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 6.dp),
+            .padding(horizontal = Dimens.spaceL, vertical = Dimens.spaceS),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
     ) {
         BasicTextField(
             value = textFieldValue,
@@ -130,19 +130,19 @@ fun SearchBar(
             decorationBox = { innerTextField ->
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(Dimens.radiusL))
                         .background(appColors.backgroundElevated)
                         .border(
-                            width = 0.5.dp,
+                            width = Dimens.borderHairline,
                             color = animateColorAsState(
                                 targetValue = if (isActive) appColors.accentPrimary else appColors.divider,
                                 label = "border"
                             ).value,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(Dimens.radiusL)
                         )
-                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                        .padding(horizontal = Dimens.spaceM, vertical = Dimens.spaceS),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
                 ) {
                     // Leading search icon
                     Icon(
@@ -152,7 +152,7 @@ fun SearchBar(
                             targetValue = if (isActive) appColors.accentPrimary else appColors.iconMuted,
                             label = "search_icon"
                         ).value,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(Dimens.iconXs)
                     )
 
                     // Input + placeholder
@@ -184,7 +184,7 @@ fun SearchBar(
                                 contentDescription = "Stop listening",
                                 tint = appColors.accentPrimary,
                                 modifier = Modifier
-                                    .size(16.dp)
+                                    .size(Dimens.iconXs)
                                     .clickable { onVoiceSearchCancel() }
                             )
                             TrailingIconState.Clear -> Icon(
@@ -192,7 +192,7 @@ fun SearchBar(
                                 contentDescription = "Clear search",
                                 tint = appColors.iconMuted,
                                 modifier = Modifier
-                                    .size(16.dp)
+                                    .size(Dimens.iconXs)
                                     .clickable { onTextCleared() }
                             )
                             TrailingIconState.Mic -> Icon(
@@ -200,7 +200,7 @@ fun SearchBar(
                                 contentDescription = "Voice search",
                                 tint = appColors.iconMuted,
                                 modifier = Modifier
-                                    .size(16.dp)
+                                    .size(Dimens.iconXs)
                                     .clickable {
                                         keyboardController?.hide()
                                         onVoiceSearch()
@@ -234,7 +234,7 @@ fun SearchBar(
                         focusManager.clearFocus()
                         keyboardController?.hide()
                     }
-                    .padding(start = 4.dp)
+                    .padding(start = Dimens.spaceXs)
             )
         }
     }

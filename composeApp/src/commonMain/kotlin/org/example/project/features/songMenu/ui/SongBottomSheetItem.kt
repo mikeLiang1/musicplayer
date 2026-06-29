@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 @Composable
@@ -42,16 +42,16 @@ fun BottomSheetItem(
         modifier = modifier
             .background(appColors.backgroundElevated)
             .clickable(onClick = { onClick() })
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = Dimens.spaceL, vertical = Dimens.spaceM)
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM)
     ) {
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(Dimens.radiusM))
                 .background(appColors.accentPrimary.copy(alpha = 0.15f))
-                .padding(8.dp)
+                .padding(Dimens.spaceS)
         ) {
             Icon(
                 songMenuAction.icon,

@@ -625,10 +625,107 @@ class QueueManagerTest {
     }
 
     @Test
-    fun `shuffle does nothing when at last index`() {
+    fun `shuffle at last index marks shuffled with full snapshot and no reorder`() {
+        // There is nothing after the current song to shuffle, but the toggle should still
+        // engage (previously this was a dead button) and snapshot the original order.
         manager.setBaseQueue(allSongs, currentBaseIndex = 4)
         manager.shuffle()
-        assertFalse(manager.queueState.value.isShuffled)
+
+        val state = manager.queueState.value
+        assertTrue(state.isShuffled)
+        assertEquals(allSongs, state.baseQueue)
+        assertEquals(allSongs, state.preShuffleBaseQueue)
+    }
+
+    @Test
+    fun `shuffle is a no-op when already shuffled`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 1)
+        manager.shuffle()
+        val afterFirst = manager.queueState.value
+
+        manager.shuffle()
+        val afterSecond = manager.queueState.value
+
+        // The second shuffle must not re-randomize or clobber the original snapshot.
+        assertEquals(afterFirst.baseQueue, afterSecond.baseQueue)
+        assertEquals(allSongs, afterSecond.preShuffleBaseQueue)
+    }
+
+    @Test
+    fun `appendRadioSongs keeps preShuffleBaseQueue in sync when shuffled`() {
+        manager.setBaseQueue(listOf(song1, song2, song3), currentBaseIndex = 0)
+        manager.shuffle()
+
+        val song6 = song1.copy(uniqueId = "song6", title = "Song Six")
+        manager.appendRadioSongs(listOf(song6))
+
+        val state = manager.queueState.value
+        // New radio song lands in both the live queue and the snapshot, so it survives unshuffle.
+        assertTrue(state.baseQueue.any { it.uniqueId == "song6" })
+        assertEquals(listOf("song1", "song2", "song3", "song6"), state.preShuffleBaseQueue?.map { it.uniqueId })
+    }
+
+    @Test
+    fun `unshuffle after appendRadioSongs restores original order including radio songs`() {
+        manager.setBaseQueue(listOf(song1, song2, song3), currentBaseIndex = 0)
+        manager.shuffle()
+        val song6 = song1.copy(uniqueId = "song6", title = "Song Six")
+        manager.appendRadioSongs(listOf(song6))
+
+        manager.unshuffle()
+
+        val state = manager.queueState.value
+        assertFalse(state.isShuffled)
+        assertEquals(listOf("song1", "song2", "song3", "song6"), state.baseQueue.map { it.uniqueId })
+        assertNull(state.preShuffleBaseQueue)
+    }
+
+    @Test
+    fun `removeSong removes from snapshot so it does not reappear on unshuffle`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 0)
+        manager.shuffle()
+
+        manager.removeSong(song4.uniqueId)
+        manager.unshuffle()
+
+        val state = manager.queueState.value
+        assertFalse(state.baseQueue.any { it.uniqueId == song4.uniqueId })
+        assertNull(state.preShuffleBaseQueue)
+    }
+
+    @Test
+    fun `replaceQueuesPreservingState reconciles snapshot to new base set when shuffled`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 0)
+        manager.shuffle()
+
+        // Drag-reorder result: a permutation of the same songs minus none.
+        val reordered = listOf(song1, song5, song4, song3, song2)
+        manager.replaceQueuesPreservingState(reordered, emptyList(), currentBaseIndex = 0)
+
+        val snapshotIds = manager.queueState.value.preShuffleBaseQueue?.map { it.uniqueId }?.toSet()
+        assertEquals(allSongs.map { it.uniqueId }.toSet(), snapshotIds)
+    }
+
+    @Test
+    fun `unshuffle clears shuffle when current song is not in snapshot`() {
+        // Defensive: an inconsistent restored state where current isn't in the snapshot
+        // should clear shuffle on the live queue rather than wedging the toggle.
+        manager.restoreState(
+            QueueState(
+                baseQueue = listOf(song4, song5),
+                currentBaseIndex = 0,
+                isShuffled = true,
+                preShuffleBaseQueue = listOf(song1, song2, song3)
+            ),
+            positionMs = 0L
+        )
+
+        manager.unshuffle()
+
+        val state = manager.queueState.value
+        assertFalse(state.isShuffled)
+        assertNull(state.preShuffleBaseQueue)
+        assertEquals(listOf(song4, song5), state.baseQueue)
     }
 
     @Test

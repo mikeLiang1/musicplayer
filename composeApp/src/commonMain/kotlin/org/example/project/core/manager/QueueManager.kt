@@ -106,6 +106,8 @@ class QueueManager() {
             val newSongs = songs.filter { it.uniqueId !in state.seenIds }
             state.copy(
                 baseQueue = state.baseQueue + newSongs,
+                // Keep the un-shuffled snapshot in sync so these songs survive unshuffle.
+                preShuffleBaseQueue = state.preShuffleBaseQueue?.plus(newSongs),
                 seenIds = state.seenIds + newSongs.map { it.uniqueId },
             )
         }
@@ -295,7 +297,9 @@ class QueueManager() {
             // Only allow removal if it's in the future (index > currentBaseIndex)
             if (baseIndex > state.currentBaseIndex) {
                 val newBase = state.baseQueue.filterIndexed { index, _ -> index != baseIndex }
-                return@update state.copy(baseQueue = newBase)
+                // Remove from the snapshot too so it doesn't reappear on unshuffle.
+                val newPreShuffle = state.preShuffleBaseQueue?.filter { it.uniqueId != uniqueId }
+                return@update state.copy(baseQueue = newBase, preShuffleBaseQueue = newPreShuffle)
             }
 
             // 3. If not found or is currently playing/history, do nothing
@@ -314,7 +318,9 @@ class QueueManager() {
     fun shuffle() {
         _queueState.update { state ->
             val baseQueue = state.baseQueue
-            if (baseQueue.isEmpty() || state.currentBaseIndex >= baseQueue.lastIndex) return@update state
+            // Nothing to do for an empty queue or if we're already shuffled
+            // (re-shuffling would overwrite the true original snapshot).
+            if (baseQueue.isEmpty() || state.isShuffled) return@update state
 
             val beforeCurrent = baseQueue.take(state.currentBaseIndex + 1)
             val afterCurrent = baseQueue.drop(state.currentBaseIndex + 1)
@@ -340,7 +346,15 @@ class QueueManager() {
             // Find current song in pre-shuffle queue
             val currentSong = state.baseQueue.getOrNull(state.currentBaseIndex) ?: return@update state
             val newIndex = preShuffleBaseQueue.indexOfFirst { it.uniqueId == currentSong.uniqueId }
-            if (newIndex == -1) return@update state
+            // Should never happen now that the snapshot is kept in sync, but if the current
+            // song somehow isn't in it, clear shuffle on the live queue instead of wedging.
+            if (newIndex == -1) {
+                return@update state.copy(
+                    isShuffled = false,
+                    preShuffleBaseQueue = null,
+                    preShuffleBaseIndex = null
+                )
+            }
 
             state.copy(
                 baseQueue = preShuffleBaseQueue,
@@ -399,11 +413,18 @@ class QueueManager() {
      */
     fun replaceQueuesPreservingState(baseQueue: List<Song>, manualQueue: List<Song>, currentBaseIndex: Int) {
         _queueState.update { state ->
+            // Reconcile the snapshot to the same set of songs as the new baseQueue:
+            // keep originals still present (in original order), then append any that moved in.
+            val newPreShuffle = state.preShuffleBaseQueue?.let { pre ->
+                val baseIds = baseQueue.map { it.uniqueId }.toSet()
+                val preIds = pre.map { it.uniqueId }.toSet()
+                pre.filter { it.uniqueId in baseIds } + baseQueue.filter { it.uniqueId !in preIds }
+            }
             state.copy(
                 baseQueue = baseQueue,
                 manualQueue = manualQueue,
-                currentBaseIndex = currentBaseIndex
-                // isShuffled, preShuffleBaseQueue, r
+                currentBaseIndex = currentBaseIndex,
+                preShuffleBaseQueue = newPreShuffle
             )
         }
         _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))

@@ -147,6 +147,33 @@ class PlaybackRepositoryTest {
         assertNull(restored.preShuffleBaseQueue)
     }
 
+    // ── seenIds reconstruction (radio dedup survives restart) ────────────────────
+
+    @Test
+    fun restore_reconstructsSeenIdsFromBaseQueue() = runBlocking {
+        // seenIds isn't persisted as its own column; it must be rebuilt from restored songs
+        // so radio dedup keeps filtering already-queued songs after a restart.
+        repository.saveQueueState(QueueState(baseQueue = listOf(song1, song2, song3)))
+
+        val restored = repository.getRestoredPlayback()!!.queueState
+        assertEquals(setOf("song1", "song2", "song3"), restored.seenIds)
+    }
+
+    @Test
+    fun restore_seenIdsIncludeShuffleSnapshotSongs() = runBlocking {
+        val state = QueueState(
+            baseQueue = listOf(song2, song1), // shuffled order (song3 still upcoming, dropped here)
+            currentBaseIndex = 0,
+            isShuffled = true,
+            preShuffleBaseQueue = listOf(song1, song2, song3)
+        )
+        repository.saveQueueState(state)
+
+        val restored = repository.getRestoredPlayback()!!.queueState
+        // Union of base + snapshot ids so no previously-seen song can be re-added by radio.
+        assertEquals(setOf("song1", "song2", "song3"), restored.seenIds)
+    }
+
     // ── Backward-compat fallback for currentManualSong by id ─────────────────────
 
     @Test

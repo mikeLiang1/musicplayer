@@ -88,7 +88,11 @@ class PlaybackRepository(
             // preShuffleBaseIndex is intentionally null: it is not persisted, and unshuffle()
             // recomputes the index from the snapshot, so storing the shuffled index here was wrong.
             preShuffleBaseIndex = null,
-            playbackMode = PlaybackMode.valueOf(stateEntity.repeatMode ?: "OFF")
+            playbackMode = PlaybackMode.valueOf(stateEntity.repeatMode ?: "OFF"),
+            // seenIds isn't persisted as its own column; reconstruct it from the restored songs so
+            // radio dedup keeps working after restart (without it, appendRadioSongs could re-add
+            // songs already in the queue/snapshot).
+            seenIds = (baseQueue + shuffleSnapshot).map { it.uniqueId }.toSet()
         )
 
         // Prime the signature so the first post-restore save doesn't needlessly rewrite the rows

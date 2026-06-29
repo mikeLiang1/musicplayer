@@ -1,6 +1,5 @@
 package org.example.project.features.musicPlayer.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
@@ -10,11 +9,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -23,6 +20,7 @@ import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueIntent
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.manager.QueueState
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 
@@ -33,77 +31,77 @@ class MusicPlayerViewModel(
     private val playbackRepository: PlaybackRepository
 ) : ViewModel() {
 
+    // Owned, mutable UI bits (fullscreen, history pill, queue editing).
     private val _uiState = MutableStateFlow(MusicPlayerUiState())
-    val uiState = _uiState.asStateFlow()
-
     private val _effect = MutableSharedFlow<MusicPlayerEffect>()
     val effect: SharedFlow<MusicPlayerEffect> = _effect.asSharedFlow()
-
     val playerState = musicPlayerManager.playerState
     val currentPosition = musicPlayerManager.currentPosition
 
-    // Projection from QueueManager's state
-    private val playerQueue: StateFlow<PlayerQueue> = queueManager.queueState
-        .map { state ->
-            PlayerQueue(
-                history = state.history,
-                current = state.current,
-                manual = state.manualUpNext,
-                upcoming = state.normalUpNext
+    val uiState: StateFlow<MusicPlayerUiState> =
+        combine(_uiState, queueManager.queueState) { ui, qs ->
+            ui.copy(isShuffled = qs.isShuffled, playbackMode = qs.playbackMode)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            _uiState.value.copy(
+                isShuffled = queueManager.queueState.value.isShuffled,
+                playbackMode = queueManager.queueState.value.playbackMode
             )
-        }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, PlayerQueue())
+        )
 
-    // What the UI consumes — editing snapshot if active, else live projection
-    val displayQueue: StateFlow<PlayerQueue> = combine(_uiState, playerQueue) { ui, live ->
-        ui.editingQueue ?: live
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, playerQueue.value)
-
-    // Shuffle and repeat state from QueueManager
-    val isShuffled: StateFlow<Boolean> = queueManager.queueState
-        .map { it.isShuffled }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    val playbackMode: StateFlow<PlaybackMode> = queueManager.queueState
-        .map { it.playbackMode }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, PlaybackMode.OFF)
+    // What the UI consumes — editing snapshot if active, else live projection.
+    // Kept as its own flow (not in uiState) so the always-visible mini-bar and the
+    // now-playing page don't recompose on shuffle/repeat/edit toggles.
+    val displayQueue: StateFlow<PlayerQueue> =
+        combine(_uiState, queueManager.queueState) { ui, qs ->
+            ui.editingQueue ?: qs.toPlayerQueue()
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            queueManager.queueState.value.toPlayerQueue()
+        )
 
     init {
-        Log.d("logging", "viewmodel int")
-
         // Attach the intent observer BEFORE restore so the NewQueue intent emitted during
         // restoration reaches a live collector instead of relying on channel buffering.
         // Sync queue changes to music player (for future changes)
         queueManager.intent
-                .onEach { intent ->
-                    val state = queueManager.queueState.value
-                    val queue = state.playbackQueue
+            .onEach { intent ->
+                val state = queueManager.queueState.value
+                val queue = state.playbackQueue
 
-                    if (queue.isEmpty()) return@onEach
+                if (queue.isEmpty()) return@onEach
 
-                    when (intent) {
-                        is QueueIntent.ReplaceQueue ->
-                            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queue, intent.newIndex)
+                when (intent) {
+                    is QueueIntent.ReplaceQueue ->
+                        musicPlayerManager.replaceFullQueueKeepingCurrentSong(
+                            queue,
+                            intent.newIndex
+                        )
 
-                        is QueueIntent.SeekToItem -> {
-                            musicPlayerManager.seekToDefaultPosition(intent.newIndex)
-                        }
-
-                        is QueueIntent.SeekAndRebuild -> {
-                            musicPlayerManager.seekToDefaultPosition(intent.mediaIndex)
-                            musicPlayerManager.replaceFullQueueKeepingCurrentSong(queue, intent.queueIndex)
-                        }
-
-                        is QueueIntent.NewQueue ->
-                            musicPlayerManager.setPlaylist(
-                                state.baseQueue,
-                                state.playbackCurrentIndex,
-                                intent.positionMs,
-                                state.autoPlay
-                            )
+                    is QueueIntent.SeekToItem -> {
+                        musicPlayerManager.seekToDefaultPosition(intent.newIndex)
                     }
+
+                    is QueueIntent.SeekAndRebuild -> {
+                        musicPlayerManager.seekToDefaultPosition(intent.mediaIndex)
+                        musicPlayerManager.replaceFullQueueKeepingCurrentSong(
+                            queue,
+                            intent.queueIndex
+                        )
+                    }
+
+                    is QueueIntent.NewQueue ->
+                        musicPlayerManager.setPlaylist(
+                            state.baseQueue,
+                            state.playbackCurrentIndex,
+                            intent.positionMs,
+                            state.autoPlay
+                        )
                 }
-                .launchIn(viewModelScope)
+            }
+            .launchIn(viewModelScope)
 
         viewModelScope.launch {
             restorePlaybackState()
@@ -122,8 +120,7 @@ class MusicPlayerViewModel(
         val restored = playbackRepository.getRestoredPlayback()
         restored?.let { (state, positionMs) ->
             queueManager.restoreState(state, positionMs)
-            Log.d("logging", "Restored queue state: $state")
-        } ?: Log.d("logging", "No saved queue state found")
+        }
     }
 
     // ── Playback ──────────────────────────────────────
@@ -178,7 +175,7 @@ class MusicPlayerViewModel(
     fun onEditQueueClicked() {
         _uiState.update {
             it.copy(
-                editingQueue = if (it.editingQueue != null) null else playerQueue.value,
+                editingQueue = if (it.editingQueue != null) null else queueManager.queueState.value.toPlayerQueue(),
                 isEditingQueue = !_uiState.value.isEditingQueue
             )
         }
@@ -189,7 +186,8 @@ class MusicPlayerViewModel(
         val combined = (current.manual + current.upcoming).toMutableList()
         val manualCount = current.manual.size
 
-        val fromIndex = combined.indexOfFirst { it.uniqueId == fromKey }.takeIf { it != -1 } ?: return
+        val fromIndex =
+            combined.indexOfFirst { it.uniqueId == fromKey }.takeIf { it != -1 } ?: return
 
         val toIndex = when (toKey) {
             "header_manual" -> 0
@@ -231,13 +229,24 @@ class MusicPlayerViewModel(
         queueManager.removeSong(uniqueId = songId)
     }
 
+    // Single place that re-shapes QueueManager's QueueState into the UI-facing PlayerQueue.
+    private fun QueueState.toPlayerQueue() = PlayerQueue(
+        history = history,
+        current = current,
+        manual = manualUpNext,
+        upcoming = normalUpNext
+    )
+
 }
 
 data class MusicPlayerUiState(
     val isFullScreenVisible: Boolean = false,
     val showHistory: Boolean = false,
     val isEditingQueue: Boolean = false,
-    val editingQueue: PlayerQueue? = null
+    val editingQueue: PlayerQueue? = null,
+    // Derived from QueueManager; populated by the uiState combine, not the mutators.
+    val isShuffled: Boolean = false,
+    val playbackMode: PlaybackMode = PlaybackMode.OFF
 )
 
 sealed interface MusicPlayerEffect {

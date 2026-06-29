@@ -68,8 +68,6 @@ fun MusicPlayerScreen(
 
     val state by viewModel.playerState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isShuffled by viewModel.isShuffled.collectAsStateWithLifecycle()
-    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState { 2 }
 
@@ -111,8 +109,8 @@ fun MusicPlayerScreen(
             PlayerControls(
                 isPlaying = state.isPlaying,
                 isBuffering = state.isBuffering,
-                isShuffled = isShuffled,
-                playbackMode = playbackMode,
+                isShuffled = uiState.isShuffled,
+                playbackMode = uiState.playbackMode,
                 viewModel = viewModel,
                 onPrevious = viewModel::onPreviousClicked,
                 onNext = viewModel::onNextClicked,

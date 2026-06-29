@@ -52,7 +52,6 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
-    val playbackMode by viewModel.playbackMode.collectAsStateWithLifecycle()
 
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.onMove(from.key as String, to.key as String)
@@ -215,7 +214,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
 
             item(key = "footer_repeat_mode") {
                 PlaybackModeFooter(
-                    playbackMode = playbackMode,
+                    playbackMode = uiState.playbackMode,
                     onPlaybackModeClicked = { viewModel.togglePlaybackMode() })
             }
         }

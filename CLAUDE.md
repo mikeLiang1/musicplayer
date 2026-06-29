@@ -132,16 +132,8 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 ### Dead code / commented-out blocks
 - **3 entire files** in `core/model/network/` are 100% commented out: `SearchResponse.kt` (31 lines), `MusicResponsiveListItemRenderer.kt` (114 lines), `Tabs.kt` (26 lines). These were typed Kotlin serialization models replaced by manual `JsonObject` tree parsing in `InnerTubeExtensions.kt`.
 - **`Continuation.kt`** (core/model/network/) — the data class and its `getContinuation()` extension are never imported or called.
-- **`QueueScreen.kt` lines 261-324** — a 64-line `CurrentSongRow` composable is fully commented out.
-- **`InnerTubeRepository.kt` lines 95-123** — a 29-line `getStreamUrl()` method is commented out (replaced by NewPipe resolution in `MediaService`).
 - **`AppNavigation.kt` lines 27-33** — commented-out login route entry (7 lines).
 - **`Type.kt` lines 32-47** — 16-line commented duplicate typography block (template remnant).
 - **`Song.kt`** — `mockSongList` is public but never imported/used anywhere.
-- **`SearchParser.kt:116-125`** — `parseByline()` extension function defined but never called.
-- **`InnerTubeRepository.kt:125-148`** — `buildPlayerBody()` and `decodeSignatureCipher()` defined but never called.
-- **4 spurious `import org.schabi.newpipe.extractor.timeago.patterns.it`** imports: in `MusicPlayerManager.kt`, `InnerTubeRepository.kt`, `SearchParser.kt` (these import the `it` extension but never use it; leftover from NewPipe time-ago parsing).
-- **1 spurious `import org.slf4j.MDC.put`** in `InnerTubeRepository.kt`.
-
-### Package name inconsistency (now fixed)
-- `NavigationState.kt` used `package com.example.budget.navigation` — **fixed**, now `org.example.project.navigation`.
-- `Type.kt`, `Dimens.kt`, `Shape.kt` used `package com.example.budget.ui.theme` — **fixed**, now `org.example.project.ui.theme`.
+- **`SearchParser.kt:116`** — `parseByline()` extension function defined but never called.
+- **2 spurious `import org.schabi.newpipe.extractor.timeago.patterns.it`** imports: in `MusicPlayerManager.kt` and `SearchParser.kt` (these import the `it` extension but never use it; leftover from NewPipe time-ago parsing).

@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.example.project.core.manager.PlayerNavigator
 import org.example.project.features.home.ui.HomeEffect
@@ -54,7 +55,7 @@ fun DashboardNavigation() {
 
     val musicPlayerViewModel = koinViewModel<MusicPlayerViewModel>()
     val isFullScreenVisible by remember {
-        musicPlayerViewModel.uiState.map { it.isFullScreenVisible }
+        musicPlayerViewModel.uiState.map { it.isFullScreenVisible }.distinctUntilChanged()
     }.collectAsStateWithLifecycle(initialValue = false)
 
     val playerNavigator = koinInject<PlayerNavigator>()

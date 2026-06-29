@@ -18,14 +18,12 @@ class NewPipeRepository {
             val extractor = youtubeService.getStreamExtractor(url)
             extractor.fetchPage()
 
-            // Prefer M4A for compatibility, fall back to highest bitrate available
+            // Pick the highest-bitrate audio stream regardless of codec.
+            // ExoPlayer handles Opus fine, and Opus (~160kbps) beats the
+            // M4A/AAC ceiling (~128kbps) on YouTube, so don't filter by format.
             extractor.audioStreams
-                .filter { it?.format?.name?.lowercase() == "m4a" }
                 .maxByOrNull { it.bitrate }
                 ?.content
-                ?: extractor.audioStreams
-                    .maxByOrNull { it.bitrate }
-                    ?.content
         } catch (e: Exception) {
             println("getStreamUrl error: ${e.message}")
             null

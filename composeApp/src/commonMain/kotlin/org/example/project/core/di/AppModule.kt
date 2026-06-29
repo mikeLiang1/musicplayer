@@ -35,7 +35,7 @@ import org.koin.dsl.module
 
 val repositoryModule = module {
     single { InnerTubeRepository(get()) }
-    single { PlaybackRepository(get()) }
+    single { PlaybackRepository(get<MusicDatabase>().playbackDao()) }
     single { PlaylistRepository(get()) }
     single { QueueManager() }
     single { PlayerNavigator() }

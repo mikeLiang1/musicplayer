@@ -71,12 +71,10 @@ class MusicPlayerViewModel(
     init {
         Log.d("logging", "viewmodel int")
 
-        viewModelScope.launch {
-            restorePlaybackState()
-
-            // 2. Set up observers AFTER restoration completes
-            // Sync queue changes to music player (for future changes)
-            queueManager.intent
+        // Attach the intent observer BEFORE restore so the NewQueue intent emitted during
+        // restoration reaches a live collector instead of relying on channel buffering.
+        // Sync queue changes to music player (for future changes)
+        queueManager.intent
                 .onEach { intent ->
                     val state = queueManager.queueState.value
                     val queue = state.playbackQueue
@@ -107,7 +105,11 @@ class MusicPlayerViewModel(
                 }
                 .launchIn(viewModelScope)
 
-            // Debounced save of queue state
+        viewModelScope.launch {
+            restorePlaybackState()
+
+            // Debounced save of queue state — attached AFTER restore so we never persist the
+            // pre-restore empty state over good saved data.
             queueManager.queueState
                 .debounce(500)
                 .onEach { state -> playbackRepository.saveQueueState(state) }
@@ -116,11 +118,9 @@ class MusicPlayerViewModel(
     }
 
     private suspend fun restorePlaybackState() {
-        // 1. Restore state first (blocking in this coroutine)
-        val savedState = playbackRepository.getQueueState()
-        savedState?.let { state ->
-            val positionMs = playbackRepository.getPosition() ?: 0L
-
+        // Restore queue + position in a single DB read.
+        val restored = playbackRepository.getRestoredPlayback()
+        restored?.let { (state, positionMs) ->
             queueManager.restoreState(state, positionMs)
             Log.d("logging", "Restored queue state: $state")
         } ?: Log.d("logging", "No saved queue state found")

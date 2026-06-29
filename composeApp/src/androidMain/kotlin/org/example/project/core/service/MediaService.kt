@@ -279,7 +279,9 @@ class MediaService : MediaLibraryService() {
         mediaSession?.player?.clearMediaItems()
 
         if (currentPos != null) {
-            serviceScope.launch {
+            // Block until the write completes: this runs from onDestroy/onTaskRemoved, where the
+            // process can be killed immediately afterward, so a fire-and-forget launch may be lost.
+            runBlocking {
                 repo.savePosition(currentPos)
             }
         }

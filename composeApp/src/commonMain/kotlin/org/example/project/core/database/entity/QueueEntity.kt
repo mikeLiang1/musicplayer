@@ -12,7 +12,7 @@ data class QueueEntity(
     val thumbnailUrl: String?,
     val url: String,
     val duration: Long,
-    val type: String, // "current" or "original"
-    val isManual: Boolean,
+    val type: String, // "base", "manual", "current_manual", or "shuffle_snapshot"
+    val isManual: Boolean, // unused; distinction is carried by `type`
     val orderIndex: Int // Important for maintaining list order
 )

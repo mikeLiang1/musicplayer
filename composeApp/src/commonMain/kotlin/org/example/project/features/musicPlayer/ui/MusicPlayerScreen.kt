@@ -110,6 +110,7 @@ fun MusicPlayerScreen(
 
             PlayerControls(
                 isPlaying = state.isPlaying,
+                isBuffering = state.isBuffering,
                 isShuffled = isShuffled,
                 playbackMode = playbackMode,
                 viewModel = viewModel,
@@ -230,6 +231,7 @@ private fun PlayerHeader(
 @Composable
 private fun PlayerControls(
     isPlaying: Boolean,
+    isBuffering: Boolean,
     isShuffled: Boolean,
     playbackMode: PlaybackMode,
     viewModel: MusicPlayerViewModel,
@@ -269,7 +271,11 @@ private fun PlayerControls(
             }
 
             // Play/Pause button
-            PlayPauseButton(viewModel::onPlayPauseClicked, isPlaying)
+            PlayPauseButton(
+                onPressed = viewModel::onPlayPauseClicked,
+                isPlaying = isPlaying,
+                isBuffering = isBuffering
+            )
 
             // Next button
             IconButton(onClick = onNext) {

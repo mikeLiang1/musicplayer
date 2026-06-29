@@ -128,7 +128,11 @@ class MusicPlayerViewModel(
 
     // ── Playback ──────────────────────────────────────
     fun onPlayPauseClicked() {
-        if (playerState.value.isBuffering) return
+        // While buffering, a tap always means "play when ready" — never pause.
+        if (playerState.value.isBuffering) {
+            musicPlayerManager.play()
+            return
+        }
         if (playerState.value.isPlaying) musicPlayerManager.pause()
         else musicPlayerManager.play()
     }

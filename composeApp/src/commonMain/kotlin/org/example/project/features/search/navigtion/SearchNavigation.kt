@@ -1,7 +1,9 @@
 package org.example.project.features.search.navigtion
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -11,6 +13,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import org.example.project.navigation.rememberNavigationState
 import org.example.project.navigation.toEntries
+import org.example.project.features.search.ui.SearchEffect
 import org.example.project.features.search.ui.SearchScreen
 import org.example.project.features.search.ui.SearchViewModel
 import org.example.project.navigation.Navigator
@@ -19,7 +22,7 @@ import org.example.project.navigation.searchAllRoutes
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun SearchNavigation() {
+fun SearchNavigation(snackbarHostState: SnackbarHostState) {
     val navigationState = rememberNavigationState(
         startRoute = Route.DashboardRoutes.SearchRoutes.Suggestions,
         topLevelRoutes = searchAllRoutes
@@ -32,6 +35,14 @@ fun SearchNavigation() {
         entry<Route.DashboardRoutes.SearchRoutes.Suggestions> {
             val searchViewModel = koinViewModel<SearchViewModel>()
             val uiState by searchViewModel.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) {
+                searchViewModel.effect.collect { effect ->
+                    when (effect) {
+                        is SearchEffect.Error -> snackbarHostState.showSnackbar(effect.message)
+                        SearchEffect.NavigateToResult -> Unit
+                    }
+                }
+            }
             SearchScreen(
                 state = uiState, onAction = searchViewModel::handleAction
             )

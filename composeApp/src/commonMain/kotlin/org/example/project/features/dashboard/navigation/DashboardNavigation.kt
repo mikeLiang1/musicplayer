@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +53,8 @@ fun DashboardNavigation() {
 
     val navigator = remember { Navigator(navigationState) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val isBottomBarVisible = navigationState.topLevelRoute in dashboardTopLevelDestinations.keys
 
     val musicPlayerViewModel = koinViewModel<MusicPlayerViewModel>()
@@ -68,6 +72,7 @@ fun DashboardNavigation() {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = appColors.backgroundPrimary,
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 Column(modifier = Modifier.navigationBarsPadding()) {
                     MusicPlayerBar(viewModel = musicPlayerViewModel)
@@ -92,12 +97,16 @@ fun DashboardNavigation() {
                                 is HomeEffect.NavigateToPlaylist -> {
                                     navigator.navigate(Route.DashboardRoutes.Playlist(effect.playlistId))
                                 }
+
+                                is HomeEffect.ShowError -> {
+                                    snackbarHostState.showSnackbar(effect.message)
+                                }
                             }
                         }
                     }
                     HomeScreen(homeState, onAction = homeViewModel::onHomeAction)
                 }
-                entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation() }
+                entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation(snackbarHostState) }
                 entry<Route.DashboardRoutes.LibraryRoutes> {
                     LibraryNavigation(
                         navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }

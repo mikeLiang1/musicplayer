@@ -8,7 +8,7 @@ class PlaySongUseCase(
     private val innerTubeRepository: InnerTubeRepository,
     private val queueManager: QueueManager,
 ) {
-    suspend operator fun invoke(songUrl: String) {
+    suspend operator fun invoke(songUrl: String): Result<Unit> = runCatching {
         val songs = innerTubeRepository.getRecommendations(songUrl)
         queueManager.setBaseQueue(songs.songs)
     }

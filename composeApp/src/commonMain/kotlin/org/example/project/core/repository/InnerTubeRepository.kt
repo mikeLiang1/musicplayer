@@ -27,17 +27,12 @@ class InnerTubeRepository(private val client: HttpClient) {
 
     suspend fun getRecommendations(url: String): SongPage = withContext(Dispatchers.IO) {
         val videoId = extractVideoId(url) ?: return@withContext SongPage(emptyList(), null)
-        try {
-            val response: JsonObject = client.post(NEXT_URL) {
-                contentType(ContentType.Application.Json)
-                applyHeaders()
-                setBody(buildNextBody(videoId))
-            }.body()
-            parseQueuePage(response)
-        } catch (e: Exception) {
-            println("getRecommendations error: ${e.message}")
-            SongPage(emptyList(), null)
-        }
+        val response: JsonObject = client.post(NEXT_URL) {
+            contentType(ContentType.Application.Json)
+            applyHeaders()
+            setBody(buildNextBody(videoId))
+        }.body()
+        parseQueuePage(response)
     }
 
     suspend fun getMoreRecommendations(token: String): SongPage = withContext(Dispatchers.IO) {

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.library.model.stableKey
 import org.example.project.ui.component.PlaylistItem
+import org.example.project.ui.component.pressableCard
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.Dimens
@@ -145,9 +146,9 @@ private fun LikedSongBanner(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .pressableCard(onClick = onClick)
             .padding(Dimens.spaceL)
-            .height(Dimens.Size.heroCardHeight), // Slightly taller to feel like a "Hero" item
+            .height(Dimens.Size.heroCardHeight),
         shape = RoundedCornerShape(Dimens.radiusXl),
         color = appColors.accentContainer
     ) {

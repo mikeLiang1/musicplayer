@@ -99,7 +99,10 @@ class SearchViewModel(
                 viewModelScope.launch {
                     val song = searchAction.song
                     playSongUseCase(song.url)
-                    recentlyPlayedRepository.recordSong(song)
+                        .onSuccess { recentlyPlayedRepository.recordSong(song) }
+                        .onFailure {
+                            _effect.emit(SearchEffect.Error("Couldn't start playback. Check your connection."))
+                        }
                 }
             }
 

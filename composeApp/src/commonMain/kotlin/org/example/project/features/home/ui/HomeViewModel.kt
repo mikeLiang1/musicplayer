@@ -48,6 +48,7 @@ class HomeViewModel(
                     RecentlyPlayedType.SONG -> {
                         viewModelScope.launch {
                             playSongUseCase(action.recentlyPlayedItem.contentId)
+                                .onFailure { _effect.emit(HomeEffect.ShowError(PLAYBACK_ERROR_MESSAGE)) }
                         }
                     }
 
@@ -75,4 +76,7 @@ sealed interface HomeAction {
 
 sealed interface HomeEffect {
     data class NavigateToPlaylist(val playlistId: String) : HomeEffect
+    data class ShowError(val message: String) : HomeEffect
 }
+
+private const val PLAYBACK_ERROR_MESSAGE = "Couldn't start playback. Check your connection."

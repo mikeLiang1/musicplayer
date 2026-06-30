@@ -3,7 +3,9 @@ package org.example.project.features.musicPlayer.ui
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -90,7 +92,11 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
 
 
 @Composable
-private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: Modifier = Modifier) {
+private fun SongDetails(
+    modifier: Modifier = Modifier,
+    song: Song,
+    viewModel: MusicPlayerViewModel
+) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -108,6 +114,7 @@ private fun SongDetails(song: Song, viewModel: MusicPlayerViewModel, modifier: M
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SongInfoRow(title: String, artist: String) {
     Row(
@@ -121,7 +128,8 @@ private fun SongInfoRow(title: String, artist: String) {
                 style = MaterialTheme.typography.headlineSmall,
                 color = appColors.textPrimary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.basicMarquee()
             )
             Spacer(modifier = Modifier.height(Dimens.spaceXs))
             Text(

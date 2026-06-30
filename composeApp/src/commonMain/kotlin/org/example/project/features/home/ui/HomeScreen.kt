@@ -26,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.ui.component.CoverImage
-import org.example.project.ui.component.marqueeOnHover
 import org.example.project.ui.component.pressableCard
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
@@ -86,7 +85,10 @@ private fun RecentlyPlayedSection(
         contentPadding = PaddingValues(horizontal = Dimens.spaceM, vertical = Dimens.spaceS),
         horizontalArrangement = Arrangement.spacedBy(Dimens.spaceL)
     ) {
-        items(state.recentlyPlayed) {
+        items(
+            items = state.recentlyPlayed,
+            key = { "${it.contentType}:${it.contentId}" }
+        ) {
             RecentlyPlayedItem(
                 recentlyPlayedItem = it,
                 onClick = { onAction(HomeAction.OnRecentPlayedClicked(it)) }

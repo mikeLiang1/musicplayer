@@ -92,7 +92,6 @@ fun MusicPlayerScreen(
 
         HorizontalPager(
             state = pagerState,
-            beyondViewportPageCount = 1,
             modifier = Modifier.weight(1f),
         ) { page ->
             when (page) {

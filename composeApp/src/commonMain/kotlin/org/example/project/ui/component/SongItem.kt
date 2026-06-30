@@ -3,7 +3,9 @@ package org.example.project.ui.component
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,6 +63,7 @@ sealed interface SongItemState {
     data object Manual : SongItemState
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SongItem(
     modifier: Modifier = Modifier,
@@ -144,7 +147,8 @@ fun SongItem(
                 maxLines = 1,
                 fontWeight = FontWeight.SemiBold,
                 color = titleColor,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = if (state is SongItemState.Current) Modifier.basicMarquee() else Modifier
             )
             Text(
                 text = "${song.artist} • ${formatTime(song.duration)}",

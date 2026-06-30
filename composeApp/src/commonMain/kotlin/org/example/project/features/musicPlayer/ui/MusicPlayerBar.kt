@@ -1,6 +1,8 @@
 package org.example.project.features.musicPlayer.ui
 
 import androidx.annotation.OptIn
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -151,6 +153,7 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
     }
 }
 
+@kotlin.OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SongInfoRow(song: Song, modifier: Modifier = Modifier) {
     Row(
@@ -169,7 +172,9 @@ private fun SongInfoRow(song: Song, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = appColors.textPrimary
+                color = appColors.textPrimary,
+                // The mini-player shows a single focal song, so scroll its title when it overflows.
+                modifier = Modifier.basicMarquee()
             )
             Spacer(modifier = Modifier.height(Dimens.spaceXs))
             Text(

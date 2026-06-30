@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.project.core.model.Playlist
 import org.example.project.core.model.PlaylistSong
@@ -63,6 +64,7 @@ fun PlaylistItem(
             Text(
                 text = playlist.name,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
                 color = appColors.textPrimary
             )

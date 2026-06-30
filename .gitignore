@@ -19,3 +19,8 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 composeApp/google-services.json
+
+# Release signing — never commit credentials or keystores
+keystore.properties
+*.jks
+*.keystore

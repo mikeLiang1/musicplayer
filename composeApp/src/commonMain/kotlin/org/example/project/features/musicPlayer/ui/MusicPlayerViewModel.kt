@@ -125,12 +125,15 @@ class MusicPlayerViewModel(
 
     // ── Playback ──────────────────────────────────────
     fun onPlayPauseClicked() {
-        // While buffering, a tap always means "play when ready" — never pause.
-        if (playerState.value.isBuffering) {
-            musicPlayerManager.play()
+        val state = playerState.value
+        // While buffering, a tap toggles the play-when-ready intent: arm it (will play
+        // once loaded) or disarm it (will start paused). Drives the ▶-in-spinner cue.
+        if (state.isBuffering) {
+            if (state.playWhenReady) musicPlayerManager.pause()
+            else musicPlayerManager.play()
             return
         }
-        if (playerState.value.isPlaying) musicPlayerManager.pause()
+        if (state.isPlaying) musicPlayerManager.pause()
         else musicPlayerManager.play()
     }
 

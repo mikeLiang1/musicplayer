@@ -6,5 +6,6 @@ import androidx.compose.runtime.Stable
 data class PlayerState(
     val isPlaying: Boolean = false,
     val durationMs: Long = 0L,
-    val isBuffering: Boolean = false
+    val isBuffering: Boolean = false,
+    val playWhenReady: Boolean = false
 )

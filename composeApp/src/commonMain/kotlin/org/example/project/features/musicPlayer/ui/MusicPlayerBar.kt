@@ -98,11 +98,22 @@ fun MusicPlayerBar(viewModel: MusicPlayerViewModel, modifier: Modifier = Modifie
                             onClick = viewModel::onPlayPauseClicked
                         ) {
                             if (state.isBuffering) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(Dimens.iconS),
-                                    color = appColors.iconPrimary,
-                                    strokeWidth = Dimens.strokeThick
-                                )
+                                // Spinning ring = loading; inner ▶ = "queued to play once loaded".
+                                Box(contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(Dimens.iconS),
+                                        color = appColors.iconPrimary,
+                                        strokeWidth = Dimens.strokeThick
+                                    )
+                                    if (state.playWhenReady) {
+                                        Icon(
+                                            imageVector = Icons.Filled.PlayArrow,
+                                            contentDescription = "Will play when loaded",
+                                            tint = appColors.iconPrimary,
+                                            modifier = Modifier.size(Dimens.iconXs)
+                                        )
+                                    }
+                                }
                             } else {
                                 Icon(
                                     imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,

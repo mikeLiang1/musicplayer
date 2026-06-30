@@ -34,7 +34,7 @@ import kotlin.math.abs
 @Composable
 fun SongPager(
     queue: PlayerQueue,
-    onSongSelected: (uniqueId: String) -> Unit,
+    onSongSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
     pageContent: @Composable (Song) -> Unit,
 ) {

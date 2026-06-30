@@ -37,11 +37,13 @@ object Dimens {
     val iconS = 24.dp
     val iconM = 28.dp
     val iconL = 32.dp
+    val iconXl = 40.dp
 
     // ── Stroke / hairline ────────────────────────────
     val borderHairline = 0.5.dp
     val strokeThin = 1.dp
     val strokeThick = 2.dp
+    val strokeXThick = 3.dp
 
     // ── Elevation ────────────────────────────────────
     val elevationLow = 1.dp

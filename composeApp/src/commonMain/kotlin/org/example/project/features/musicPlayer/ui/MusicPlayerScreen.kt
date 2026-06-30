@@ -66,7 +66,6 @@ fun MusicPlayerScreen(
 ) {
     BackHandler { onDismissRequest() }
 
-    val state by viewModel.playerState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState { 2 }
@@ -107,13 +106,7 @@ fun MusicPlayerScreen(
             Spacer(modifier = Modifier.height(Dimens.spaceL))
 
             PlayerControls(
-                isPlaying = state.isPlaying,
-                isBuffering = state.isBuffering,
-                isShuffled = uiState.isShuffled,
-                playbackMode = uiState.playbackMode,
                 viewModel = viewModel,
-                onPrevious = viewModel::onPreviousClicked,
-                onNext = viewModel::onNextClicked,
                 modifier = Modifier.padding(horizontal = Dimens.spaceXl, vertical = Dimens.spaceL)
             )
 
@@ -228,15 +221,16 @@ private fun PlayerHeader(
 
 @Composable
 private fun PlayerControls(
-    isPlaying: Boolean,
-    isBuffering: Boolean,
-    isShuffled: Boolean,
-    playbackMode: PlaybackMode,
     viewModel: MusicPlayerViewModel,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val state by viewModel.playerState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPlaying = state.isPlaying
+    val isBuffering = state.isBuffering
+    val willPlayWhenReady = state.playWhenReady
+    val isShuffled = uiState.isShuffled
+    val playbackMode = uiState.playbackMode
 
     Column(modifier = modifier) {
 
@@ -260,7 +254,7 @@ private fun PlayerControls(
             }
 
             // Previous button
-            IconButton(onClick = onPrevious) {
+            IconButton(onClick = viewModel::onPreviousClicked) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = "Previous",
@@ -272,11 +266,12 @@ private fun PlayerControls(
             PlayPauseButton(
                 onPressed = viewModel::onPlayPauseClicked,
                 isPlaying = isPlaying,
-                isBuffering = isBuffering
+                isBuffering = isBuffering,
+                willPlayWhenReady = willPlayWhenReady
             )
 
             // Next button
-            IconButton(onClick = onNext) {
+            IconButton(onClick = viewModel::onNextClicked) {
                 Icon(
                     imageVector = Icons.Filled.SkipNext,
                     contentDescription = "Next",

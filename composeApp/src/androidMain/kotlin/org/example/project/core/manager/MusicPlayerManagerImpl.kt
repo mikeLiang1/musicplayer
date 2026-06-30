@@ -89,6 +89,10 @@ class MusicPlayerManagerImpl(
                         }
                     }
 
+                    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                        _playerState.update { it.copy(playWhenReady = playWhenReady) }
+                    }
+
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED) {
                             _currentPosition.value = 0L

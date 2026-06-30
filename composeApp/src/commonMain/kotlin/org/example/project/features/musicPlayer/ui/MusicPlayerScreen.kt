@@ -54,6 +54,7 @@ import kotlinx.coroutines.launch
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.musicPlayer.model.PlayerQueue
 import org.example.project.features.songMenu.ui.SongMenuAction
+import org.example.project.features.songMenu.ui.SongMenuController
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.theme.Dimens
@@ -70,6 +71,8 @@ fun MusicPlayerScreen(
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState { 2 }
 
+    val songMenu = rememberSongMenuController()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -82,6 +85,7 @@ fun MusicPlayerScreen(
             pagerState = pagerState,
             displayQueue = displayQueue,
             uiState = uiState,
+            songMenu = songMenu,
             onHistoryClick = viewModel::onHistoryPillClicked,
             onEditQueueClicked = viewModel::onEditQueueClicked
         )
@@ -94,7 +98,11 @@ fun MusicPlayerScreen(
             when (page) {
                 0 -> SongScreen(song = displayQueue.current, viewModel = viewModel)
 
-                1 -> QueueScreen(viewModel = viewModel, isActivePage = pagerState.currentPage == 1)
+                1 -> QueueScreen(
+                    viewModel = viewModel,
+                    songMenu = songMenu,
+                    isActivePage = pagerState.currentPage == 1
+                )
             }
         }
 
@@ -135,6 +143,7 @@ private fun PlayerHeader(
     pagerState: PagerState,
     displayQueue: PlayerQueue,
     uiState: MusicPlayerUiState,
+    songMenu: SongMenuController,
     onHistoryClick: () -> Unit,
     onEditQueueClicked: () -> Unit
 ) {
@@ -186,19 +195,18 @@ private fun PlayerHeader(
                 DragHandle()
             }
         }
-        val songMenu = rememberSongMenuController(
-            listOf(
-                SongMenuAction.AddToQueue,
-                SongMenuAction.AddToPlaylist,
-                SongMenuAction.GoToArtist,
-                SongMenuAction.GoToAlbum
-            )
-        )
-
         if (pagerState.currentPage == 0) {
             IconButton(onClick = {
                 displayQueue.current?.let {
-                    songMenu.show(it)
+                    songMenu.show(
+                        it,
+                        listOf(
+                            SongMenuAction.AddToQueue,
+                            SongMenuAction.AddToPlaylist,
+                            SongMenuAction.GoToArtist,
+                            SongMenuAction.GoToAlbum
+                        )
+                    )
                 }
             }) {
                 Icon(

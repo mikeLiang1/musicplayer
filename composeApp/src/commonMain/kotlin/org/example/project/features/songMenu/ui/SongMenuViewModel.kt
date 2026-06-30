@@ -1,6 +1,5 @@
 package org.example.project.features.songMenu.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,23 +16,18 @@ class SongMenuViewModel(
     private val playlistRepository: PlaylistRepository,
     private val queueManager: QueueManager
 ) : ViewModel() {
-
-    init {
-        Log.d("logging", "songmenu init")
-    }
-
     private val _uiState = MutableStateFlow(SongMenuState())
     val uiState = _uiState.asStateFlow()
 
     val playlists = playlistRepository.getPlaylists()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun onMenuClicked(song: Song, playlistSongId: String?) {
+    fun onMenuClicked(song: Song, menuActions: List<SongMenuAction>, playlistSongId: String?) {
         _uiState.update {
             it.copy(
                 isMenuSheetVisible = true,
                 selectedSong = song,
-                isManualSongSelected = queueManager.queueState.value.manualQueue.contains(song),
+                menuActions = menuActions,
                 playlistSongId = playlistSongId
             )
         }
@@ -88,6 +82,6 @@ data class SongMenuState(
     val isMenuSheetVisible: Boolean = false,
     val isPlaylistSheetVisible: Boolean = false,
     val selectedSong: Song? = null,
-    val isManualSongSelected: Boolean = false,
+    val menuActions: List<SongMenuAction> = emptyList(),
     val playlistSongId: String? = null
 )

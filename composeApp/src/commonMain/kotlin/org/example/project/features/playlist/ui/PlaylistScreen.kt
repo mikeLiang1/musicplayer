@@ -86,14 +86,13 @@ fun PlaylistScreen(
                 Text("Playlist not found")
             } else {
 
-                val songMenu = rememberSongMenuController(
-                    listOf(
-                        SongMenuAction.AddToQueue,
-                        SongMenuAction.AddToPlaylist,
-                        SongMenuAction.GoToArtist,
-                        SongMenuAction.GoToAlbum,
-                        SongMenuAction.RemoveFromPlaylist
-                    )
+                val songMenu = rememberSongMenuController()
+                val menuActions = listOf(
+                    SongMenuAction.AddToQueue,
+                    SongMenuAction.AddToPlaylist,
+                    SongMenuAction.GoToArtist,
+                    SongMenuAction.GoToAlbum,
+                    SongMenuAction.RemoveFromPlaylist
                 )
                 LazyColumn(
                     contentPadding = PaddingValues(vertical = Dimens.spaceL),
@@ -117,7 +116,7 @@ fun PlaylistScreen(
                                     onAction(PlaylistAction.OnPlaylistSongPressed(song.song, index))
                                 },
                                 onMenuClicked = {
-                                    songMenu.show(song.song, playlistSongId = song.id)
+                                    songMenu.show(song.song, menuActions, playlistSongId = song.id)
                                 },
                                 state = if (state.currentlyPlayingSongId == song.song.uniqueId && state.isPlaylistActive)
                                     SongItemState.Current(state.isPlaying) else SongItemState.Default

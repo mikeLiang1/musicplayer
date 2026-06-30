@@ -36,7 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CancellationException
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.features.songMenu.ui.SongMenuAction
-import org.example.project.features.songMenu.ui.rememberSongMenuController
+import org.example.project.features.songMenu.ui.SongMenuController
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.component.SongItemState
 import org.example.project.ui.theme.Dimens
@@ -46,7 +46,11 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
+fun QueueScreen(
+    viewModel: MusicPlayerViewModel,
+    songMenu: SongMenuController,
+    isActivePage: Boolean = true
+) {
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -111,14 +115,12 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
         }
     }
 
-    val songMenu = rememberSongMenuController(
-        listOf(
-            SongMenuAction.AddToQueue,
-            SongMenuAction.AddToPlaylist,
-            SongMenuAction.GoToArtist,
-            SongMenuAction.GoToAlbum,
-            SongMenuAction.RemoveFromQueue
-        )
+    val menuActions = listOf(
+        SongMenuAction.AddToQueue,
+        SongMenuAction.AddToPlaylist,
+        SongMenuAction.GoToArtist,
+        SongMenuAction.GoToAlbum,
+        SongMenuAction.RemoveFromQueue
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -129,7 +131,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
                 song = currentSong,
                 state = SongItemState.Current(playerState.isPlaying && isActivePage),
                 onClick = { },
-                onMenuClicked = { songMenu.show(currentSong) })
+                onMenuClicked = { songMenu.show(currentSong, menuActions) })
         }
 
         // ── Scrollable queue ─────────────────────────────
@@ -151,7 +153,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
                             song = song,
                             state = SongItemState.Previous,
                             dragHandleModifier = Modifier,
-                            onMenuClicked = { songMenu.show(song) },
+                            onMenuClicked = { songMenu.show(song, menuActions) },
                         ) { viewModel.changePlayingToSong(song.uniqueId) }
                     }
                 }
@@ -166,7 +168,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
                             song = currentSong,
                             state = SongItemState.Current(playerState.isPlaying && isActivePage),
                             dragHandleModifier = Modifier,
-                            onMenuClicked = { songMenu.show(currentSong) }
+                            onMenuClicked = { songMenu.show(currentSong, menuActions) }
                         ) { /* can't tap current to change, already playing */ }
                     }
                 }
@@ -186,7 +188,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
                                 state = SongItemState.Manual,
                                 isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
-                                onMenuClicked = { songMenu.show(song) },
+                                onMenuClicked = { songMenu.show(song, menuActions) },
                                 onRemoveClicked = { viewModel.removeSong(song.uniqueId) }
                             ) { viewModel.changePlayingToSong(song.uniqueId) }
                         }
@@ -204,7 +206,7 @@ fun QueueScreen(viewModel: MusicPlayerViewModel, isActivePage: Boolean = true) {
                                 song = song,
                                 isEditMode = uiState.isEditingQueue,
                                 dragHandleModifier = Modifier.draggableHandle(),
-                                onMenuClicked = { songMenu.show(song) },
+                                onMenuClicked = { songMenu.show(song, menuActions) },
                                 onRemoveClicked = { viewModel.removeSong(song.uniqueId) }
                             ) { viewModel.changePlayingToSong(song.uniqueId) }
                         }

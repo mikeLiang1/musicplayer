@@ -11,17 +11,15 @@ import org.koin.compose.viewmodel.koinViewModel
 class SongMenuController(
     private val viewModel: SongMenuViewModel
 ) {
-    fun show(song: Song, playlistSongId: String? = null) {
+    fun show(song: Song, options: List<SongMenuAction>, playlistSongId: String? = null) {
         // Direct call to the "Source of Truth"
-        viewModel.onMenuClicked(song, playlistSongId)
+        viewModel.onMenuClicked(song, options, playlistSongId)
     }
 }
 
 
 @Composable
-fun rememberSongMenuController(
-    options: List<SongMenuAction>
-): SongMenuController {
+fun rememberSongMenuController(): SongMenuController {
     val viewModel: SongMenuViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
@@ -36,7 +34,7 @@ fun rememberSongMenuController(
             viewModel.onCloseMenuSheet()
         },
         handleBottomSheetAction = viewModel::handleAction,
-        songMenuActions = options
+        songMenuActions = uiState.menuActions
     )
 
     AddToPlaylistBottomSheet(

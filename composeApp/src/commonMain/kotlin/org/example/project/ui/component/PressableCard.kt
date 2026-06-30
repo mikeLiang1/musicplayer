@@ -5,21 +5,13 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import org.example.project.ui.theme.Dimens
 
-fun Modifier.pressableCard(
-    shape: RoundedCornerShape = RoundedCornerShape(Dimens.radiusM),
-    pressedScale: Float = 0.96f,
-    onClick: () -> Unit
-) = composed {
+fun Modifier.pressableCard(onClick: () -> Unit) = composed {
 
     val scale = remember { Animatable(1f) }
 
@@ -27,13 +19,12 @@ fun Modifier.pressableCard(
         scaleX = scale.value
         scaleY = scale.value
     }
-        .clip(shape)
         .pointerInput(Unit) {
             detectTapGestures(
                 onPress = {
                     // Shrink immediately
                     scale.animateTo(
-                        pressedScale,
+                        0.95f,
                         animationSpec = tween(durationMillis = 90)
                     )
 

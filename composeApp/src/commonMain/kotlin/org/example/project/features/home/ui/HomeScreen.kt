@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.ui.component.CoverImage
@@ -100,8 +101,8 @@ private fun RecentlyPlayedItem(recentlyPlayedItem: RecentlyPlayedItem, onClick: 
     Column(
         modifier = Modifier
             .width(Dimens.Size.coverCardWidth)
+            .clip(RoundedCornerShape(Dimens.radiusM))
             .pressableCard(
-                shape = RoundedCornerShape(Dimens.radiusM),
                 onClick = onClick
             )
     ) {

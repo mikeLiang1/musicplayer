@@ -1,6 +1,5 @@
 package org.example.project.features.home.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import org.example.project.core.model.RecentlyPlayedItem
 import org.example.project.ui.component.CoverImage
+import org.example.project.ui.component.marqueeOnHover
+import org.example.project.ui.component.pressableCard
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.Dimens
@@ -81,7 +82,7 @@ private fun RecentlyPlayedSection(
 ) {
     Text("Recently Played", modifier = Modifier.padding(Dimens.spaceM), style = MaterialTheme.typography.bodyLarge)
     LazyRow(
-        contentPadding = PaddingValues(horizontal = Dimens.spaceM),
+        contentPadding = PaddingValues(horizontal = Dimens.spaceM, vertical = Dimens.spaceS),
         horizontalArrangement = Arrangement.spacedBy(Dimens.spaceL)
     ) {
         items(state.recentlyPlayed) {
@@ -96,17 +97,19 @@ private fun RecentlyPlayedSection(
 
 @Composable
 private fun RecentlyPlayedItem(recentlyPlayedItem: RecentlyPlayedItem, onClick: () -> Unit) {
-    // TODO: Change the hover / interaction source
     Column(
         modifier = Modifier
             .width(Dimens.Size.coverCardWidth)
-            .clickable(onClick = onClick)
+            .pressableCard(
+                shape = RoundedCornerShape(Dimens.radiusM),
+                onClick = onClick
+            )
     ) {
         CoverImage(
             data = recentlyPlayedItem.thumbnailUrl,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = Dimens.spaceS),
+                .padding(bottom = Dimens.spaceS),
             shape = RoundedCornerShape(Dimens.radiusM)
         )
         Text(

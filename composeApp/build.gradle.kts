@@ -154,10 +154,16 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            manifestPlaceholders["appName"] = "KotlinProject"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"
         }
         getByName("debug") {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["appName"] = "KotlinProject Debug"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_debug"
+            manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_debug_round"
         }
     }
 

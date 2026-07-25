@@ -28,7 +28,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.example.project.MainActivity
 import org.example.project.core.helper.toMediaItem
+import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.manager.QueueState
 import org.example.project.core.repository.InnerTubeRepository
 import org.example.project.core.repository.NewPipeRepository
 import org.example.project.core.repository.PlaybackRepository
@@ -89,10 +91,7 @@ class MediaService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) {
-                    // TODO: I think this is called when playlist ends
-//                    serviceScope.launch {
-//                        queueManager.playNext()
-//                    }
+                    handleQueueEnded()
                 }
             }
 
@@ -220,6 +219,43 @@ class MediaService : MediaLibraryService() {
                 .setIsPlayable(false)
                 .build()
         ).build()
+
+    /**
+     * ExoPlayer has no more media items to advance into. This never fires mid-queue —
+     * onMediaItemTransition(REASON_AUTO) handles that — only at the true end of baseQueue
+     * with an empty manual queue.
+     */
+    private fun handleQueueEnded() {
+        val state = queueManager.queueState.value
+        when (state.playbackMode) {
+            PlaybackMode.REPEAT -> queueManager.restartFromBeginning()
+            PlaybackMode.Infinite -> refillRadioQueue(state)
+            PlaybackMode.OFF -> Unit // expected: playback stops at the end of the queue
+        }
+    }
+
+    /**
+     * Fetches another radio page seeded by the last song and appends it, then advances into
+     * the first newly-added song. If the radio API only returns songs already in seenIds,
+     * appendRadioSongs() dedupes them to nothing and playback simply stays ended — a known
+     * limitation of the seenIds anti-repeat design, not re-seeded here.
+     */
+    private fun refillRadioQueue(state: QueueState) {
+        val lastSong = state.baseQueue.lastOrNull() ?: return
+        serviceScope.launch {
+            try {
+                val page = innerTubeRepository.getRecommendations(lastSong.url)
+                if (page.songs.isNotEmpty()) {
+                    queueManager.appendRadioSongs(page.songs)
+                    queueManager.playNext()
+                } else {
+                    Log.e("MediaService", "Infinite radio refill returned no songs for: ${lastSong.url}")
+                }
+            } catch (e: Exception) {
+                Log.e("MediaService", "Infinite radio refill failed for: ${lastSong.url}", e)
+            }
+        }
+    }
 
     private fun resolveStreamUrl(youtubeId: String): String {
         purgeCache()

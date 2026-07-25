@@ -780,6 +780,48 @@ class QueueManagerTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
+    //  restartFromBeginning (REPEAT at true queue-end, driven by MediaService)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun `restartFromBeginning resets currentBaseIndex to 0`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 4)
+        manager.restartFromBeginning()
+        assertEquals(0, manager.queueState.value.currentBaseIndex)
+        assertEquals(song1, manager.queueState.value.current)
+    }
+
+    @Test
+    fun `restartFromBeginning clears a lingering currentManualSong`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 4)
+        manager.addToManualQueue(song2)
+        manager.playNext() // manual song becomes current
+        assertNotNull(manager.queueState.value.currentManualSong)
+
+        manager.restartFromBeginning()
+        assertNull(manager.queueState.value.currentManualSong)
+        assertEquals(0, manager.queueState.value.currentBaseIndex)
+    }
+
+    @Test
+    fun `restartFromBeginning preserves baseQueue contents and playbackMode`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 4)
+        manager.togglePlaybackMode() // OFF -> REPEAT
+        manager.restartFromBeginning()
+        assertEquals(allSongs, manager.queueState.value.baseQueue)
+        assertEquals(PlaybackMode.REPEAT, manager.queueState.value.playbackMode)
+    }
+
+    @Test
+    fun `restartFromBeginning emits SeekToItem at index 0`() {
+        manager.setBaseQueue(allSongs, currentBaseIndex = 4)
+        drain()
+        manager.restartFromBeginning()
+        drain()
+        assertEquals(QueueIntent.SeekToItem(0), collectedIntents.last())
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
     //  hasNext / hasPrevious
     // ═══════════════════════════════════════════════════════════════════════════
 

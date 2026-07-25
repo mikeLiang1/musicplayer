@@ -368,6 +368,18 @@ class QueueManager() {
     }
 
     /**
+     * Loops the base queue back to its first song. Used when playback reaches the natural
+     * end of the queue while playbackMode == REPEAT. Assumes no manual queue is pending
+     * (true at real queue-end, since playNext() always drains manual songs first).
+     */
+    fun restartFromBeginning() {
+        _queueState.update { state ->
+            state.copy(currentBaseIndex = 0, currentManualSong = null)
+        }
+        _intent.trySend(QueueIntent.SeekToItem(0))
+    }
+
+    /**
      * Cycles repeat mode: OFF → ALL → ONE → OFF
      */
     fun togglePlaybackMode() {

@@ -15,6 +15,17 @@ import org.example.project.core.model.Song
 import org.schabi.newpipe.extractor.timeago.patterns.it
 
 fun parseSearchPage(root: JsonObject): SearchResult {
+    // "Load more" continuation responses have a different shape: the songs live under
+    // continuationContents.musicShelfContinuation with no sectionListRenderer and no title,
+    // so the initial-response path below would return an empty result and stop pagination.
+    root.findObjectWithKey("musicShelfContinuation")?.let { continuation ->
+        val items = continuation["contents"]?.jsonArray ?: return SearchResult()
+        return SearchResult(
+            songs = items.mapNotNull { parseSongItem(it.jsonObject) },
+            continuationToken = continuation.parseContinuationToken()
+        )
+    }
+
     val sectionList =
         root.findObjectWithKey("sectionListRenderer") ?: return SearchResult()
     val shelves = sectionList["contents"]?.jsonArray ?: return SearchResult()
@@ -37,20 +48,23 @@ fun parseSearchPage(root: JsonObject): SearchResult {
             "Artists" -> artists.addAll(items.mapNotNull { parseArtistItem(it.jsonObject) })
         }
         if (continuationToken == null) {
-            continuationToken = renderer["continuations"]
-                ?.jsonArray
-                ?.firstOrNull()
-                ?.jsonObject
-                ?.get("nextContinuationData")
-                ?.jsonObject
-                ?.get("continuation")
-                ?.jsonPrimitive
-                ?.content
+            continuationToken = renderer.parseContinuationToken()
         }
     }
 
     return SearchResult(songs, albums, artists, continuationToken)
 }
+
+private fun JsonObject.parseContinuationToken(): String? =
+    this["continuations"]
+        ?.jsonArray
+        ?.firstOrNull()
+        ?.jsonObject
+        ?.get("nextContinuationData")
+        ?.jsonObject
+        ?.get("continuation")
+        ?.jsonPrimitive
+        ?.content
 
 fun parseSongItem(item: JsonObject): Song? {
     val renderer = item["musicResponsiveListItemRenderer"]?.jsonObject ?: return null

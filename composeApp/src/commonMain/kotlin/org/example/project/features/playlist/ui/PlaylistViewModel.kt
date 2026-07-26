@@ -73,7 +73,25 @@ class PlaylistViewModel(
             }
 
             PlaylistAction.OnPlayPressed -> {
+                val state = uiState.value
+                val playlist = state.playlist ?: return
+                if (playlist.songs.isEmpty()) return
 
+                if (state.isPlaylistActive) {
+                    // Already our queue — the FAB is a plain play/pause toggle.
+                    if (state.isPlaying) musicPlayerManager.pause() else musicPlayerManager.play()
+                } else {
+                    viewModelScope.launch {
+                        // setBaseQueue sets autoPlay and emits NewQueue, so this starts playback.
+                        queueManager.setBaseQueue(
+                            songs = playlist.songs.map { it.song },
+                            contextId = playlistId,
+                            currentBaseIndex = 0
+                        )
+                        recentlyPlaylistRepository.recordPlaylist(playlist)
+                        playlistRepository.markPlayed(playlistId)
+                    }
+                }
             }
 
             PlaylistAction.OnSearchPressed -> {
@@ -81,7 +99,22 @@ class PlaylistViewModel(
             }
 
             PlaylistAction.OnShuffledPressed -> {
+                val state = uiState.value
+                val playlist = state.playlist ?: return
+                if (playlist.songs.isEmpty()) return
 
+                viewModelScope.launch {
+                    // Start on a random song, then shuffle() randomises everything after it —
+                    // otherwise shuffle-play would always open with the playlist's first track.
+                    queueManager.setBaseQueue(
+                        songs = playlist.songs.map { it.song },
+                        contextId = playlistId,
+                        currentBaseIndex = playlist.songs.indices.random()
+                    )
+                    queueManager.shuffle()
+                    recentlyPlaylistRepository.recordPlaylist(playlist)
+                    playlistRepository.markPlayed(playlistId)
+                }
             }
         }
     }

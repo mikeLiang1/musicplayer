@@ -41,9 +41,10 @@ class LikedSongsViewModel(
         )
 
     fun handleAction(action: LikedSongsAction) {
+        val state = uiState.value
+
         when (action) {
             is LikedSongsAction.OnSongClicked -> {
-                val state = uiState.value
                 if (!state.isContextActive) {
                     queueManager.setBaseQueue(
                         songs = state.songs,
@@ -52,6 +53,37 @@ class LikedSongsViewModel(
                     )
                 }
                 queueManager.playSongFromQueue(action.song.uniqueId)
+            }
+
+            LikedSongsAction.OnPlayPressed -> {
+                if (state.songs.isEmpty()) return
+                if (state.isContextActive) {
+                    // Already our queue — the FAB is a plain play/pause toggle.
+                    if (state.isPlaying) musicPlayerManager.pause() else musicPlayerManager.play()
+                } else {
+                    // setBaseQueue sets autoPlay and emits NewQueue, so this starts playback.
+                    queueManager.setBaseQueue(
+                        songs = state.songs,
+                        contextId = LIKED_SONGS_CONTEXT_ID,
+                        currentBaseIndex = 0
+                    )
+                }
+            }
+
+            LikedSongsAction.OnShufflePressed -> {
+                if (state.songs.isEmpty()) return
+                // Start on a random song, then shuffle() randomises everything after it —
+                // otherwise shuffle-play would always open with the most recently liked song.
+                queueManager.setBaseQueue(
+                    songs = state.songs,
+                    contextId = LIKED_SONGS_CONTEXT_ID,
+                    currentBaseIndex = state.songs.indices.random()
+                )
+                queueManager.shuffle()
+            }
+
+            LikedSongsAction.OnMenuPressed -> {
+                // TODO: no collection-level menu yet (PlaylistAction.OnMenuPressed is also a stub)
             }
         }
     }
@@ -67,4 +99,7 @@ data class LikedSongsUiState(
 
 sealed interface LikedSongsAction {
     data class OnSongClicked(val song: Song, val index: Int) : LikedSongsAction
+    data object OnPlayPressed : LikedSongsAction
+    data object OnShufflePressed : LikedSongsAction
+    data object OnMenuPressed : LikedSongsAction
 }

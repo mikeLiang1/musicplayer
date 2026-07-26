@@ -1,33 +1,12 @@
 package org.example.project.features.playlist.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.project.core.model.Playlist
@@ -36,153 +15,72 @@ import org.example.project.core.model.Song
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.CoverImage
-import org.example.project.ui.component.PlayPauseButton
-import org.example.project.ui.component.SongItem
-import org.example.project.ui.component.SongItemState
+import org.example.project.ui.component.SongCollectionHeader
+import org.example.project.ui.component.SongCollectionScaffold
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.Dimens
-import org.example.project.ui.theme.appColors
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val playlistSongMenuActions = listOf(
+    SongMenuAction.AddToQueue,
+    SongMenuAction.AddToPlaylist,
+    SongMenuAction.GoToArtist,
+    SongMenuAction.GoToAlbum,
+    SongMenuAction.RemoveFromPlaylist
+)
+
 @Composable
 fun PlaylistScreen(
     state: PlaylistUiState,
     onBackPressed: () -> Unit,
     onAction: (PlaylistAction) -> Unit
 ) {
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .background(color = appColors.backgroundElevated)
-                    .fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = onBackPressed
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
-                }
+    val songMenu = rememberSongMenuController()
+    val playlist = state.playlist
 
-                Text(text = state.playlist?.name ?: "", color = appColors.textPrimary)
-
-                IconButton(onClick = { onAction(PlaylistAction.OnSearchPressed) }) {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
-                }
+    SongCollectionScaffold(
+        title = playlist?.name ?: "",
+        items = playlist?.songs ?: emptyList(),
+        songOf = { it.song },
+        itemKey = { it.id },
+        onBackPressed = onBackPressed,
+        onSongClicked = { playlistSong, index ->
+            onAction(PlaylistAction.OnPlaylistSongPressed(playlistSong.song, index))
+        },
+        onSongMenuClicked = { playlistSong ->
+            songMenu.show(playlistSong.song, playlistSongMenuActions, playlistSongId = playlistSong.id)
+        },
+        isLoading = state.isLoading,
+        emptyMessage = if (playlist == null) "Playlist not found" else "No songs in playlist",
+        currentlyPlayingSongId = state.currentlyPlayingSongId,
+        isContextActive = state.isPlaylistActive,
+        isPlaying = state.isPlaying,
+        topBarActions = {
+            IconButton(onClick = { onAction(PlaylistAction.OnSearchPressed) }) {
+                Icon(Icons.Default.Search, contentDescription = "Search")
             }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            if (state.isLoading) {
-                CircularProgressIndicator()
-            } else if (state.playlist == null) {
-                Text("Playlist not found")
-            } else {
-
-                val songMenu = rememberSongMenuController()
-                val menuActions = listOf(
-                    SongMenuAction.AddToQueue,
-                    SongMenuAction.AddToPlaylist,
-                    SongMenuAction.GoToArtist,
-                    SongMenuAction.GoToAlbum,
-                    SongMenuAction.RemoveFromPlaylist
+        },
+        header = playlist?.let {
+            {
+                SongCollectionHeader(
+                    songCount = it.songs.count(),
+                    isPlaying = state.isPlaying && state.isPlaylistActive,
+                    onShufflePressed = { onAction(PlaylistAction.OnShuffledPressed) },
+                    onMenuPressed = { onAction(PlaylistAction.OnMenuPressed) },
+                    onPlayPressed = { onAction(PlaylistAction.OnPlayPressed) },
+                    title = it.name,
+                    artwork = {
+                        CoverImage(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Dimens.Size.playlistCoverInset),
+                            data = it.thumbnailUrl
+                        )
+                    }
                 )
-                LazyColumn(
-                    contentPadding = PaddingValues(vertical = Dimens.spaceL),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    item {
-                        PlaylistHeader(playlist = state.playlist, onAction = onAction, state.isPlaying)
-                    }
-                    item {
-                        HorizontalDivider(color = appColors.divider, modifier = Modifier.padding(vertical = Dimens.spaceM))
-                    }
-                    if (state.playlist.songs.isEmpty()) {
-                        item {
-                            Text("No songs in playlist")
-                        }
-                    } else {
-                        itemsIndexed(state.playlist.songs, key = { _, item -> item.id }) { index, song ->
-                            SongItem(
-                                song = song.song,
-                                onClick = {
-                                    onAction(PlaylistAction.OnPlaylistSongPressed(song.song, index))
-                                },
-                                onMenuClicked = {
-                                    songMenu.show(song.song, menuActions, playlistSongId = song.id)
-                                },
-                                state = if (state.currentlyPlayingSongId == song.song.uniqueId && state.isPlaylistActive)
-                                    SongItemState.Current(state.isPlaying) else SongItemState.Default
-                            )
-                        }
-                    }
-                }
             }
         }
-    }
-}
-
-@Composable
-private fun PlaylistHeader(playlist: Playlist, onAction: (PlaylistAction) -> Unit, isPlaying: Boolean) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        CoverImage(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Dimens.Size.playlistCoverInset), data = playlist.thumbnailUrl
-        )
-
-        Text(
-            playlist.name,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = Dimens.spaceM)
-        )
-
-        Row(
-            modifier = Modifier
-                .padding(top = Dimens.spaceS)
-                .padding(horizontal = Dimens.spaceM)
-        ) {
-            Text(
-                "${playlist.songs.count()} songs", style = MaterialTheme.typography.bodySmall,
-                color = appColors.textMuted
-            )
-            // TODO: Total duration ?
-
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
-            Row {
-                IconButton(onClick = { onAction(PlaylistAction.OnShuffledPressed) }) {
-
-                    Icon(Icons.Default.Shuffle, contentDescription = "shuffle")
-                }
-
-                Spacer(modifier = Modifier.width(Dimens.spaceM))
-                IconButton(onClick = { onAction(PlaylistAction.OnMenuPressed) }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
-                }
-            }
-
-            PlayPauseButton(
-                onPressed = { onAction(PlaylistAction.OnPlayPressed) },
-                isPlaying = isPlaying,
-                modifier = Modifier.padding(end = Dimens.spaceM)
-            )
-        }
-    }
+    )
 }
 
 @DevicePreviews

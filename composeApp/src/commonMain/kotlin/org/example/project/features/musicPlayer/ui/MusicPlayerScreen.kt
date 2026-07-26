@@ -111,7 +111,11 @@ fun MusicPlayerScreen(
             modifier = Modifier.weight(1f),
         ) { page ->
             when (page) {
-                0 -> SongScreen(song = displayQueue.current, viewModel = viewModel)
+                0 -> SongScreen(
+                    song = displayQueue.current,
+                    viewModel = viewModel,
+                    songMenu = songMenu
+                )
 
                 1 -> QueueScreen(
                     viewModel = viewModel,

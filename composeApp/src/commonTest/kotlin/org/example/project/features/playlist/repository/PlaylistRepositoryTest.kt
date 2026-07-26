@@ -153,11 +153,60 @@ class PlaylistRepositoryTest {
         assertEquals(1, repository.getLikedSongCount().first())
     }
 
-    // ── isSongLiked ───────────────────────────────────────────────────────────
+    // ── likeSong / unlikeSong ─────────────────────────────────────────────────
+
+    @Test
+    fun likeSong_twice_staysLikedAndKeepsOriginalLikedAt() = runBlocking {
+        val song1 = song("song1")
+        clock.now = 100L
+        repository.likeSong(song1)
+        clock.now = 200L
+        repository.likeSong(song1) // the player heart may fire again before state settles
+
+        assertTrue(repository.isSongLiked(song1.url))
+        assertEquals(1, repository.getLikedSongCount().first())
+        assertEquals(100L, dao.likedSongs.value[song1.url]?.likedAt)
+    }
+
+    @Test
+    fun unlikeSong_removesOnlyTheLikeMark() = runBlocking {
+        val song1 = song("song1")
+        repository.likeSong(song1)
+        repository.unlikeSong(song1.url)
+
+        assertFalse(repository.isSongLiked(song1.url))
+        assertTrue(dao.songs.value.containsKey(song1.url))
+    }
+
+    // ── isSongLiked / observeIsSongLiked ──────────────────────────────────────
 
     @Test
     fun isSongLiked_onUnknownSong_isFalse() = runBlocking {
         assertFalse(repository.isSongLiked("url-never-seen"))
+    }
+
+    @Test
+    fun observeIsSongLiked_emitsAcrossLikeAndUnlike() = runBlocking {
+        val song1 = song("song1")
+        val liked = repository.observeIsSongLiked(song1.url)
+
+        assertFalse(liked.first())
+
+        repository.likeSong(song1)
+        assertTrue(liked.first())
+
+        repository.unlikeSong(song1.url)
+        assertFalse(liked.first())
+    }
+
+    @Test
+    fun observeIsSongLiked_isScopedToItsOwnSong() = runBlocking {
+        val song1 = song("song1")
+        val song2 = song("song2")
+        repository.likeSong(song2)
+
+        assertFalse(repository.observeIsSongLiked(song1.url).first())
+        assertTrue(repository.observeIsSongLiked(song2.url).first())
     }
 }
 
@@ -221,6 +270,9 @@ private class FakePlaylistDao : PlaylistDao {
     override suspend fun getSong(url: String): SongEntity? = songs.value[url]
 
     override suspend fun isSongLiked(url: String): Boolean = likedSongs.value.containsKey(url)
+
+    override fun observeIsSongLiked(url: String): Flow<Boolean> =
+        likedSongs.map { it.containsKey(url) }
 
     override suspend fun insertLikedSong(likedSong: LikedSongEntity) {
         // OnConflictStrategy.IGNORE semantics: never overwrite an existing row.

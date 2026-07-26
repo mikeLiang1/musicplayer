@@ -15,6 +15,11 @@ class SongMenuController(
         // Direct call to the "Source of Truth"
         viewModel.onMenuClicked(song, options, playlistSongId)
     }
+
+    /** Skips the song menu and opens the add-to-playlist sheet straight away. */
+    fun showAddToPlaylist(song: Song) {
+        viewModel.onAddToPlaylistClicked(song)
+    }
 }
 
 
@@ -23,6 +28,8 @@ fun rememberSongMenuController(): SongMenuController {
     val viewModel: SongMenuViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
+    val isSelectedSongLiked by viewModel.isSelectedSongLiked.collectAsStateWithLifecycle()
+    val likedSongCount by viewModel.likedSongCount.collectAsStateWithLifecycle()
 
     val controller = remember {
         SongMenuController(viewModel = viewModel)
@@ -41,6 +48,9 @@ fun rememberSongMenuController(): SongMenuController {
         isBottomSheetVisible = uiState.isPlaylistSheetVisible,
         onCloseBottomSheet = viewModel::onClosePlaylistSheet,
         playlists = playlists,
+        isSongLiked = isSelectedSongLiked,
+        likedSongCount = likedSongCount,
+        onLikedSongsClicked = viewModel::toggleLikeForSelectedSong,
         onPlaylistClicked = viewModel::addSongToSelectedPlaylist
     )
 

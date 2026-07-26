@@ -49,6 +49,9 @@ interface PlaylistDao {
     @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE songUrl = :url)")
     suspend fun isSongLiked(url: String): Boolean
 
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE songUrl = :url)")
+    fun observeIsSongLiked(url: String): Flow<Boolean>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLikedSong(likedSong: LikedSongEntity)
 

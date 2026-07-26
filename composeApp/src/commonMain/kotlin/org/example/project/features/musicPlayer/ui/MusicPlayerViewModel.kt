@@ -2,6 +2,7 @@ package org.example.project.features.musicPlayer.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,6 +17,8 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -29,13 +32,15 @@ import org.example.project.core.manager.QueueManager
 import org.example.project.core.manager.QueueState
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
+import org.example.project.features.playlist.repository.PlaylistRepository
 import kotlin.time.Clock
 
 @OptIn(FlowPreview::class)
 class MusicPlayerViewModel(
     private val musicPlayerManager: MusicPlayerManager,
     private val queueManager: QueueManager,
-    private val playbackRepository: PlaybackRepository
+    private val playbackRepository: PlaybackRepository,
+    private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
 
     // Owned, mutable UI bits (fullscreen, history pill, queue editing).
@@ -68,6 +73,17 @@ class MusicPlayerViewModel(
             SharingStarted.Eagerly,
             queueManager.queueState.value.toPlayerQueue()
         )
+
+    // Liked state for the now-playing song, observed from the DB so it stays right when the
+    // song is liked/unliked elsewhere (song menu, add-to-playlist sheet, Liked Songs screen).
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val isCurrentSongLiked: StateFlow<Boolean> = queueManager.queueState
+        .map { it.current?.url }
+        .distinctUntilChanged()
+        .flatMapLatest { url ->
+            if (url == null) flowOf(false) else playlistRepository.observeIsSongLiked(url)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     init {
         // Attach the intent observer BEFORE restore so the NewQueue intent emitted during
@@ -158,6 +174,15 @@ class MusicPlayerViewModel(
     }
 
     fun togglePlaybackMode() = queueManager.togglePlaybackMode()
+
+    // ── Like ──────────────────────────────────────────
+    /** Idempotent: only ever adds. Unliking happens from the add-to-playlist sheet. */
+    fun likeCurrentSong() {
+        val song = queueManager.queueState.value.current ?: return
+        viewModelScope.launch {
+            playlistRepository.likeSong(song)
+        }
+    }
 
     // ── Sleep Timer ───────────────────────────────────
     private var sleepTimerJob: Job? = null

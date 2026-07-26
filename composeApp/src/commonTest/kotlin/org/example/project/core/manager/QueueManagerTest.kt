@@ -446,6 +446,39 @@ class QueueManagerTest {
         assertEquals(1, manager.queueState.value.manualQueue.size)
     }
 
+    @Test
+    fun `addToManualQueue list appends in order with fresh uniqueIds and one ReplaceQueue`() {
+        manager.setBaseQueue(listOf(song1, song2))
+        manager.addToManualQueue(song5)
+        drain()
+        collectedIntents.clear()
+
+        manager.addToManualQueue(listOf(song3, song4))
+        drain()
+
+        val manualQueue = manager.queueState.value.manualQueue
+        assertEquals(listOf(song5.title, song3.title, song4.title), manualQueue.map { it.title })
+        assertNotEquals(song3.uniqueId, manualQueue[1].uniqueId)
+        assertNotEquals(song4.uniqueId, manualQueue[2].uniqueId)
+
+        // One rebuild for the whole batch, not one per song.
+        assertEquals(1, collectedIntents.size)
+        assertTrue(collectedIntents.last() is QueueIntent.ReplaceQueue)
+    }
+
+    @Test
+    fun `addToManualQueue list is a no-op when empty`() {
+        manager.setBaseQueue(allSongs)
+        drain()
+        collectedIntents.clear()
+
+        manager.addToManualQueue(emptyList())
+        drain()
+
+        assertTrue(manager.queueState.value.manualQueue.isEmpty())
+        assertTrue(collectedIntents.isEmpty())
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     //  playSongFromQueue
     // ═══════════════════════════════════════════════════════════════════════════

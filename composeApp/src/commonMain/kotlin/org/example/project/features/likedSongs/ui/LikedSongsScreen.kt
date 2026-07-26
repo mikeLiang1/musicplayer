@@ -2,6 +2,7 @@ package org.example.project.features.likedSongs.ui
 
 import androidx.compose.runtime.Composable
 import org.example.project.core.model.Song
+import org.example.project.features.collectionMenu.ui.rememberCollectionMenuController
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.SongCollectionHeader
@@ -20,9 +21,12 @@ private val likedSongMenuActions = listOf(
 fun LikedSongsScreen(
     state: LikedSongsUiState,
     onBackPressed: () -> Unit,
-    onAction: (LikedSongsAction) -> Unit
+    onAction: (LikedSongsAction) -> Unit,
+    onMessage: (String) -> Unit = {}
 ) {
     val songMenu = rememberSongMenuController()
+    // No onDeleted: Liked Songs is a system collection, so its menu has no delete row.
+    val collectionMenu = rememberCollectionMenuController(onMessage = onMessage)
 
     SongCollectionScaffold(
         title = "Liked Songs",
@@ -43,7 +47,12 @@ fun LikedSongsScreen(
                 songCount = state.songs.count(),
                 isPlaying = state.isPlaying && state.isContextActive,
                 onShufflePressed = { onAction(LikedSongsAction.OnShufflePressed) },
-                onMenuPressed = { onAction(LikedSongsAction.OnMenuPressed) },
+                // Nothing to queue when empty, so the ⋮ would open an empty sheet — hide it.
+                onMenuPressed = if (state.songs.isEmpty()) {
+                    null
+                } else {
+                    { collectionMenu.show(title = "Liked Songs", songs = state.songs) }
+                },
                 onPlayPressed = { onAction(LikedSongsAction.OnPlayPressed) }
             )
         }

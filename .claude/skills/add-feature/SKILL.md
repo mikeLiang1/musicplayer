@@ -104,6 +104,15 @@ entry<Route.DashboardRoutes.LibraryRoutes.Library> {
 ### How screens get Navigator and SongMenuController
 - `Navigator` is **not injected via Koin**. Each navigation composable builds its own: `val navigator = remember { Navigator(navigationState) }` (see `DashboardNavigation.kt`, `LibraryNavigation.kt`). Cross-level navigation is done with lambdas passed down, e.g. `LibraryNavigation(navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) })`.
 - Song context menu: call `rememberSongMenuController()` (from `features/songMenu/ui/SongMenuController.kt`) inside a screen. It obtains `SongMenuViewModel` via Koin, composes the two bottom sheets itself, and returns a controller with `show(song, options, playlistSongId)`. Called in `PlaylistScreen.kt` and `MusicPlayerScreen.kt` (which passes the controller down to `QueueScreen` as a parameter — don't call it twice in nested composables or you compose duplicate sheets).
+- Collection (⋮ on a whole playlist / liked songs) menu: same pattern, `rememberCollectionMenuController(onDeleted, onMessage)` from `features/collectionMenu/ui/CollectionMenuController.kt`. It composes the menu sheet, rename sheet and delete confirmation, and returns `show(playlist)` / `show(title, songs)`. Used by `PlaylistScreen` and `LikedSongsScreen`.
+
+### Menus belong in their own ViewModel, not the host screen's
+
+A menu that carries state (which sheet is open, in-progress rename text, a pending confirmation) gets its **own ViewModel + `remember…Controller()` composable**, so host screens keep their original Action set. Two exist — `SongMenuViewModel` (subject: one `Song`) and `CollectionMenuViewModel` (subject: a `CollectionMenuTarget` — a playlist or a system collection) — and a third subject (e.g. a queue menu) should be a third VM, not extra fields on an existing one. They share only rendering, via `MenuBottomSheet` + the `MenuAction` interface (see the `ui-components` skill).
+
+The controller snapshots its subject when the sheet opens (`show(playlist)`), rather than observing Room itself — the host screen already has the loaded data.
+
+Because these VMs sit outside the navigation composable, their one-shot results come back as **callbacks passed to `remember…Controller()`**, not Effects collected in navigation: `onDeleted` (the playlist this screen shows is gone — `PlaylistScreen` passes its own `onBackPressed`) and `onMessage` (snackbar text; screens take an `onMessage: (String) -> Unit` param that the navigation composable wires to `snackbarHostState`). Inside the controller these are read through `rememberUpdatedState` so the long-lived collector never calls a stale lambda.
 
 ## Recipe: new feature screen
 

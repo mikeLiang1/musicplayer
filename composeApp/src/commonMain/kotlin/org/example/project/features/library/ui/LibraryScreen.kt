@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import org.example.project.features.library.model.LibraryItem
 import org.example.project.features.library.model.stableKey
 import org.example.project.ui.component.PlaylistItem
+import org.example.project.ui.component.PlaylistNameBottomSheet
 import org.example.project.ui.component.pressableCard
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
@@ -57,7 +58,7 @@ fun LibraryScreen(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
         LibraryColumn(modifier = Modifier.padding(padding), state = state, onAction = onAction)
     }
 
-    CreatePlaylistBottomSheet(
+    PlaylistNameBottomSheet(
         isVisible = state.createPlaylist.isVisible,
         name = state.createPlaylist.name,
         isSaving = state.createPlaylist.isSaving,

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.core.model.Song
+import org.example.project.ui.component.MenuBottomSheet
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -36,13 +37,11 @@ fun rememberSongMenuController(): SongMenuController {
         SongMenuController(viewModel = viewModel)
     }
 
-    SongMenuBottomSheet(
-        isMenuBottomSheetVisible = uiState.isMenuSheetVisible,
-        onCloseBottomSheet = {
-            viewModel.onCloseMenuSheet()
-        },
-        handleBottomSheetAction = viewModel::handleAction,
-        songMenuActions = uiState.menuActions
+    MenuBottomSheet(
+        isVisible = uiState.isMenuSheetVisible,
+        actions = uiState.menuActions,
+        onActionSelected = viewModel::handleAction,
+        onDismissRequest = { viewModel.onCloseMenuSheet() }
     )
 
     AddToPlaylistBottomSheet(

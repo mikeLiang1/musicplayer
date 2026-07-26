@@ -64,11 +64,36 @@ It owns the `Scaffold` + back-arrow top bar (title `titleLarge`, single-line ell
 Does NOT support drag-to-reorder. If PlaylistScreen ever needs it, add it here behind a flag rather than forking the scaffold.
 
 ### SongCollectionHeader.kt — the header for those screens
-`SongCollectionHeader(songCount, isPlaying, onShufflePressed, onMenuPressed, onPlayPressed, modifier, title: String? = null, artwork: (@Composable () -> Unit)? = null)`. Song count + shuffle/menu icon row + `PlayPauseButton`, built for `SongCollectionScaffold`'s `header` slot.
+`SongCollectionHeader(songCount, isPlaying, onShufflePressed, onMenuPressed: (() -> Unit)?, onPlayPressed, modifier, title: String? = null, artwork: (@Composable () -> Unit)? = null)`. Song count + shuffle/menu icon row + `PlayPauseButton`, built for `SongCollectionScaffold`'s `header` slot.
+
+`onMenuPressed` is nullable and **hides the ⋮ when null** — pass null when the collection has no menu-worthy actions (LikedSongsScreen does this while empty; a ⋮ opening an empty sheet is worse than no ⋮). Wire the non-null case straight to the controller: `onMenuPressed = { collectionMenu.show(playlist) }`.
 
 Both extras are optional slots: PlaylistScreen passes `artwork = { CoverImage(...) }` and `title = playlist.name`; LikedSongsScreen passes neither (no cover art exists, and the scaffold top bar already names it), so it renders as count + controls only.
 
 **Pass `isPlaying = state.isPlaying && isContextActive`** — bare `state.isPlaying` makes the FAB show "pause" while a *different* collection is what's playing.
+
+### MenuBottomSheet.kt — every ⋮ menu in the app
+The sheet chrome (`ModalBottomSheet` + drag handle + `appColors.backgroundElevated`) plus the row renderer, shared by the per-song menu and the collection menu:
+
+```kotlin
+fun <T : MenuAction> MenuBottomSheet(
+    isVisible: Boolean,
+    actions: List<T>,
+    onActionSelected: (T) -> Unit,
+    onDismissRequest: () -> Unit
+)
+fun MenuBottomSheetItem(modifier: Modifier = Modifier, action: MenuAction, onClick: () -> Unit)
+```
+
+Rows are described by the `MenuAction` interface (`label`, `icon`, `accent: MenuAccent = Neutral`). Implement it with a **feature-local sealed class**, never by adding rows to someone else's: `SongMenuAction` (per-song) and `CollectionMenuAction` (per-collection) both do this. `MenuAccent` (`Neutral` / `Like` / `Destructive`) picks the icon-chip and label colors — `Destructive` is `appColors.error`.
+
+Selecting a row hides the sheet, then fires `onDismissRequest` followed by `onActionSelected`, so an action that opens *another* sheet (add-to-playlist, rename) doesn't fight this one's exit animation. Don't re-close the sheet from your handler.
+
+### PlaylistNameBottomSheet.kt — naming a playlist
+`PlaylistNameBottomSheet(isVisible, name, isSaving, onNameChange, onConfirm, onDismissRequest, title = "New playlist", confirmLabel = "Create")`. `BasicTextField` in a bordered rounded box, keyboard auto-shown, and the incoming `name` arrives fully selected so the first keystroke replaces it. Library's "+" uses the defaults; the collection menu's rename passes `title = "Rename playlist", confirmLabel = "Save"`. Gate `onConfirm` on `name.isNotBlank() && !isSaving` in the caller too — the sheet only dims the button.
+
+### ConfirmDialog.kt — stop sign for irreversible actions
+`ConfirmDialog(isVisible, title, message, confirmLabel, onConfirm, onDismissRequest, isDestructive = false, dismissLabel = "Cancel")`. Material3 `AlertDialog` in app colors; `isDestructive` tints the confirm label with `appColors.error`. A dialog rather than a sheet on purpose — it can appear over a sheet. Used by the delete-playlist flow.
 
 ### PlaylistItem.kt
 Simple playlist row: `PlaylistItem(modifier, playlist: Playlist, onClick, trailing: @Composable (() -> Unit)? = null)`. Cover thumb (`Dimens.Size.coverThumb`) + name + "Playlist • N songs" subtitle. Used by LibraryScreen (no trailing) and `AddToPlaylistBottomSheet`, which passes a `Checkbox` as `trailing` to show whether the song is already in that playlist. The trailing slot renders after the weighted text `Column`, separated by `Dimens.spaceS`; omit it and the row lays out exactly as before.

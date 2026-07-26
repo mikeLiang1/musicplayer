@@ -14,6 +14,7 @@ import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
+import org.example.project.features.collectionMenu.ui.rememberCollectionMenuController
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.component.SongCollectionHeader
 import org.example.project.ui.component.SongCollectionScaffold
@@ -33,9 +34,15 @@ private val playlistSongMenuActions = listOf(
 fun PlaylistScreen(
     state: PlaylistUiState,
     onBackPressed: () -> Unit,
-    onAction: (PlaylistAction) -> Unit
+    onAction: (PlaylistAction) -> Unit,
+    onMessage: (String) -> Unit = {}
 ) {
     val songMenu = rememberSongMenuController()
+    // Deleting the playlist deletes what this screen shows, so leaving is our back action.
+    val collectionMenu = rememberCollectionMenuController(
+        onDeleted = onBackPressed,
+        onMessage = onMessage
+    )
     val playlist = state.playlist
 
     SongCollectionScaffold(
@@ -60,21 +67,21 @@ fun PlaylistScreen(
                 Icon(Icons.Default.Search, contentDescription = "Search")
             }
         },
-        header = playlist?.let {
+        header = playlist?.let { loaded ->
             {
                 SongCollectionHeader(
-                    songCount = it.songs.count(),
+                    songCount = loaded.songs.count(),
                     isPlaying = state.isPlaying && state.isPlaylistActive,
                     onShufflePressed = { onAction(PlaylistAction.OnShuffledPressed) },
-                    onMenuPressed = { onAction(PlaylistAction.OnMenuPressed) },
+                    onMenuPressed = { collectionMenu.show(loaded) },
                     onPlayPressed = { onAction(PlaylistAction.OnPlayPressed) },
-                    title = it.name,
+                    title = loaded.name,
                     artwork = {
                         CoverImage(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = Dimens.Size.playlistCoverInset),
-                            data = it.thumbnailUrl
+                            data = loaded.thumbnailUrl
                         )
                     }
                 )

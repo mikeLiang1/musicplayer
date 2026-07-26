@@ -22,6 +22,7 @@ import org.example.project.core.repository.PlaybackRepository
 import org.example.project.core.repository.RecentlyPlayedRepository
 import org.example.project.core.SpeechRecognizer
 import org.example.project.core.usecase.PlaySongUseCase
+import org.example.project.features.collectionMenu.ui.CollectionMenuViewModel
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.ui.LibraryViewModel
 import org.example.project.features.likedSongs.ui.LikedSongsViewModel
@@ -130,6 +131,7 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { SongMenuViewModel(get(), get()) }
+    viewModel { CollectionMenuViewModel(get(), get()) }
     viewModel { SearchViewModel(get(), get(), get(), get(), getOrNull<SpeechRecognizer>()) }
     viewModel { LibraryViewModel(get(), get(), get()) }
     viewModel { LikedSongsViewModel(get(), get(), get()) }

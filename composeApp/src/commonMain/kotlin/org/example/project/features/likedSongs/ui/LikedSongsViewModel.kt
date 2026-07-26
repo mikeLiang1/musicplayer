@@ -82,9 +82,6 @@ class LikedSongsViewModel(
                 queueManager.shuffle()
             }
 
-            LikedSongsAction.OnMenuPressed -> {
-                // TODO: no collection-level menu yet (PlaylistAction.OnMenuPressed is also a stub)
-            }
         }
     }
 }
@@ -101,5 +98,4 @@ sealed interface LikedSongsAction {
     data class OnSongClicked(val song: Song, val index: Int) : LikedSongsAction
     data object OnPlayPressed : LikedSongsAction
     data object OnShufflePressed : LikedSongsAction
-    data object OnMenuPressed : LikedSongsAction
 }

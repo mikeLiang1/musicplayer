@@ -68,10 +68,6 @@ class PlaylistViewModel(
                 }
             }
 
-            PlaylistAction.OnMenuPressed -> {
-
-            }
-
             PlaylistAction.OnPlayPressed -> {
                 val state = uiState.value
                 val playlist = state.playlist ?: return
@@ -123,7 +119,6 @@ class PlaylistViewModel(
 
 sealed interface PlaylistAction {
     data object OnShuffledPressed : PlaylistAction
-    data object OnMenuPressed : PlaylistAction
     data object OnPlayPressed : PlaylistAction
     data object OnSearchPressed : PlaylistAction
     data class OnPlaylistSongPressed(val song: Song, val index: Int) : PlaylistAction

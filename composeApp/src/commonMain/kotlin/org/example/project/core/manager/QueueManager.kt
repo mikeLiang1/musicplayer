@@ -180,10 +180,20 @@ class QueueManager() {
      * Adds a song to the manual queue.
      */
     fun addToManualQueue(song: Song) {
-        // Generate new uniqueId when adding to manual queue
-        val queueSong = song.copy(uniqueId = UUID.randomUUID().toString())
+        addToManualQueue(listOf(song))
+    }
+
+    /**
+     * Adds several songs to the manual queue at once, preserving their order — one state
+     * update and one rebuild intent, rather than N of each as looping over the single-song
+     * overload would do.
+     */
+    fun addToManualQueue(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        // Generate new uniqueIds when adding to manual queue
+        val queueSongs = songs.map { it.copy(uniqueId = UUID.randomUUID().toString()) }
         _queueState.update { state ->
-            state.copy(manualQueue = state.manualQueue + queueSong)
+            state.copy(manualQueue = state.manualQueue + queueSongs)
         }
         _intent.trySend(QueueIntent.ReplaceQueue(_queueState.value.playbackCurrentIndex))
     }

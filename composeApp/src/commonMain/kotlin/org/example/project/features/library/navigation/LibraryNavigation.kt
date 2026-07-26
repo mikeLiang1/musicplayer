@@ -1,11 +1,14 @@
 package org.example.project.features.library.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -23,7 +26,10 @@ import org.example.project.navigation.libraryAllRoutes
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun LibraryNavigation(navigateToPlaylist: (String) -> Unit) {
+fun LibraryNavigation(
+    snackbarHostState: SnackbarHostState,
+    navigateToPlaylist: (String) -> Unit
+) {
     val navigationState = rememberNavigationState(
         startRoute = Route.DashboardRoutes.LibraryRoutes.Library,
         topLevelRoutes = libraryAllRoutes
@@ -54,10 +60,14 @@ fun LibraryNavigation(navigateToPlaylist: (String) -> Unit) {
         entry<Route.DashboardRoutes.LibraryRoutes.LikedSongs> {
             val likedSongsViewModel = koinViewModel<LikedSongsViewModel>()
             val state by likedSongsViewModel.uiState.collectAsStateWithLifecycle()
+            val scope = rememberCoroutineScope()
             LikedSongsScreen(
                 state = state,
                 onBackPressed = { navigator.goBack() },
-                onAction = likedSongsViewModel::handleAction
+                onAction = likedSongsViewModel::handleAction,
+                onMessage = { message ->
+                    scope.launch { snackbarHostState.showSnackbar(message) }
+                }
             )
         }
 

@@ -87,6 +87,8 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 | `features/playlist/repository/PlaylistRepository.kt` | Room-based playlist CRUD |
 | `features/songMenu/ui/SongMenuViewModel.kt` | Song context menu (add to queue/playlist, remove) |
 | `features/songMenu/ui/SongMenuController.kt` | Wires ViewModel + bottom sheets for song menu |
+| `features/collectionMenu/ui/CollectionMenuViewModel.kt` | Collection-level ⋮ menu: queue all, rename, delete playlist |
+| `features/collectionMenu/ui/CollectionMenuController.kt` | Wires ViewModel + menu/rename sheets + delete confirmation |
 | `features/dashboard/navigation/DashboardNavigation.kt` | Scaffold with bottom nav + player bar + full-screen overlay |
 
 ### Navigation & shared UI
@@ -96,6 +98,9 @@ Uses **AndroidX Navigation3** (the JetBrains Compose Multiplatform navigation li
 | `navigation/Navigator.kt` | Navigate, goBack, replaceRoot, per-tab back stacks |
 | `navigation/AppNavigation.kt` | Top-level NavDisplay wiring |
 | `ui/component/SongItem.kt` | Reusable song row (5 visual states, equalizer, drag handle) |
+| `ui/component/MenuBottomSheet.kt` | Shared ⋮ sheet + `MenuAction`/`MenuAccent` contract for all menus |
+| `ui/component/PlaylistNameBottomSheet.kt` | Name-a-playlist sheet (create in Library, rename in the collection menu) |
+| `ui/component/ConfirmDialog.kt` | Confirmation dialog for irreversible actions (delete playlist) |
 | `ui/component/SearchBar.kt` | Search bar with debounced input and suggestions |
 | `ui/component/CoverImage.kt` | Async image loader (Coil) |
 | `ui/component/PlayPauseButton.kt` | Animated play/pause FAB |

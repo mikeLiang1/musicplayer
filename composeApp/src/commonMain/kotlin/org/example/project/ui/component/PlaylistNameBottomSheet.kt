@@ -1,4 +1,4 @@
-package org.example.project.features.library.ui
+package org.example.project.ui.component
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -27,9 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,18 +51,23 @@ import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
 /**
- * Sheet behind the Library "+" button. Opens with a suggested name already selected, so a single
- * confirm keeps the old one-tap speed while typing immediately replaces the suggestion.
+ * Sheet for naming a playlist — the Library "+" button (create) and the playlist menu (rename).
+ *
+ * Opens with [name] already selected, so a single confirm keeps the old one-tap create speed
+ * while typing immediately replaces the suggestion; rename gets the same behaviour for free,
+ * seeded with the current name. [title] and [confirmLabel] are what the two callers differ on.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreatePlaylistBottomSheet(
+fun PlaylistNameBottomSheet(
     isVisible: Boolean,
     name: String,
     isSaving: Boolean,
     onNameChange: (String) -> Unit,
     onConfirm: () -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    title: String = "New playlist",
+    confirmLabel: String = "Create"
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -71,7 +76,7 @@ fun CreatePlaylistBottomSheet(
     }
 
     if (isVisible) {
-        val canCreate = name.isNotBlank() && !isSaving
+        val canConfirm = name.isNotBlank() && !isSaving
 
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
@@ -95,7 +100,7 @@ fun CreatePlaylistBottomSheet(
                     .padding(bottom = Dimens.spaceL)
             ) {
                 Text(
-                    text = "New playlist",
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = appColors.textPrimary,
                     modifier = Modifier.padding(vertical = Dimens.spaceM)
@@ -104,7 +109,7 @@ fun CreatePlaylistBottomSheet(
                 PlaylistNameField(
                     name = name,
                     onNameChange = onNameChange,
-                    onDone = { if (canCreate) onConfirm() }
+                    onDone = { if (canConfirm) onConfirm() }
                 )
 
                 Row(
@@ -120,10 +125,10 @@ fun CreatePlaylistBottomSheet(
                         onClick = onDismissRequest
                     )
                     SheetTextButton(
-                        text = "Create",
-                        color = if (canCreate) appColors.accentPrimary else appColors.textDim,
+                        text = confirmLabel,
+                        color = if (canConfirm) appColors.accentPrimary else appColors.textDim,
                         onClick = onConfirm,
-                        enabled = canCreate
+                        enabled = canConfirm
                     )
                 }
             }
@@ -132,7 +137,7 @@ fun CreatePlaylistBottomSheet(
 }
 
 @Composable
-private fun SheetTextButton(
+internal fun SheetTextButton(
     text: String,
     color: Color,
     onClick: () -> Unit,
@@ -249,13 +254,30 @@ private fun PlaylistNameField(
 @Composable
 private fun CreatePlaylistBottomSheetPreview() {
     AppPreview {
-        CreatePlaylistBottomSheet(
+        PlaylistNameBottomSheet(
             isVisible = true,
             name = "My playlist",
             isSaving = false,
             onNameChange = {},
             onConfirm = {},
             onDismissRequest = {}
+        )
+    }
+}
+
+@DevicePreviews
+@Composable
+private fun RenamePlaylistBottomSheetPreview() {
+    AppPreview {
+        PlaylistNameBottomSheet(
+            isVisible = true,
+            name = "Late night drives",
+            isSaving = false,
+            onNameChange = {},
+            onConfirm = {},
+            onDismissRequest = {},
+            title = "Rename playlist",
+            confirmLabel = "Save"
         )
     }
 }

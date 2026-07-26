@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -23,6 +24,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.example.project.core.manager.PlayerNavigator
 import org.example.project.features.home.ui.HomeEffect
 import org.example.project.features.home.ui.HomeScreen
@@ -54,6 +56,7 @@ fun DashboardNavigation() {
     val navigator = remember { Navigator(navigationState) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val isBottomBarVisible = navigationState.topLevelRoute in dashboardTopLevelDestinations.keys
 
@@ -109,6 +112,7 @@ fun DashboardNavigation() {
                 entry<Route.DashboardRoutes.SearchRoutes> { SearchNavigation(snackbarHostState) }
                 entry<Route.DashboardRoutes.LibraryRoutes> {
                     LibraryNavigation(
+                        snackbarHostState = snackbarHostState,
                         navigateToPlaylist = { navigator.navigate(Route.DashboardRoutes.Playlist(it)) }
                     )
                 }
@@ -120,7 +124,10 @@ fun DashboardNavigation() {
                     PlaylistScreen(
                         state,
                         onBackPressed = { navigator.goBack() },
-                        onAction = playlistViewModel::handleAction
+                        onAction = playlistViewModel::handleAction,
+                        onMessage = { message ->
+                            scope.launch { snackbarHostState.showSnackbar(message) }
+                        }
                     )
                 }
             }

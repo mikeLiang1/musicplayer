@@ -3,10 +3,8 @@ package org.example.project.ui.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Shuffle
@@ -17,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.Dimens
@@ -39,7 +39,7 @@ fun SongCollectionHeader(
     songCount: Int,
     isPlaying: Boolean,
     onShufflePressed: () -> Unit,
-    onMenuPressed: () -> Unit,
+    onMenuPressed: (() -> Unit)?,
     onPlayPressed: () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
@@ -54,44 +54,62 @@ fun SongCollectionHeader(
             Text(
                 title,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = Dimens.spaceM)
+                fontWeight = FontWeight.SemiBold,
+                color = appColors.textPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(
+                    horizontal = Dimens.spaceM,
+                    vertical = Dimens.spaceS
+                )
             )
         }
 
-        Row(
-            modifier = Modifier
-                .padding(top = Dimens.spaceS)
-                .padding(horizontal = Dimens.spaceM)
-        ) {
-            Text(
-                "$songCount songs", style = MaterialTheme.typography.bodySmall,
-                color = appColors.textMuted
-            )
-            // TODO: Total duration ?
+        // Text sits on the same 12dp gutter as the SongItem rows below.
+        Text(
+            text = if (songCount == 1) "1 song" else "$songCount songs",
+            style = MaterialTheme.typography.bodySmall,
+            color = appColors.textMuted,
+            modifier = Modifier.padding(horizontal = Dimens.spaceM)
+        )
+        // TODO: Total duration ?
 
-        }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = Dimens.spaceS)
+                // Right gutter only: on the left, IconButton's own 12dp inset already lands
+                // the glyph on the same gutter as the text above and the rows below.
+                .padding(end = Dimens.spaceM)
         ) {
-
-            Row {
+            // No spacer between the two — adjacent 48dp touch targets are already spaced,
+            // and an extra gap makes the pair read as two unrelated controls.
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onShufflePressed) {
-
-                    Icon(Icons.Default.Shuffle, contentDescription = "shuffle")
+                    Icon(
+                        Icons.Default.Shuffle,
+                        contentDescription = "shuffle",
+                        tint = appColors.iconSecondary
+                    )
                 }
-
-                Spacer(modifier = Modifier.width(Dimens.spaceM))
-                IconButton(onClick = onMenuPressed) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
+                // Null when the collection has no menu-worthy actions (an empty Liked Songs) —
+                // a ⋮ that opens an empty sheet is worse than no ⋮ at all.
+                if (onMenuPressed != null) {
+                    IconButton(onClick = onMenuPressed) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = "Menu",
+                            tint = appColors.iconSecondary
+                        )
+                    }
                 }
             }
 
             PlayPauseButton(
                 onPressed = onPlayPressed,
-                isPlaying = isPlaying,
-                modifier = Modifier.padding(end = Dimens.spaceM)
+                isPlaying = isPlaying
             )
         }
     }

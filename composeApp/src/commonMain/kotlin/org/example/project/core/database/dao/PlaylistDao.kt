@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
+import org.example.project.core.database.entity.LikedSongEntity
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.entity.PlaylistSongEntity
 import org.example.project.core.database.entity.PlaylistWithSongs
@@ -43,6 +44,32 @@ interface PlaylistDao {
 
     @Query("SELECT * FROM songs WHERE url = :url")
     suspend fun getSong(url: String): SongEntity?
+
+    // Liked songs
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE songUrl = :url)")
+    suspend fun isSongLiked(url: String): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertLikedSong(likedSong: LikedSongEntity)
+
+    @Query("DELETE FROM liked_songs WHERE songUrl = :url")
+    suspend fun deleteLikedSong(url: String)
+
+    @Query(
+        "SELECT songs.* FROM songs " +
+            "INNER JOIN liked_songs ON songs.url = liked_songs.songUrl " +
+            "ORDER BY liked_songs.likedAt DESC"
+    )
+    fun getLikedSongs(): Flow<List<SongEntity>>
+
+    @Query("SELECT COUNT(*) FROM liked_songs")
+    fun getLikedSongCount(): Flow<Int>
+
+    @Transaction
+    suspend fun likeSong(song: SongEntity, likedAt: Long) {
+        insertSongIfMissing(song)
+        insertLikedSong(LikedSongEntity(songUrl = song.url, likedAt = likedAt))
+    }
 
     // Playlist songs (junction)
     @Insert

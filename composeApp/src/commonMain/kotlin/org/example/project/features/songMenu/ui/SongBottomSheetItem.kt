@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.PlaylistRemove
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Queue
 import androidx.compose.material3.Icon
@@ -89,6 +91,16 @@ sealed class SongMenuAction {
     abstract val label: String
     abstract val icon: ImageVector
 
+    data object Like : SongMenuAction() {
+        override val label = "Like"
+        override val icon = Icons.Outlined.FavoriteBorder
+    }
+
+    data object Unlike : SongMenuAction() {
+        override val label = "Unlike"
+        override val icon = Icons.Rounded.Favorite
+    }
+
     data object GoToArtist : SongMenuAction() {
         override val label = "Go to artist"
         override val icon = Icons.Rounded.Person
@@ -121,6 +133,7 @@ sealed class SongMenuAction {
 
     companion object {
         val all = listOf(
+            Like,
             AddToQueue,
             AddToPlaylist,
             GoToArtist,

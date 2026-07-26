@@ -25,13 +25,14 @@ internal fun PlaylistSongWithSong.toDomain() = PlaylistSong(
     position = playlistSong.position
 )
 
-internal fun SongEntity.toSong(idOverride: String) = Song(
+internal fun SongEntity.toSong(idOverride: String, isLiked: Boolean = false) = Song(
     uniqueId = idOverride, // Use the DB ID instead of random()
     url = url,
     title = title,
     artist = artist,
     thumbnailUrl = thumbnailUrl,
-    duration = duration
+    duration = duration,
+    isLiked = isLiked
 )
 
 internal fun PlaylistWithSongs.toDomain() = Playlist(

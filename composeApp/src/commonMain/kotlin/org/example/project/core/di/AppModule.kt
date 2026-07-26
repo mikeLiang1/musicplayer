@@ -24,6 +24,7 @@ import org.example.project.core.SpeechRecognizer
 import org.example.project.core.usecase.PlaySongUseCase
 import org.example.project.features.home.ui.HomeViewModel
 import org.example.project.features.library.ui.LibraryViewModel
+import org.example.project.features.likedSongs.ui.LikedSongsViewModel
 import org.example.project.features.musicPlayer.ui.MusicPlayerViewModel
 import org.example.project.features.playlist.repository.PlaylistRepository
 import org.example.project.features.playlist.ui.PlaylistViewModel
@@ -36,7 +37,7 @@ import org.koin.dsl.module
 val repositoryModule = module {
     single { InnerTubeRepository(get()) }
     single { PlaybackRepository(get<MusicDatabase>().playbackDao()) }
-    single { PlaylistRepository(get()) }
+    single { PlaylistRepository(get<MusicDatabase>().playlistDao()) }
     single { QueueManager() }
     single { PlayerNavigator() }
     single { RecentlyPlayedRepository(get()) }
@@ -131,6 +132,7 @@ val viewModelModule = module {
     viewModel { SongMenuViewModel(get(), get()) }
     viewModel { SearchViewModel(get(), get(), get(), get(), getOrNull<SpeechRecognizer>()) }
     viewModel { LibraryViewModel(get(), get(), get()) }
+    viewModel { LikedSongsViewModel(get(), get(), get()) }
     viewModel { MusicPlayerViewModel(get(), get(), get()) }
     viewModel { params ->
         PlaylistViewModel(

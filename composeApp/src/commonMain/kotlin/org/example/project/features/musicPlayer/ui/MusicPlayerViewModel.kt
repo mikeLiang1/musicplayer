@@ -3,6 +3,8 @@ package org.example.project.features.musicPlayer.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -11,7 +13,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -23,6 +29,7 @@ import org.example.project.core.manager.QueueManager
 import org.example.project.core.manager.QueueState
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
+import kotlin.time.Clock
 
 @OptIn(FlowPreview::class)
 class MusicPlayerViewModel(
@@ -152,6 +159,42 @@ class MusicPlayerViewModel(
 
     fun togglePlaybackMode() = queueManager.togglePlaybackMode()
 
+    // ── Sleep Timer ───────────────────────────────────
+    private var sleepTimerJob: Job? = null
+
+    fun setSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        val durationMs = minutes * 60_000L
+        val endAt = Clock.System.now().toEpochMilliseconds() + durationMs
+        _uiState.update { it.copy(sleepTimerEndAtMs = endAt, sleepTimerEndOfTrack = false) }
+        sleepTimerJob = viewModelScope.launch {
+            delay(durationMs)
+            musicPlayerManager.pause()
+            _uiState.update { it.copy(sleepTimerEndAtMs = null) }
+        }
+    }
+
+    fun setSleepTimerEndOfTrack() {
+        sleepTimerJob?.cancel()
+        _uiState.update { it.copy(sleepTimerEndAtMs = null, sleepTimerEndOfTrack = true) }
+        sleepTimerJob = viewModelScope.launch {
+            // Wait for the current song to change (i.e. the track it was set on finishes), then pause.
+            queueManager.queueState
+                .map { it.current?.uniqueId }
+                .distinctUntilChanged()
+                .drop(1)
+                .first()
+            musicPlayerManager.pause()
+            _uiState.update { it.copy(sleepTimerEndOfTrack = false) }
+        }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _uiState.update { it.copy(sleepTimerEndAtMs = null, sleepTimerEndOfTrack = false) }
+    }
+
     // ── UI State ──────────────────────────────────────
     fun setFullScreen(fullScreen: Boolean) {
         _uiState.update { it.copy(isFullScreenVisible = fullScreen) }
@@ -249,7 +292,10 @@ data class MusicPlayerUiState(
     val editingQueue: PlayerQueue? = null,
     // Derived from QueueManager; populated by the uiState combine, not the mutators.
     val isShuffled: Boolean = false,
-    val playbackMode: PlaybackMode = PlaybackMode.OFF
+    val playbackMode: PlaybackMode = PlaybackMode.OFF,
+    // Sleep timer: either a target timestamp (duration mode) or an end-of-track flag, never both.
+    val sleepTimerEndAtMs: Long? = null,
+    val sleepTimerEndOfTrack: Boolean = false
 )
 
 sealed interface MusicPlayerEffect {

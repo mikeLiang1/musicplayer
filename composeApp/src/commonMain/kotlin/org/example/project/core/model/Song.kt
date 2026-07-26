@@ -11,7 +11,8 @@ data class Song(
     val artist: String,
     val thumbnailUrl: String?,
     val duration: Long,
-    val album: String? = null
+    val album: String? = null,
+    val isLiked: Boolean = false
 )
 
 data class SongPage(

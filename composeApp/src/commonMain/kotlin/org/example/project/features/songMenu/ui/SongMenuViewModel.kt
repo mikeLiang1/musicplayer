@@ -27,10 +27,24 @@ class SongMenuViewModel(
             it.copy(
                 isMenuSheetVisible = true,
                 selectedSong = song,
-                menuActions = menuActions,
+                menuActions = withLikeAction(menuActions, song.isLiked),
                 playlistSongId = playlistSongId
             )
         }
+        // The passed-in Song may be stale/default on liked status (e.g. search results
+        // never carry it) — confirm against the DB and correct the sheet in place.
+        viewModelScope.launch {
+            val liked = playlistRepository.isSongLiked(song.url)
+            _uiState.update { current ->
+                if (current.selectedSong?.uniqueId != song.uniqueId) return@update current
+                current.copy(menuActions = withLikeAction(menuActions, liked))
+            }
+        }
+    }
+
+    private fun withLikeAction(base: List<SongMenuAction>, liked: Boolean): List<SongMenuAction> {
+        val likeAction = if (liked) SongMenuAction.Unlike else SongMenuAction.Like
+        return listOf(likeAction) + base
     }
 
     fun onCloseMenuSheet() {
@@ -67,6 +81,14 @@ class SongMenuViewModel(
 
             SongMenuAction.GoToAlbum -> {}
             SongMenuAction.GoToArtist -> {}
+
+            SongMenuAction.Like, SongMenuAction.Unlike -> {
+                val song = _uiState.value.selectedSong ?: return
+                viewModelScope.launch {
+                    playlistRepository.toggleLike(song)
+                }
+                onCloseMenuSheet()
+            }
         }
     }
 

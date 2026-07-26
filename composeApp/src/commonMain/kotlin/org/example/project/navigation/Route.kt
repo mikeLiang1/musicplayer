@@ -22,6 +22,11 @@ sealed interface Route : NavKey {
         data object LibraryRoutes : Route {
             @Serializable
             data object Library : Route
+
+            // Pushed inside the Library tab's own stack — intentionally NOT added to
+            // libraryAllRoutes (that set is for top-level roots of the nested state).
+            @Serializable
+            data object LikedSongs : Route
         }
 
         // Shared route — reachable from both Search and Library

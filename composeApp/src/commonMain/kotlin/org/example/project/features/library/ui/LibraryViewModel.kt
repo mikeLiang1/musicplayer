@@ -34,8 +34,9 @@ class LibraryViewModel(
     // 2. Combine Room data with the Filter flow
     val uiState: StateFlow<LibraryUiState> = combine(
         playlistRepository.getPlaylists(),
-        _selectedFilter
-    ) { playlists, filter ->
+        _selectedFilter,
+        playlistRepository.getLikedSongCount()
+    ) { playlists, filter, likedSongCount ->
 
         // This block runs whenever EITHER the database changes OR the filter changes
 
@@ -50,7 +51,8 @@ class LibraryViewModel(
         LibraryUiState(
             allItems = allItems,
             libraryItems = filteredList,
-            selectedFilter = filter
+            selectedFilter = filter,
+            likedSongCount = likedSongCount
         )
     }.stateIn(
         scope = viewModelScope,
@@ -75,6 +77,12 @@ class LibraryViewModel(
                     playlistRepository.createPlaylist("playlist")
                 }
             }
+
+            LibraryAction.OnLikedSongsClicked -> {
+                viewModelScope.launch {
+                    _effect.emit(LibraryEffect.NavigateToLikedSongs)
+                }
+            }
         }
     }
 }
@@ -96,9 +104,11 @@ sealed interface LibraryAction {
     data class OnFilterSelected(val filter: LibraryItemFilter) : LibraryAction
     data class OnPlayListSelected(val playlistId: String) : LibraryAction
     data object OnAddPlaylist : LibraryAction
+    data object OnLikedSongsClicked : LibraryAction
 }
 
 sealed interface LibraryEffect {
     data class NavigateToPlaylist(val playlistId: String) : LibraryEffect
+    data object NavigateToLikedSongs : LibraryEffect
 }
 

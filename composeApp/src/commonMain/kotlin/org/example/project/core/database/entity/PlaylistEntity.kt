@@ -21,6 +21,24 @@ data class SongEntity(
     val duration: Long,
     val firstAddedAt: Long
 )
+
+// User-specific like state — kept out of the canonical songs table so likedAt
+// ordering is correct and future per-account/sync columns have a home
+@Entity(
+    tableName = "liked_songs",
+    foreignKeys = [
+        ForeignKey(
+            entity = SongEntity::class,
+            parentColumns = ["url"],
+            childColumns = ["songUrl"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class LikedSongEntity(
+    @PrimaryKey val songUrl: String,
+    val likedAt: Long
+)
 // Playlist metadata — one row per playlist
 @Entity(tableName = "playlists")
 data class PlaylistEntity(

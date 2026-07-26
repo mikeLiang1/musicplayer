@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Repeat
@@ -44,7 +45,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +76,7 @@ fun MusicPlayerScreen(
     val pagerState = rememberPagerState { 2 }
 
     val songMenu = rememberSongMenuController()
+    var isSleepTimerSheetVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -87,7 +92,18 @@ fun MusicPlayerScreen(
             uiState = uiState,
             songMenu = songMenu,
             onHistoryClick = viewModel::onHistoryPillClicked,
-            onEditQueueClicked = viewModel::onEditQueueClicked
+            onEditQueueClicked = viewModel::onEditQueueClicked,
+            onSleepTimerClicked = { isSleepTimerSheetVisible = true }
+        )
+
+        SleepTimerBottomSheet(
+            isVisible = isSleepTimerSheetVisible,
+            sleepTimerEndAtMs = uiState.sleepTimerEndAtMs,
+            sleepTimerEndOfTrack = uiState.sleepTimerEndOfTrack,
+            onDismissRequest = { isSleepTimerSheetVisible = false },
+            onDurationSelected = viewModel::setSleepTimer,
+            onEndOfTrackSelected = viewModel::setSleepTimerEndOfTrack,
+            onCancelTimer = viewModel::cancelSleepTimer
         )
 
         HorizontalPager(
@@ -144,7 +160,8 @@ private fun PlayerHeader(
     uiState: MusicPlayerUiState,
     songMenu: SongMenuController,
     onHistoryClick: () -> Unit,
-    onEditQueueClicked: () -> Unit
+    onEditQueueClicked: () -> Unit,
+    onSleepTimerClicked: () -> Unit
 ) {
     Row(
         modifier = modifier,
@@ -194,33 +211,44 @@ private fun PlayerHeader(
                 DragHandle()
             }
         }
-        if (pagerState.currentPage == 0) {
-            IconButton(onClick = {
-                displayQueue.current?.let {
-                    songMenu.show(
-                        it,
-                        listOf(
-                            SongMenuAction.AddToQueue,
-                            SongMenuAction.AddToPlaylist,
-                            SongMenuAction.GoToArtist,
-                            SongMenuAction.GoToAlbum
-                        )
-                    )
-                }
-            }) {
+        val isSleepTimerActive = uiState.sleepTimerEndAtMs != null || uiState.sleepTimerEndOfTrack
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onSleepTimerClicked) {
                 Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "Menu",
-                    tint = appColors.iconSecondary
+                    imageVector = Icons.Filled.Timer,
+                    contentDescription = "Sleep timer",
+                    tint = if (isSleepTimerActive) appColors.accentPrimary else appColors.iconSecondary
                 )
             }
-        } else {
-            IconButton(onClick = onEditQueueClicked) {
-                Icon(
-                    imageVector = if (!uiState.isEditingQueue) Icons.Filled.Edit else Icons.Filled.Check,
-                    contentDescription = "Edit queue",
-                    tint = appColors.iconSecondary
-                )
+
+            if (pagerState.currentPage == 0) {
+                IconButton(onClick = {
+                    displayQueue.current?.let {
+                        songMenu.show(
+                            it,
+                            listOf(
+                                SongMenuAction.AddToQueue,
+                                SongMenuAction.AddToPlaylist,
+                                SongMenuAction.GoToArtist,
+                                SongMenuAction.GoToAlbum
+                            )
+                        )
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Menu",
+                        tint = appColors.iconSecondary
+                    )
+                }
+            } else {
+                IconButton(onClick = onEditQueueClicked) {
+                    Icon(
+                        imageVector = if (!uiState.isEditingQueue) Icons.Filled.Edit else Icons.Filled.Check,
+                        contentDescription = "Edit queue",
+                        tint = appColors.iconSecondary
+                    )
+                }
             }
         }
     }

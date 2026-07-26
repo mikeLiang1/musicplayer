@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import org.example.project.core.database.dao.PlaybackDao
 import org.example.project.core.database.dao.PlaylistDao
 import org.example.project.core.database.dao.RecentlyPlayedDao
+import org.example.project.core.database.entity.LikedSongEntity
 import org.example.project.core.database.entity.PlaybackStateEntity
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.entity.PlaylistSongEntity
@@ -19,9 +20,10 @@ import org.example.project.core.database.entity.SongEntity
 @Database(
     entities = [
         QueueEntity::class, PlaybackStateEntity::class, PlaylistEntity::class,
-        PlaylistSongEntity::class, SongEntity::class, RecentlyPlayedEntity::class
+        PlaylistSongEntity::class, SongEntity::class, RecentlyPlayedEntity::class,
+        LikedSongEntity::class
     ],
-    version = 5
+    version = 7
 )
 abstract class MusicDatabase : RoomDatabase() {
     abstract fun playbackDao(): PlaybackDao

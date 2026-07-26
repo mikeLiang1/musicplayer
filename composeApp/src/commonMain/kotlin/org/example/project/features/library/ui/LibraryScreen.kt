@@ -122,7 +122,10 @@ private fun LibraryFilterPill(
 private fun LibraryColumn(modifier: Modifier = Modifier, state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     LazyColumn(modifier = modifier) {
         item {
-            LikedSongBanner(songCount = state.likedSongCount, onClick = {})
+            LikedSongBanner(
+                songCount = state.likedSongCount,
+                onClick = { onAction(LibraryAction.OnLikedSongsClicked) }
+            )
         }
 
         items(state.libraryItems, key = { it.stableKey() }) { item ->

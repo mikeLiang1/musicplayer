@@ -3,7 +3,7 @@ package org.example.project.features.playlist.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import org.example.project.core.database.MusicDatabase
+import org.example.project.core.database.dao.PlaylistDao
 import org.example.project.core.database.entity.PlaylistEntity
 import org.example.project.core.database.mapper.toDomain
 import org.example.project.core.database.mapper.toSong
@@ -14,8 +14,7 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-class PlaylistRepository(database: MusicDatabase, private val clock: Clock = Clock.System) {
-    private val dao = database.playlistDao()
+class PlaylistRepository(private val dao: PlaylistDao, private val clock: Clock = Clock.System) {
 
     fun getPlaylists(): Flow<List<Playlist>> =
         dao.getAllPlaylistsWithSongs().map { list -> list.map { it.toDomain() } }
@@ -80,6 +79,22 @@ class PlaylistRepository(database: MusicDatabase, private val clock: Clock = Clo
             playlistSongs = reordered,
             timestamp = clock.now().toEpochMilliseconds()
         )
+    }
+
+    fun getLikedSongs(): Flow<List<Song>> =
+        dao.getLikedSongs().map { list -> list.map { it.toSong(idOverride = it.url, isLiked = true) } }
+
+    fun getLikedSongCount(): Flow<Int> = dao.getLikedSongCount()
+
+    suspend fun isSongLiked(url: String): Boolean = dao.isSongLiked(url)
+
+    suspend fun toggleLike(song: Song) {
+        if (isSongLiked(song.url)) {
+            dao.deleteLikedSong(song.url)
+        } else {
+            val now = clock.now().toEpochMilliseconds()
+            dao.likeSong(song.toSongEntity(firstAddedAt = now), likedAt = now)
+        }
     }
 }
 

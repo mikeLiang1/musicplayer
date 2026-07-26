@@ -15,6 +15,8 @@ import org.example.project.navigation.toEntries
 import org.example.project.features.library.ui.LibraryEffect
 import org.example.project.features.library.ui.LibraryScreen
 import org.example.project.features.library.ui.LibraryViewModel
+import org.example.project.features.likedSongs.ui.LikedSongsScreen
+import org.example.project.features.likedSongs.ui.LikedSongsViewModel
 import org.example.project.navigation.Navigator
 import org.example.project.navigation.Route
 import org.example.project.navigation.libraryAllRoutes
@@ -39,10 +41,24 @@ fun LibraryNavigation(navigateToPlaylist: (String) -> Unit) {
                         is LibraryEffect.NavigateToPlaylist -> {
                             navigateToPlaylist(effect.playlistId)
                         }
+
+                        LibraryEffect.NavigateToLikedSongs -> {
+                            navigator.navigate(Route.DashboardRoutes.LibraryRoutes.LikedSongs)
+                        }
                     }
                 }
             }
             LibraryScreen(state = state, onAction = libraryViewModel::handleAction)
+        }
+
+        entry<Route.DashboardRoutes.LibraryRoutes.LikedSongs> {
+            val likedSongsViewModel = koinViewModel<LikedSongsViewModel>()
+            val state by likedSongsViewModel.uiState.collectAsStateWithLifecycle()
+            LikedSongsScreen(
+                state = state,
+                onBackPressed = { navigator.goBack() },
+                onAction = likedSongsViewModel::handleAction
+            )
         }
 
     }

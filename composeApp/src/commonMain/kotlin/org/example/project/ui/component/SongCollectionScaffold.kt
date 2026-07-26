@@ -1,6 +1,5 @@
 package org.example.project.ui.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.example.project.core.model.Song
 import org.example.project.ui.theme.Dimens
@@ -62,19 +62,25 @@ fun <T> SongCollectionScaffold(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
+            // No background of its own — an elevated fill here reads as a stray colour band
+            // with a hard edge partway down the screen. The bar sits on the page background.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
-                    .background(color = appColors.backgroundElevated)
                     .fillMaxWidth()
+                    .padding(end = Dimens.spaceXs)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "back",
+                            tint = appColors.iconPrimary
+                        )
                     }
                     Text(
                         text = title,
@@ -102,26 +108,30 @@ fun <T> SongCollectionScaffold(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                contentPadding = PaddingValues(vertical = Dimens.spaceL),
-                horizontalAlignment = Alignment.CenterHorizontally
+                contentPadding = PaddingValues(bottom = Dimens.spaceL)
             ) {
                 if (header != null) {
                     item { header() }
                     item {
                         HorizontalDivider(
-                            color = appColors.divider,
-                            modifier = Modifier.padding(vertical = Dimens.spaceM)
+                            color = appColors.dividerSubtle,
+                            modifier = Modifier.padding(bottom = Dimens.spaceS)
                         )
                     }
                 }
 
                 if (items.isEmpty()) {
                     item {
+                        // fillMaxWidth + centred text rather than a centred LazyColumn: aligning
+                        // the whole column would drag every full-width row's content around too.
                         Text(
                             text = emptyMessage,
                             color = appColors.textMuted,
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(Dimens.spaceL)
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Dimens.spaceL)
                         )
                     }
                 } else {

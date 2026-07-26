@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -42,6 +43,21 @@ class SongMenuViewModel(
             if (url == null) flowOf(false) else playlistRepository.observeIsSongLiked(url)
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+    /**
+     * Ids of the playlists that already contain the selected song — drives the checked state of
+     * each row in the add-to-playlist sheet. Derived from [playlists] (which already carries every
+     * playlist's songs), so rows update live as the user ticks them.
+     */
+    val selectedSongPlaylistIds: StateFlow<Set<String>> = combine(
+        playlists,
+        _uiState.map { it.selectedSong?.url }.distinctUntilChanged()
+    ) { allPlaylists, url ->
+        if (url == null) emptySet()
+        else allPlaylists.filter { playlist -> playlist.songs.any { it.song.url == url } }
+            .map { it.id }
+            .toSet()
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
 
     fun onMenuClicked(song: Song, menuActions: List<SongMenuAction>, playlistSongId: String?) {
         _uiState.update {
@@ -120,10 +136,21 @@ class SongMenuViewModel(
         }
     }
 
-    fun addSongToSelectedPlaylist(playlistId: String) {
+    /**
+     * Playlist row in the add-to-playlist sheet: acts as an add/remove toggle, mirroring the
+     * Liked Songs row. Removing clears every occurrence, since [PlaylistRepository.addSong]
+     * doesn't dedupe and a playlist may already hold the same song twice.
+     */
+    fun togglePlaylistForSelectedSong(playlistId: String) {
         val song = _uiState.value.selectedSong ?: return
+        val playlist = playlists.value.firstOrNull { it.id == playlistId } ?: return
+        val existing = playlist.songs.filter { it.song.url == song.url }
         viewModelScope.launch {
-            playlistRepository.addSong(playlistId, song)
+            if (existing.isEmpty()) {
+                playlistRepository.addSong(playlistId, song)
+            } else {
+                existing.forEach { playlistRepository.removePlaylistSong(it.id) }
+            }
         }
     }
 

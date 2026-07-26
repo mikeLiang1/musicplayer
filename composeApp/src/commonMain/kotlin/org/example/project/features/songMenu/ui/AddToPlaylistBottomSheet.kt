@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,11 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import kotlinx.coroutines.launch
 import org.example.project.core.model.Playlist
 import org.example.project.ui.component.PlaylistItem
 import org.example.project.ui.theme.Dimens
@@ -45,11 +45,11 @@ fun AddToPlaylistBottomSheet(
     playlists: List<Playlist>,
     isSongLiked: Boolean,
     likedSongCount: Int,
+    checkedPlaylistIds: Set<String>,
     onLikedSongsClicked: () -> Unit,
     onPlaylistClicked: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(isBottomSheetVisible) {
         if (isBottomSheetVisible) {
@@ -59,14 +59,8 @@ fun AddToPlaylistBottomSheet(
         }
     }
     if (isBottomSheetVisible) {
-        // Hide with the sheet's own animation, then let the caller flip the boolean.
-        val dismissThen: (() -> Unit) -> Unit = { action ->
-            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                if (!sheetState.isVisible) onCloseBottomSheet()
-            }
-            action()
-        }
-
+        // Every row is an add/remove toggle and the sheet stays open, so the song can be moved in
+        // and out of several playlists in one pass with each row updating as you go.
         ModalBottomSheet(
             onDismissRequest = onCloseBottomSheet,
             sheetState = sheetState,
@@ -81,7 +75,7 @@ fun AddToPlaylistBottomSheet(
                     LikedSongsRow(
                         isSongLiked = isSongLiked,
                         songCount = likedSongCount,
-                        onClick = { dismissThen(onLikedSongsClicked) }
+                        onClick = onLikedSongsClicked
                     )
                     HorizontalDivider(
                         color = appColors.dividerSubtle,
@@ -106,7 +100,20 @@ fun AddToPlaylistBottomSheet(
                     items(playlists, key = { it.id }) { playlist ->
                         PlaylistItem(
                             playlist = playlist,
-                            onClick = { dismissThen { onPlaylistClicked(playlist.id) } }
+                            onClick = { onPlaylistClicked(playlist.id) },
+                            trailing = {
+                                Checkbox(
+                                    checked = playlist.id in checkedPlaylistIds,
+                                    // The whole row is the click target; the box shows state only.
+                                    onCheckedChange = null,
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = appColors.accentPrimary,
+                                        uncheckedColor = appColors.iconSecondary,
+                                        checkmarkColor = appColors.onAccent
+                                    ),
+                                    modifier = Modifier.padding(end = Dimens.spaceM)
+                                )
+                            }
                         )
                     }
                 }

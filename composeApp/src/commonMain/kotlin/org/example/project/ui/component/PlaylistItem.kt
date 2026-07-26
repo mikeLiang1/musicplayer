@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,7 +35,8 @@ import org.example.project.ui.theme.appColors
 fun PlaylistItem(
     modifier: Modifier = Modifier,
     playlist: Playlist,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    trailing: @Composable (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
@@ -75,28 +77,39 @@ fun PlaylistItem(
                 color = appColors.textMuted
             )
         }
+
+        if (trailing != null) {
+            Spacer(Modifier.width(Dimens.spaceS))
+            trailing()
+        }
     }
 }
 
 @Preview
 @Composable
 private fun PlaylistItemPreview() {
+    val playlist = Playlist(
+        name = "Title", id = "", thumbnailUrl = "", songs = listOf(
+            PlaylistSong(
+                song = Song(
+                    url = "item.url",
+                    title = "Currently Playing Song",
+                    artist = "Artist",
+                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                    duration = 3000L
+                ), position = 0, id = ""
+            )
+        )
+    )
     Surface {
         Column {
+            PlaylistItem(playlist = playlist, onClick = {})
+            // Trailing slot, as the add-to-playlist sheet uses it.
             PlaylistItem(
-                playlist = Playlist(
-                    name = "Title", id = "", thumbnailUrl = "", songs = listOf(
-                        PlaylistSong(
-                            song = Song(
-                                url = "item.url",
-                                title = "Currently Playing Song",
-                                artist = "Artist",
-                                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                                duration = 3000L
-                            ), position = 0, id = ""
-                        )
-                    )
-                ), onClick = {})
+                playlist = playlist,
+                onClick = {},
+                trailing = { Checkbox(checked = true, onCheckedChange = null) }
+            )
         }
 
     }

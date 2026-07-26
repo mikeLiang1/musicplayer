@@ -30,6 +30,7 @@ fun rememberSongMenuController(): SongMenuController {
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     val isSelectedSongLiked by viewModel.isSelectedSongLiked.collectAsStateWithLifecycle()
     val likedSongCount by viewModel.likedSongCount.collectAsStateWithLifecycle()
+    val checkedPlaylistIds by viewModel.selectedSongPlaylistIds.collectAsStateWithLifecycle()
 
     val controller = remember {
         SongMenuController(viewModel = viewModel)
@@ -50,8 +51,9 @@ fun rememberSongMenuController(): SongMenuController {
         playlists = playlists,
         isSongLiked = isSelectedSongLiked,
         likedSongCount = likedSongCount,
+        checkedPlaylistIds = checkedPlaylistIds,
         onLikedSongsClicked = viewModel::toggleLikeForSelectedSong,
-        onPlaylistClicked = viewModel::addSongToSelectedPlaylist
+        onPlaylistClicked = viewModel::togglePlaylistForSelectedSong
     )
 
     return controller

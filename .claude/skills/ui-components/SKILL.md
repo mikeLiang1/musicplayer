@@ -34,7 +34,7 @@ Visual states via the sealed interface `SongItemState`:
 `isEditMode = true` swaps the trailing `MoreVert` menu button for a `Close` remove button (`onRemoveClicked`) and shows a leading `Reorder` icon that you make draggable by passing `dragHandleModifier = Modifier.draggableHandle()` inside a `ReorderableItem` (see Lists below). The preview at the bottom of the file renders all five combinations — extend it when you add a state.
 
 ### PlaylistItem.kt
-Simple playlist row: `PlaylistItem(modifier, playlist: Playlist, onClick)`. Cover thumb (`Dimens.Size.coverThumb`) + name + "Playlist • N songs" subtitle. Used by LibraryScreen.
+Simple playlist row: `PlaylistItem(modifier, playlist: Playlist, onClick, trailing: @Composable (() -> Unit)? = null)`. Cover thumb (`Dimens.Size.coverThumb`) + name + "Playlist • N songs" subtitle. Used by LibraryScreen (no trailing) and `AddToPlaylistBottomSheet`, which passes a `Checkbox` as `trailing` to show whether the song is already in that playlist. The trailing slot renders after the weighted text `Column`, separated by `Dimens.spaceS`; omit it and the row lays out exactly as before.
 
 ### CoverImage.kt — ALL artwork goes through this
 ```kotlin

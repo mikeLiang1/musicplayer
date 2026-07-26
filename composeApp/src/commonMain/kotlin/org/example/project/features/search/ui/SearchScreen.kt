@@ -34,12 +34,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import kotlinx.coroutines.flow.distinctUntilChanged
+import org.example.project.core.model.Song
+import org.example.project.features.songMenu.ui.SongMenuAction
+import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.SearchBar
 import org.example.project.ui.component.SongItem
 import org.example.project.ui.theme.AppPreview
 import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
+import org.schabi.newpipe.extractor.timeago.patterns.it
 
 @Composable
 fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
@@ -48,6 +52,8 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
 
     val focusManager = LocalFocusManager.current
     var showPermissionDialog by remember { mutableStateOf(false) }
+
+    val songMenu = rememberSongMenuController()
 
     if (showPermissionDialog) {
         RequestVoicePermissionEffect {
@@ -148,7 +154,15 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
                         SongItem(
                             song = song,
                             onMenuClicked = {
-
+                                songMenu.show(
+                                    song,
+                                    listOf(
+                                        SongMenuAction.AddToQueue,
+                                        SongMenuAction.AddToPlaylist,
+                                        SongMenuAction.GoToArtist,
+                                        SongMenuAction.GoToAlbum
+                                    )
+                                )
                             }, onClick = {
                                 onAction(SearchAction.OnSongClicked(song))
                             }

@@ -2,9 +2,15 @@ package org.example.project.features.songMenu.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -21,6 +27,21 @@ class SongMenuViewModel(
 
     val playlists = playlistRepository.getPlaylists()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // Liked Songs is a permanent row in the add-to-playlist sheet, so the sheet needs its
+    // count and whether the selected song is already in it — both live, so the row reflects
+    // a like/unlike made from the sheet itself.
+    val likedSongCount: StateFlow<Int> = playlistRepository.getLikedSongCount()
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val isSelectedSongLiked: StateFlow<Boolean> = _uiState
+        .map { it.selectedSong?.url }
+        .distinctUntilChanged()
+        .flatMapLatest { url ->
+            if (url == null) flowOf(false) else playlistRepository.observeIsSongLiked(url)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     fun onMenuClicked(song: Song, menuActions: List<SongMenuAction>, playlistSongId: String?) {
         _uiState.update {
@@ -45,6 +66,13 @@ class SongMenuViewModel(
     private fun withLikeAction(base: List<SongMenuAction>, liked: Boolean): List<SongMenuAction> {
         val likeAction = if (liked) SongMenuAction.Unlike else SongMenuAction.Like
         return listOf(likeAction) + base
+    }
+
+    /** Opens the add-to-playlist sheet directly, skipping the song menu (e.g. the player heart). */
+    fun onAddToPlaylistClicked(song: Song) {
+        _uiState.update {
+            it.copy(selectedSong = song, isPlaylistSheetVisible = true, playlistSongId = null)
+        }
     }
 
     fun onCloseMenuSheet() {
@@ -96,6 +124,14 @@ class SongMenuViewModel(
         val song = _uiState.value.selectedSong ?: return
         viewModelScope.launch {
             playlistRepository.addSong(playlistId, song)
+        }
+    }
+
+    /** Liked Songs row in the add-to-playlist sheet: acts as an add/remove toggle. */
+    fun toggleLikeForSelectedSong() {
+        val song = _uiState.value.selectedSong ?: return
+        viewModelScope.launch {
+            playlistRepository.toggleLike(song)
         }
     }
 }

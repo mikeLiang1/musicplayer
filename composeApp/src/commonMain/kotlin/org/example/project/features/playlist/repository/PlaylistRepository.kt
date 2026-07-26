@@ -1,6 +1,7 @@
 package org.example.project.features.playlist.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.example.project.core.database.dao.PlaylistDao
@@ -88,13 +89,21 @@ class PlaylistRepository(private val dao: PlaylistDao, private val clock: Clock 
 
     suspend fun isSongLiked(url: String): Boolean = dao.isSongLiked(url)
 
+    fun observeIsSongLiked(url: String): Flow<Boolean> =
+        dao.observeIsSongLiked(url).distinctUntilChanged()
+
+    /** Idempotent — liking an already-liked song is a no-op (the DAO insert IGNOREs conflicts). */
+    suspend fun likeSong(song: Song) {
+        val now = clock.now().toEpochMilliseconds()
+        dao.likeSong(song.toSongEntity(firstAddedAt = now), likedAt = now)
+    }
+
+    suspend fun unlikeSong(url: String) {
+        dao.deleteLikedSong(url)
+    }
+
     suspend fun toggleLike(song: Song) {
-        if (isSongLiked(song.url)) {
-            dao.deleteLikedSong(song.url)
-        } else {
-            val now = clock.now().toEpochMilliseconds()
-            dao.likeSong(song.toSongEntity(firstAddedAt = now), likedAt = now)
-        }
+        if (isSongLiked(song.url)) unlikeSong(song.url) else likeSong(song)
     }
 }
 

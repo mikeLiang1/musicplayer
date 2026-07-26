@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,14 +50,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.core.helper.formatTime
 import org.example.project.core.model.Song
+import org.example.project.features.songMenu.ui.SongMenuController
 import org.example.project.ui.component.CoverImage
 import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 import kotlin.math.roundToInt
 
 @Composable
-fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
+fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel, songMenu: SongMenuController) {
     val displayQueue by viewModel.displayQueue.collectAsStateWithLifecycle()
+    val isLiked by viewModel.isCurrentSongLiked.collectAsStateWithLifecycle()
 
     song?.let { current ->
         Column(
@@ -82,6 +85,13 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
             SongDetails(
                 song = current,
                 viewModel = viewModel,
+                isLiked = isLiked,
+                // First tap likes the song outright; once liked, the heart becomes the way
+                // into the playlist sheet (where Liked Songs can also be toggled back off).
+                onLikeClicked = {
+                    if (isLiked) songMenu.showAddToPlaylist(current)
+                    else viewModel.likeCurrentSong()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = Dimens.spaceXxl)
@@ -95,14 +105,16 @@ fun SongScreen(song: Song?, viewModel: MusicPlayerViewModel) {
 private fun SongDetails(
     modifier: Modifier = Modifier,
     song: Song,
-    viewModel: MusicPlayerViewModel
+    viewModel: MusicPlayerViewModel,
+    isLiked: Boolean,
+    onLikeClicked: () -> Unit
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        SongInfoRow(song.title, song.artist)
+        SongInfoRow(song.title, song.artist, isLiked = isLiked, onLikeClicked = onLikeClicked)
 
         Spacer(modifier = Modifier.height(Dimens.spaceXxl))
 
@@ -116,7 +128,12 @@ private fun SongDetails(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SongInfoRow(title: String, artist: String) {
+private fun SongInfoRow(
+    title: String,
+    artist: String,
+    isLiked: Boolean,
+    onLikeClicked: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -138,11 +155,11 @@ private fun SongInfoRow(title: String, artist: String) {
                 color = appColors.textSecondary
             )
         }
-        IconButton(onClick = { }) {
+        IconButton(onClick = onLikeClicked) {
             Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Favorite",
-                tint = appColors.rose,
+                imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                contentDescription = if (isLiked) "Add to playlist" else "Like",
+                tint = if (isLiked) appColors.rose else appColors.iconSecondary,
                 modifier = Modifier.size(Dimens.iconM)
             )
         }

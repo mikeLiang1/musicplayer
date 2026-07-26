@@ -133,7 +133,7 @@ val viewModelModule = module {
     viewModel { SearchViewModel(get(), get(), get(), get(), getOrNull<SpeechRecognizer>()) }
     viewModel { LibraryViewModel(get(), get(), get()) }
     viewModel { LikedSongsViewModel(get(), get(), get()) }
-    viewModel { MusicPlayerViewModel(get(), get(), get()) }
+    viewModel { MusicPlayerViewModel(get(), get(), get(), get()) }
     viewModel { params ->
         PlaylistViewModel(
             params.get(),

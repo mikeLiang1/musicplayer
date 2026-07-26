@@ -208,6 +208,60 @@ class PlaylistRepositoryTest {
         assertFalse(repository.observeIsSongLiked(song1.url).first())
         assertTrue(repository.observeIsSongLiked(song2.url).first())
     }
+
+    // ── lastPlayedAt / updatedAt ──────────────────────────────────────────────
+    // The library sort key is lastPlayedAt (falling back to createdAt); updatedAt is metadata
+    // that records content edits only. Keeping the two apart is what stops rows from
+    // reordering under the user while the add-to-playlist sheet is open.
+
+    @Test
+    fun markPlayed_setsLastPlayedAt_andLeavesUpdatedAtAlone() = runBlocking {
+        val playlist = repository.createPlaylist("Road trip")
+        val createdUpdatedAt = dao.playlists.single().updatedAt
+
+        clock.now = 5000L
+        repository.markPlayed(playlist.id)
+
+        val stored = dao.playlists.single()
+        assertEquals(5000L, stored.lastPlayedAt)
+        assertEquals(createdUpdatedAt, stored.updatedAt)
+    }
+
+    @Test
+    fun addSong_doesNotChangeLastPlayedAt() = runBlocking {
+        val playlist = repository.createPlaylist("Road trip")
+
+        clock.now = 5000L
+        repository.addSong(playlist.id, song("song1"))
+
+        val stored = dao.playlists.single()
+        // The sort key must be untouched by an edit, or the row jumps to the top of the sheet.
+        assertEquals(0L, stored.lastPlayedAt)
+        assertEquals(5000L, stored.updatedAt)
+    }
+
+    @Test
+    fun newPlaylist_hasNeverBeenPlayed() = runBlocking {
+        repository.createPlaylist("Road trip")
+
+        // 0 is what makes the query fall back to createdAt, so a new playlist sorts to the top
+        // instead of below every playlist that has ever been played.
+        assertEquals(0L, dao.playlists.single().lastPlayedAt)
+    }
+
+    @Test
+    fun removePlaylistSong_marksThePlaylistEdited() = runBlocking {
+        val playlist = repository.createPlaylist("Road trip")
+        repository.addSong(playlist.id, song("song1"))
+        val playlistSongId = dao.playlistSongs.single().id
+
+        clock.now = 9000L
+        repository.removePlaylistSong(playlistSongId)
+
+        // Removing is as much an edit as adding — both bump updatedAt.
+        assertEquals(9000L, dao.playlists.single().updatedAt)
+        assertTrue(dao.playlistSongs.isEmpty())
+    }
 }
 
 private class FakeClock(var now: Long) : Clock {
@@ -254,6 +308,11 @@ private class FakePlaylistDao : PlaylistDao {
     override suspend fun touchPlaylist(id: String, timestamp: Long) {
         val index = playlists.indexOfFirst { it.id == id }
         if (index >= 0) playlists[index] = playlists[index].copy(updatedAt = timestamp)
+    }
+
+    override suspend fun markPlaylistPlayed(id: String, timestamp: Long) {
+        val index = playlists.indexOfFirst { it.id == id }
+        if (index >= 0) playlists[index] = playlists[index].copy(lastPlayedAt = timestamp)
     }
 
     override suspend fun deletePlaylist(id: String) {
@@ -304,6 +363,11 @@ private class FakePlaylistDao : PlaylistDao {
 
     override suspend fun deletePlaylistSong(id: String) {
         playlistSongs.removeAll { it.id == id }
+    }
+
+    override suspend fun touchPlaylistOwning(playlistSongId: String, timestamp: Long) {
+        val owner = playlistSongs.firstOrNull { it.id == playlistSongId }?.playlistId ?: return
+        touchPlaylist(owner, timestamp)
     }
 
     override suspend fun deleteAllPlaylistSongs(playlistId: String) {

@@ -66,7 +66,12 @@ class PlaylistRepository(private val dao: PlaylistDao, private val clock: Clock 
     }
 
     suspend fun removePlaylistSong(playlistSongId: String) {
-        dao.deletePlaylistSong(playlistSongId)
+        dao.removeSongFromPlaylist(playlistSongId, clock.now().toEpochMilliseconds())
+    }
+
+    /** Records that the playlist was played — this, not editing, is what orders the library. */
+    suspend fun markPlayed(playlistId: String) {
+        dao.markPlaylistPlayed(playlistId, clock.now().toEpochMilliseconds())
     }
 
     suspend fun reorderSongs(playlistId: String, playlistSongIds: List<String>) {

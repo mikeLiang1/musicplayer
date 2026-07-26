@@ -120,8 +120,10 @@ Build/install/launch and logcat tag details: `.claude/skills/build-and-run/SKILL
 1. Create a playlist, add songs from the song menu, open it from the Library tab.
 2. Remove a song, rename/delete the playlist — list state updates without restart.
 3. Play from a playlist, then check Home tab: recently played row shows the song/playlist.
-4. If you touched entities/DAOs: remember the DB is v5 with **destructive migration** — a
-   version bump wipes local data on upgrade; state this in your PR.
+4. If you touched entities/DAOs: the DB is v8 and version bumps from 7 onward **must preserve
+   data** via an `AutoMigration`. Verify by installing *over* the previous build (`adb install -r`,
+   never uninstall first) and confirming playlists, liked songs and the restored queue survived —
+   uninstalling hides exactly the bug you are checking for.
 
 **Navigation changes** (structure: `.claude/skills/navigation/SKILL.md`)
 1. Each bottom tab (Home / Search / Library) keeps its own back stack — navigate deep in

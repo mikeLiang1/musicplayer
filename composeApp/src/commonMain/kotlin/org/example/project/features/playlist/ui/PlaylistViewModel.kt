@@ -60,6 +60,7 @@ class PlaylistViewModel(
                                 currentBaseIndex = playlistAction.index
                             )
                             recentlyPlaylistRepository.recordPlaylist(playlist)
+                            playlistRepository.markPlayed(playlistId)
                         }
                     }
 

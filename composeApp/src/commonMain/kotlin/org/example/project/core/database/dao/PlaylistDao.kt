@@ -15,11 +15,17 @@ import org.example.project.core.database.entity.SongEntity
 @Dao
 interface PlaylistDao {
     // Playlists
-    @Query("SELECT * FROM playlists ORDER BY updatedAt DESC")
+    //
+    // Ordered by recency of use, not of editing: MAX(lastPlayedAt, createdAt) means a playlist
+    // that has never been played sorts by when it was created (so a new playlist appears at the
+    // top rather than the bottom), and one that has sorts by when it was last played.
+    // Deliberately NOT updatedAt — sorting on edits made rows jump under the user's finger in the
+    // add-to-playlist sheet, and buried playlists that are played daily but never edited.
+    @Query("SELECT * FROM playlists ORDER BY MAX(lastPlayedAt, createdAt) DESC")
     fun getAllPlaylists(): Flow<List<PlaylistEntity>>
 
     @Transaction
-    @Query("SELECT * FROM playlists ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM playlists ORDER BY MAX(lastPlayedAt, createdAt) DESC")
     fun getAllPlaylistsWithSongs(): Flow<List<PlaylistWithSongs>>
 
     @Transaction
@@ -34,6 +40,10 @@ interface PlaylistDao {
 
     @Query("UPDATE playlists SET updatedAt = :timestamp WHERE id = :id")
     suspend fun touchPlaylist(id: String, timestamp: Long)
+
+    /** Drives the library sort — see the ordering note on [getAllPlaylists]. */
+    @Query("UPDATE playlists SET lastPlayedAt = :timestamp WHERE id = :id")
+    suspend fun markPlaylistPlayed(id: String, timestamp: Long)
 
     @Query("DELETE FROM playlists WHERE id = :id")
     suspend fun deletePlaylist(id: String)
@@ -84,6 +94,12 @@ interface PlaylistDao {
     @Query("DELETE FROM playlist_songs WHERE id = :id")
     suspend fun deletePlaylistSong(id: String)
 
+    @Query(
+        "UPDATE playlists SET updatedAt = :timestamp " +
+            "WHERE id = (SELECT playlistId FROM playlist_songs WHERE id = :playlistSongId)"
+    )
+    suspend fun touchPlaylistOwning(playlistSongId: String, timestamp: Long)
+
     @Query("DELETE FROM playlist_songs WHERE playlistId = :playlistId")
     suspend fun deleteAllPlaylistSongs(playlistId: String)
 
@@ -107,6 +123,16 @@ interface PlaylistDao {
         insertPlaylistSong(playlistSong)
         touchPlaylist(playlistId, timestamp)
         return playlistSong.id
+    }
+
+    /**
+     * Touch must happen before the delete — the subquery in [touchPlaylistOwning] resolves the
+     * owning playlist through the very row being removed.
+     */
+    @Transaction
+    suspend fun removeSongFromPlaylist(playlistSongId: String, timestamp: Long) {
+        touchPlaylistOwning(playlistSongId, timestamp)
+        deletePlaylistSong(playlistSongId)
     }
 
     @Transaction

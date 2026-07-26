@@ -53,11 +53,11 @@ import org.example.project.core.database.entity.SongEntity
         PlaylistSongEntity::class, SongEntity::class, RecentlyPlayedEntity::class,
         LikedSongEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
     autoMigrations = [
-        // Append one entry per version bump, e.g.:
-        // AutoMigration(from = 7, to = 8),
+        // Append one entry per version bump.
+        AutoMigration(from = 7, to = 8), // playlists.lastPlayedAt
     ]
 )
 abstract class MusicDatabase : RoomDatabase() {

@@ -45,8 +45,12 @@ data class PlaylistEntity(
     @PrimaryKey val id: String,
     val name: String,
     val createdAt: Long,
+    // Content edits only (add/remove/reorder songs, rename) — NOT playback. Metadata, not a sort key.
     val updatedAt: Long,
-    val thumbnailUrl: String
+    val thumbnailUrl: String,
+    // Last time the playlist was played. 0 = never played, which is why the library sort falls
+    // back to createdAt (see PlaylistDao) instead of sinking new playlists to the bottom.
+    @ColumnInfo(defaultValue = "0") val lastPlayedAt: Long = 0
 )
 // Junction table — links playlists :left_right_arrow: songs with ordering
 @OptIn(ExperimentalUuidApi::class)

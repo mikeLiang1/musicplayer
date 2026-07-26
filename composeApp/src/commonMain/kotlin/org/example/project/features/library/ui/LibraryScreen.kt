@@ -56,6 +56,15 @@ fun LibraryScreen(state: LibraryUiState, onAction: (LibraryAction) -> Unit) {
     ) { padding ->
         LibraryColumn(modifier = Modifier.padding(padding), state = state, onAction = onAction)
     }
+
+    CreatePlaylistBottomSheet(
+        isVisible = state.createPlaylist.isVisible,
+        name = state.createPlaylist.name,
+        isSaving = state.createPlaylist.isSaving,
+        onNameChange = { onAction(LibraryAction.OnCreatePlaylistNameChanged(it)) },
+        onConfirm = { onAction(LibraryAction.OnConfirmCreatePlaylist) },
+        onDismissRequest = { onAction(LibraryAction.OnDismissCreatePlaylist) }
+    )
 }
 
 
@@ -166,7 +175,7 @@ private fun LikedSongBanner(
                 modifier = Modifier
                     .size(Dimens.Size.iconChip)
                     .background(
-                        color = appColors.accentDark,
+                        color = appColors.roseContainer,
                         shape = RoundedCornerShape(Dimens.radiusL)
                     ),
                 contentAlignment = Alignment.Center
@@ -174,7 +183,7 @@ private fun LikedSongBanner(
                 Icon(
                     imageVector = Icons.Rounded.Favorite,
                     contentDescription = null,
-                    tint = appColors.onAccent,
+                    tint = appColors.rose,
                     modifier = Modifier.size(Dimens.iconL)
                 )
             }

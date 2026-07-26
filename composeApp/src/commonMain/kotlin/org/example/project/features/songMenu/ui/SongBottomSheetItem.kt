@@ -20,7 +20,6 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Queue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,7 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import org.example.project.ui.theme.AppPreview
+import org.example.project.ui.theme.DevicePreviews
 import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
 
@@ -39,7 +39,16 @@ fun BottomSheetItem(
     songMenuAction: SongMenuAction,
     onClick: () -> Unit
 ) {
-    val isManual = songMenuAction == SongMenuAction.RemoveFromQueue
+    val contentColor = when (songMenuAction.accent) {
+        MenuAccent.Neutral -> appColors.iconSecondary
+        MenuAccent.Like -> appColors.rose
+        MenuAccent.Destructive -> appColors.error
+    }
+    val chipColor = when (songMenuAction.accent) {
+        MenuAccent.Neutral -> appColors.accentPrimary.copy(alpha = 0.15f)
+        MenuAccent.Like -> appColors.rose.copy(alpha = 0.15f)
+        MenuAccent.Destructive -> appColors.error.copy(alpha = 0.15f)
+    }
     Row(
         modifier = modifier
             .background(appColors.backgroundElevated)
@@ -52,53 +61,61 @@ fun BottomSheetItem(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(Dimens.radiusM))
-                .background(appColors.accentPrimary.copy(alpha = 0.15f))
+                .background(chipColor)
                 .padding(Dimens.spaceS)
         ) {
             Icon(
                 songMenuAction.icon,
                 contentDescription = songMenuAction.label,
-                tint = if (isManual) appColors.error else appColors.iconSecondary
+                tint = contentColor
             )
         }
         Text(
             text = songMenuAction.label,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = if (isManual) appColors.error else appColors.textPrimary,
+            color = if (songMenuAction.accent == MenuAccent.Neutral) {
+                appColors.textPrimary
+            } else {
+                contentColor
+            },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }
 }
 
-@Preview
+@DevicePreviews
 @Composable
 private fun BottomSheetItemPreview() {
-    Surface {
+    AppPreview {
         Column {
-            BottomSheetItem(
-                songMenuAction = SongMenuAction.AddToPlaylist, onClick = {}
-            )
-            BottomSheetItem(
-                songMenuAction = SongMenuAction.AddToPlaylist, onClick = {}
-            )
+            BottomSheetItem(songMenuAction = SongMenuAction.Like, onClick = {})
+            BottomSheetItem(songMenuAction = SongMenuAction.Unlike, onClick = {})
+            BottomSheetItem(songMenuAction = SongMenuAction.AddToPlaylist, onClick = {})
+            BottomSheetItem(songMenuAction = SongMenuAction.RemoveFromQueue, onClick = {})
         }
     }
 }
 
+/** Colour role for a menu row — see [BottomSheetItem] for how each maps to icon/chip/label. */
+enum class MenuAccent { Neutral, Like, Destructive }
+
 sealed class SongMenuAction {
     abstract val label: String
     abstract val icon: ImageVector
+    open val accent: MenuAccent = MenuAccent.Neutral
 
     data object Like : SongMenuAction() {
         override val label = "Like"
         override val icon = Icons.Outlined.FavoriteBorder
+        override val accent = MenuAccent.Like
     }
 
     data object Unlike : SongMenuAction() {
         override val label = "Unlike"
         override val icon = Icons.Rounded.Favorite
+        override val accent = MenuAccent.Like
     }
 
     data object GoToArtist : SongMenuAction() {
@@ -129,6 +146,7 @@ sealed class SongMenuAction {
     data object RemoveFromQueue : SongMenuAction() {
         override val label = "Remove from queue"
         override val icon = Icons.Rounded.DeleteOutline
+        override val accent = MenuAccent.Destructive
     }
 
     companion object {

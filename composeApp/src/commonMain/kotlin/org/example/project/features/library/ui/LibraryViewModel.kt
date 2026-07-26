@@ -23,20 +23,21 @@ class LibraryViewModel(
     private val playlistRepository: PlaylistRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LibraryUiState())
-//    val uiState = _uiState.asStateFlow()
-
     private val _effect = MutableSharedFlow<LibraryEffect>()
     val effect: SharedFlow<LibraryEffect> = _effect.asSharedFlow()
 
     private val _selectedFilter = MutableStateFlow<LibraryItemFilter>(LibraryItemFilter.All)
 
+    // Transient sheet state — not backed by Room, so it joins the combine as its own source
+    private val _createPlaylist = MutableStateFlow(CreatePlaylistState())
+
     // 2. Combine Room data with the Filter flow
     val uiState: StateFlow<LibraryUiState> = combine(
         playlistRepository.getPlaylists(),
         _selectedFilter,
-        playlistRepository.getLikedSongCount()
-    ) { playlists, filter, likedSongCount ->
+        playlistRepository.getLikedSongCount(),
+        _createPlaylist
+    ) { playlists, filter, likedSongCount, createPlaylist ->
 
         // This block runs whenever EITHER the database changes OR the filter changes
 
@@ -52,7 +53,8 @@ class LibraryViewModel(
             allItems = allItems,
             libraryItems = filteredList,
             selectedFilter = filter,
-            likedSongCount = likedSongCount
+            likedSongCount = likedSongCount,
+            createPlaylist = createPlaylist
         )
     }.stateIn(
         scope = viewModelScope,
@@ -73,8 +75,34 @@ class LibraryViewModel(
             }
 
             LibraryAction.OnAddPlaylist -> {
+                val existingNames = uiState.value.allItems
+                    .filterIsInstance<LibraryItem.PlaylistItem>()
+                    .map { it.playlist.name }
+                _createPlaylist.value = CreatePlaylistState(
+                    isVisible = true,
+                    name = suggestDefaultPlaylistName(existingNames)
+                )
+            }
+
+            is LibraryAction.OnCreatePlaylistNameChanged -> {
+                _createPlaylist.update { it.copy(name = libraryAction.name) }
+            }
+
+            LibraryAction.OnDismissCreatePlaylist -> {
+                _createPlaylist.value = CreatePlaylistState()
+            }
+
+            LibraryAction.OnConfirmCreatePlaylist -> {
+                val current = _createPlaylist.value
+                val name = current.name.trim()
+                // Guards a blank name and a double-tap on Create, which would otherwise
+                // insert the playlist twice before the first insert closes the sheet.
+                if (name.isEmpty() || current.isSaving) return
+                _createPlaylist.update { it.copy(isSaving = true) }
                 viewModelScope.launch {
-                    playlistRepository.createPlaylist("playlist")
+                    val playlist = playlistRepository.createPlaylist(name)
+                    _createPlaylist.value = CreatePlaylistState()
+                    _effect.emit(LibraryEffect.NavigateToPlaylist(playlist.id))
                 }
             }
 
@@ -91,7 +119,14 @@ data class LibraryUiState(
     val allItems: List<LibraryItem> = listOf(),
     val likedSongCount: Int = 0,
     val selectedFilter: LibraryItemFilter = LibraryItemFilter.All,
-    val libraryItems: List<LibraryItem> = listOf()
+    val libraryItems: List<LibraryItem> = listOf(),
+    val createPlaylist: CreatePlaylistState = CreatePlaylistState()
+)
+
+data class CreatePlaylistState(
+    val isVisible: Boolean = false,
+    val name: String = "",
+    val isSaving: Boolean = false
 )
 
 
@@ -104,6 +139,9 @@ sealed interface LibraryAction {
     data class OnFilterSelected(val filter: LibraryItemFilter) : LibraryAction
     data class OnPlayListSelected(val playlistId: String) : LibraryAction
     data object OnAddPlaylist : LibraryAction
+    data class OnCreatePlaylistNameChanged(val name: String) : LibraryAction
+    data object OnConfirmCreatePlaylist : LibraryAction
+    data object OnDismissCreatePlaylist : LibraryAction
     data object OnLikedSongsClicked : LibraryAction
 }
 

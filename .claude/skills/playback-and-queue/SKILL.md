@@ -24,7 +24,9 @@ translation only in the ViewModel. Never shortcut a layer.
 1. User taps a song (e.g. `SearchViewModel.OnSongClicked`, `HomeViewModel`) →
    `playSongUseCase(song.url)`.
 2. `core/usecase/PlaySongUseCase.kt`: `innerTubeRepository.getRecommendations(songUrl)` fetches
-   an InnerTube radio queue (~25 songs, tapped song first) → `queueManager.setBaseQueue(songs.songs)`.
+   an InnerTube radio queue (~25 songs, tapped song first) → `queueManager.setBaseQueue(songs.songs,
+   context = QueueContext(songUrl, RADIO, title = seed.title))` — the seed is the first returned
+   song, so its title names the radio in the player header.
    (Radio fetch details → `innertube-api` skill.) Note: the returned continuation token is
    dropped; `getMoreRecommendations`/`appendRadioSongs` exist but have **no production callers**.
 3. `setBaseQueue` resets state (`autoPlay = true`, manual queue cleared, `seenIds` primed) and
@@ -81,7 +83,24 @@ translation only in the ViewModel. Never shortcut a layer.
 
 State (`QueueState` in `QueueManager.kt`): `baseQueue` (the radio/playlist),
 `manualQueue` (user "play next" songs), `currentBaseIndex`, `currentManualSong`,
-`isShuffled` + `preShuffleBaseQueue`/`preShuffleBaseIndex`, `playbackMode`, `seenIds`.
+`isShuffled` + `preShuffleBaseQueue`/`preShuffleBaseIndex`, `playbackMode`, `seenIds`,
+`context`.
+
+**`context: QueueContext?`** (`core/model/QueueContext.kt` — `id` + `type`
+(`RADIO`/`PLAYLIST`/`LIKED_SONGS`) + `title`) records where the queue came from. Set only by
+`setBaseQueue`, which **always overwrites it** (a sourceless call clears it — pinned by a test).
+Two consumers:
+- identity: `PlaylistViewModel`/`LikedSongsViewModel` compare `queue.context?.id` against their
+  own id for `isPlaylistActive`/`isContextActive` (was a bare `contextId` before).
+- display: `MusicPlayerUiState.queueContext` → the "PLAYING FROM PLAYLIST / <name>" label centered
+  in the player header (`MusicPlayerScreen.QueueContextLabel`), which shares that slot with the
+  queue page's history pill. The drag handle sits in its own row above the header.
+
+Player header layout rule: **one leading button (close) and exactly one trailing button** — ⋮ on
+the Now Playing page, edit-queue on the Queue page. The center slot is a `weight(1f)` Box, so it
+is only truly centered while both sides are the same width; adding a second trailing icon shifts
+the label off-center (this is why the sleep timer moved into the ⋮ menu). The armed-timer cue is
+the ⋮ icon tinted `accentPrimary`.
 
 Derived (these define the flat list the player sees):
 ```
@@ -156,6 +175,10 @@ the repo. If you change anything around manual-song selection, verify against th
   contents actually changed (hash "signature"); pointer/shuffle/repeat updates are cheap.
   Playback **position** is saved separately by `MediaService.saveData()` in `onTaskRemoved` and
   `onDestroy` (`runBlocking` on purpose — the process may die immediately after).
+- The queue's `context` rides along in the singleton `PlaybackStateEntity` row
+  (`contextId`/`contextType`/`contextTitle`, all nullable, added in DB v9). Restore rebuilds it
+  only when all three are present and the type name still resolves — otherwise the queue comes
+  back sourceless rather than half-labelled.
 - **Restore**: on app start, `MusicPlayerViewModel.init` → `restorePlaybackState()` →
   `getRestoredPlayback()` (rebuilds `QueueState` incl. shuffle snapshot and `seenIds`) →
   `queueManager.restoreState(state, positionMs)` → emits `NewQueue(positionMs)` → player is

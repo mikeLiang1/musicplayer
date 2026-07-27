@@ -22,7 +22,7 @@ class CollectionMenuController(
             CollectionMenuTarget.UserPlaylist(
                 playlistId = playlist.id,
                 title = playlist.name,
-                songs = playlist.songs.map { it.song }
+                songs = playlist.songs
             )
         )
     }

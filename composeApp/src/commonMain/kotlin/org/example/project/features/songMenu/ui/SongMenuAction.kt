@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Queue
+import androidx.compose.material.icons.rounded.Timer
 import org.example.project.ui.component.MenuAccent
 import org.example.project.ui.component.MenuAction
 
@@ -59,6 +60,16 @@ sealed class SongMenuAction : MenuAction {
         override val label = "Remove from queue"
         override val icon = Icons.Rounded.DeleteOutline
         override val accent = MenuAccent.Destructive
+    }
+
+    /**
+     * Player-only row: playback-scoped rather than song-scoped, so it is passed explicitly by
+     * the full-screen player and deliberately kept out of [all]. Selecting it emits
+     * [SongMenuEffect.OpenSleepTimer] instead of doing work in the song menu itself.
+     */
+    data object SleepTimer : SongMenuAction() {
+        override val label = "Sleep timer"
+        override val icon = Icons.Rounded.Timer
     }
 
     companion object {

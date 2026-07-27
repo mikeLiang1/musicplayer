@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.project.core.model.Playlist
-import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
 import org.example.project.ui.theme.Dimens
 import org.example.project.ui.theme.appColors
@@ -90,14 +89,12 @@ fun PlaylistItem(
 private fun PlaylistItemPreview() {
     val playlist = Playlist(
         name = "Title", id = "", thumbnailUrl = "", songs = listOf(
-            PlaylistSong(
-                song = Song(
-                    url = "item.url",
-                    title = "Currently Playing Song",
-                    artist = "Artist",
-                    thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                    duration = 3000L
-                ), position = 0, id = ""
+            Song(
+                url = "item.url",
+                title = "Currently Playing Song",
+                artist = "Artist",
+                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                duration = 3000L
             )
         )
     )

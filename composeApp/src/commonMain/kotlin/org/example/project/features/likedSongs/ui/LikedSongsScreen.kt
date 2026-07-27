@@ -30,9 +30,7 @@ fun LikedSongsScreen(
 
     SongCollectionScaffold(
         title = "Liked Songs",
-        items = state.songs,
-        songOf = { it },
-        itemKey = { it.uniqueId },
+        songs = state.songs,
         onBackPressed = onBackPressed,
         onSongClicked = { song, index -> onAction(LikedSongsAction.OnSongClicked(song, index)) },
         onSongMenuClicked = { song -> songMenu.show(song, likedSongMenuActions) },

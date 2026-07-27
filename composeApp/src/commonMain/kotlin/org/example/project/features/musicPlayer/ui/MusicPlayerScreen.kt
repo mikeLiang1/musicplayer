@@ -2,7 +2,9 @@ package org.example.project.features.musicPlayer.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +35,6 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Repeat
@@ -44,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,12 +55,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.example.project.core.manager.PlaybackMode
+import org.example.project.core.model.QueueContext
+import org.example.project.core.model.QueueContextType
 import org.example.project.features.musicPlayer.model.PlayerQueue
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.SongMenuController
+import org.example.project.features.songMenu.ui.SongMenuEffect
 import org.example.project.features.songMenu.ui.rememberSongMenuController
 import org.example.project.ui.component.PlayPauseButton
 import org.example.project.ui.theme.Dimens
@@ -78,13 +84,32 @@ fun MusicPlayerScreen(
     val songMenu = rememberSongMenuController()
     var isSleepTimerSheetVisible by remember { mutableStateOf(false) }
 
+    // The sleep timer lives in the ⋮ menu (a song-scoped sheet), but its own sheet belongs here.
+    LaunchedEffect(songMenu) {
+        songMenu.effect.collect { effect ->
+            when (effect) {
+                SongMenuEffect.OpenSleepTimer -> isSleepTimerSheetVisible = true
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // ── Header (close · drag handle · menu) ─────────
+        // ── Drag handle (own row, above the header) ─────
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = Dimens.spaceS)
+        ) {
+            DragHandle()
+        }
+
+        // ── Header (close · playing-from · menu) ────────
         PlayerHeader(
             navigateBack = onDismissRequest,
             pagerState = pagerState,
@@ -92,8 +117,7 @@ fun MusicPlayerScreen(
             uiState = uiState,
             songMenu = songMenu,
             onHistoryClick = viewModel::onHistoryPillClicked,
-            onEditQueueClicked = viewModel::onEditQueueClicked,
-            onSleepTimerClicked = { isSleepTimerSheetVisible = true }
+            onEditQueueClicked = viewModel::onEditQueueClicked
         )
 
         SleepTimerBottomSheet(
@@ -155,6 +179,43 @@ private fun DragHandle() {
     )
 }
 
+/**
+ * "PLAYING FROM PLAYLIST / Late Night Drive" — the queue's source, centered in the header.
+ * Two lines: the source kind in muted caps, then its name (marquee'd when it doesn't fit
+ * the narrow space left between the close button and the trailing actions).
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun QueueContextLabel(
+    context: QueueContext,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = when (context.type) {
+                QueueContextType.PLAYLIST -> "PLAYING FROM PLAYLIST"
+                QueueContextType.LIKED_SONGS -> "PLAYING FROM"
+                QueueContextType.RADIO -> "PLAYING FROM SONG RADIO"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = appColors.textMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = context.title,
+            style = MaterialTheme.typography.labelLarge,
+            color = appColors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.basicMarquee()
+        )
+    }
+}
+
 @Composable
 private fun PlayerHeader(
     modifier: Modifier = Modifier,
@@ -164,8 +225,7 @@ private fun PlayerHeader(
     uiState: MusicPlayerUiState,
     songMenu: SongMenuController,
     onHistoryClick: () -> Unit,
-    onEditQueueClicked: () -> Unit,
-    onSleepTimerClicked: () -> Unit
+    onEditQueueClicked: () -> Unit
 ) {
     Row(
         modifier = modifier,
@@ -180,7 +240,7 @@ private fun PlayerHeader(
             )
         }
 
-        // center content: drag handle, or the history pill on the queue page
+        // center content: the queue's source, or the history pill on the queue page
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.weight(1f)
@@ -212,47 +272,41 @@ private fun PlayerHeader(
                     }
                 }
             } else {
-                DragHandle()
+                uiState.queueContext?.let { QueueContextLabel(context = it) }
             }
         }
+        // Exactly one trailing button on either page, matching the single leading close button —
+        // that symmetry is what keeps the center content centered on the bar.
         val isSleepTimerActive = uiState.sleepTimerEndAtMs != null || uiState.sleepTimerEndOfTrack
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onSleepTimerClicked) {
+        if (pagerState.currentPage == 0) {
+            IconButton(onClick = {
+                displayQueue.current?.let {
+                    songMenu.show(
+                        it,
+                        listOf(
+                            SongMenuAction.AddToQueue,
+                            SongMenuAction.AddToPlaylist,
+                            SongMenuAction.GoToArtist,
+                            SongMenuAction.GoToAlbum,
+                            SongMenuAction.SleepTimer
+                        )
+                    )
+                }
+            }) {
                 Icon(
-                    imageVector = Icons.Filled.Timer,
-                    contentDescription = "Sleep timer",
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = "Menu",
+                    // An armed timer tints the menu that now hides it, so it stays discoverable.
                     tint = if (isSleepTimerActive) appColors.accentPrimary else appColors.iconSecondary
                 )
             }
-
-            if (pagerState.currentPage == 0) {
-                IconButton(onClick = {
-                    displayQueue.current?.let {
-                        songMenu.show(
-                            it,
-                            listOf(
-                                SongMenuAction.AddToQueue,
-                                SongMenuAction.AddToPlaylist,
-                                SongMenuAction.GoToArtist,
-                                SongMenuAction.GoToAlbum
-                            )
-                        )
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "Menu",
-                        tint = appColors.iconSecondary
-                    )
-                }
-            } else {
-                IconButton(onClick = onEditQueueClicked) {
-                    Icon(
-                        imageVector = if (!uiState.isEditingQueue) Icons.Filled.Edit else Icons.Filled.Check,
-                        contentDescription = "Edit queue",
-                        tint = appColors.iconSecondary
-                    )
-                }
+        } else {
+            IconButton(onClick = onEditQueueClicked) {
+                Icon(
+                    imageVector = if (!uiState.isEditingQueue) Icons.Filled.Edit else Icons.Filled.Check,
+                    contentDescription = "Edit queue",
+                    tint = appColors.iconSecondary
+                )
             }
         }
     }

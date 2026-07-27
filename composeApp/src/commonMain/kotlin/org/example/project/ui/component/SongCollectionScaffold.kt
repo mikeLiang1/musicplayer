@@ -34,23 +34,23 @@ import org.example.project.ui.theme.appColors
  * playlist detail and liked songs.
  *
  * Owns the back-arrow top bar, the loading / empty / list switch, and the SongItem
- * rows including the currently-playing highlight. The caller keeps its own item type
- * [T], so PlaylistScreen can pass `PlaylistSong` (retaining the playlistSongId its
- * remove-from-playlist action needs) while LikedSongsScreen passes `Song` directly.
+ * rows including the currently-playing highlight.
+ *
+ * Rows are keyed on `Song.uniqueId`, which both callers make unique per row: playlist
+ * songs carry their playlist_songs row ID, liked songs their URL. That same ID is what
+ * PlaylistScreen hands to remove-from-playlist, so no wrapper type is needed here.
  *
  * [header] renders as the first scrolling item, followed by a divider; pass null for
- * a bare list. When [items] is empty, [emptyMessage] takes the list's place — the
+ * a bare list. When [songs] is empty, [emptyMessage] takes the list's place — the
  * header still shows, so a playlist with no songs keeps its cover art.
  */
 @Composable
-fun <T> SongCollectionScaffold(
+fun SongCollectionScaffold(
     title: String,
-    items: List<T>,
-    songOf: (T) -> Song,
-    itemKey: (T) -> Any,
+    songs: List<Song>,
     onBackPressed: () -> Unit,
-    onSongClicked: (item: T, index: Int) -> Unit,
-    onSongMenuClicked: (T) -> Unit,
+    onSongClicked: (song: Song, index: Int) -> Unit,
+    onSongMenuClicked: (Song) -> Unit,
     isLoading: Boolean = false,
     emptyMessage: String = "No songs",
     currentlyPlayingSongId: String? = null,
@@ -120,7 +120,7 @@ fun <T> SongCollectionScaffold(
                     }
                 }
 
-                if (items.isEmpty()) {
+                if (songs.isEmpty()) {
                     item {
                         // fillMaxWidth + centred text rather than a centred LazyColumn: aligning
                         // the whole column would drag every full-width row's content around too.
@@ -135,12 +135,11 @@ fun <T> SongCollectionScaffold(
                         )
                     }
                 } else {
-                    itemsIndexed(items, key = { _, item -> itemKey(item) }) { index, item ->
-                        val song = songOf(item)
+                    itemsIndexed(songs, key = { _, song -> song.uniqueId }) { index, song ->
                         SongItem(
                             song = song,
-                            onClick = { onSongClicked(item, index) },
-                            onMenuClicked = { onSongMenuClicked(item) },
+                            onClick = { onSongClicked(song, index) },
+                            onMenuClicked = { onSongMenuClicked(song) },
                             state = if (currentlyPlayingSongId == song.uniqueId && isContextActive) {
                                 SongItemState.Current(isPlaying)
                             } else {

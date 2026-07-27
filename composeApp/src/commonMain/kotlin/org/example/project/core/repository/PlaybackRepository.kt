@@ -11,6 +11,8 @@ import org.example.project.core.database.mapper.toDomain
 import org.example.project.core.database.mapper.toEntity
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueState
+import org.example.project.core.model.QueueContext
+import org.example.project.core.model.QueueContextType
 
 class PlaybackRepository(
     private val dao: PlaybackDao,
@@ -61,7 +63,10 @@ class PlaybackRepository(
             currentIndex = state.currentBaseIndex,
             isShuffled = state.isShuffled,
             repeatMode = state.playbackMode.name,
-            currentManualSongId = state.currentManualSong?.uniqueId
+            currentManualSongId = state.currentManualSong?.uniqueId,
+            contextId = state.context?.id,
+            contextType = state.context?.type?.name,
+            contextTitle = state.context?.title
         )
     }
 
@@ -89,6 +94,9 @@ class PlaybackRepository(
             // recomputes the index from the snapshot, so storing the shuffled index here was wrong.
             preShuffleBaseIndex = null,
             playbackMode = PlaybackMode.valueOf(stateEntity.repeatMode ?: "OFF"),
+            // All three columns must be present to rebuild a context; a partial row (or a queue
+            // saved before v9) restores as "no source" rather than a half-labelled one.
+            context = stateEntity.toQueueContext(),
             // seenIds isn't persisted as its own column; reconstruct it from the restored songs so
             // radio dedup keeps working after restart (without it, appendRadioSongs could re-add
             // songs already in the queue/snapshot).
@@ -100,6 +108,13 @@ class PlaybackRepository(
         lastQueueSignature = queueSignature(queueState)
 
         return RestoredPlayback(queueState, stateEntity.positionMs)
+    }
+
+    private fun PlaybackStateEntity.toQueueContext(): QueueContext? {
+        val id = contextId ?: return null
+        val type = QueueContextType.fromName(contextType) ?: return null
+        val title = contextTitle ?: return null
+        return QueueContext(id = id, type = type, title = title)
     }
 
     private fun queueSignature(state: QueueState): Int = listOf(

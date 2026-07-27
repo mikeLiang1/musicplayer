@@ -49,13 +49,19 @@ interface PlaybackDao {
         SET currentIndex = :currentIndex,
             isShuffled = :isShuffled,
             repeatMode = :repeatMode,
-            currentManualSongId = :currentManualSongId
+            currentManualSongId = :currentManualSongId,
+            contextId = :contextId,
+            contextType = :contextType,
+            contextTitle = :contextTitle
         WHERE id = 0
     """)
     suspend fun updatePlaybackState(
         currentIndex: Int?,
         isShuffled: Boolean,
         repeatMode: String?,
-        currentManualSongId: String?
+        currentManualSongId: String?,
+        contextId: String?,
+        contextType: String?,
+        contextTitle: String?
     )
 }

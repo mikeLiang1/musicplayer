@@ -7,6 +7,8 @@ import org.example.project.core.database.entity.PlaybackStateEntity
 import org.example.project.core.database.entity.QueueEntity
 import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueState
+import org.example.project.core.model.QueueContext
+import org.example.project.core.model.QueueContextType
 import org.example.project.core.model.Song
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -118,6 +120,43 @@ class PlaybackRepositoryTest {
         assertEquals("manual1", restored.currentManualSong?.uniqueId)
         // current resolves to the manual song when one is playing
         assertEquals("manual1", restored.current?.uniqueId)
+    }
+
+    // ── Queue context ("playing from …" source) ──────────────────────────────────
+
+    @Test
+    fun saveAndRestore_queueContext() = runBlocking {
+        val context = QueueContext(
+            id = "playlist-1",
+            type = QueueContextType.PLAYLIST,
+            title = "Late Night Drive"
+        )
+        repository.saveQueueState(QueueState(baseQueue = listOf(song1), context = context))
+
+        val restored = repository.getRestoredPlayback()!!.queueState
+        assertEquals(context, restored.context)
+    }
+
+    @Test
+    fun restore_noContextColumns_yieldsNullContext() = runBlocking {
+        // Queues saved before the context columns existed restore without a source.
+        repository.saveQueueState(QueueState(baseQueue = listOf(song1)))
+
+        assertNull(repository.getRestoredPlayback()!!.queueState.context)
+    }
+
+    @Test
+    fun restore_unknownContextType_yieldsNullContext() = runBlocking {
+        // A type name that no longer exists must not crash the restore.
+        dao.queueRows.add(song1.toRow(type = "base", order = 0))
+        dao.state = PlaybackStateEntity(
+            id = 0,
+            contextId = "some-id",
+            contextType = "ALBUM_THAT_NO_LONGER_EXISTS",
+            contextTitle = "Whatever"
+        )
+
+        assertNull(repository.getRestoredPlayback()!!.queueState.context)
     }
 
     // ── Shuffle snapshot (#3 regression) ─────────────────────────────────────────
@@ -283,13 +322,19 @@ private class FakePlaybackDao : PlaybackDao {
         currentIndex: Int?,
         isShuffled: Boolean,
         repeatMode: String?,
-        currentManualSongId: String?
+        currentManualSongId: String?,
+        contextId: String?,
+        contextType: String?,
+        contextTitle: String?
     ) {
         state = (state ?: PlaybackStateEntity(id = 0)).copy(
             currentIndex = currentIndex,
             isShuffled = isShuffled,
             repeatMode = repeatMode,
-            currentManualSongId = currentManualSongId
+            currentManualSongId = currentManualSongId,
+            contextId = contextId,
+            contextType = contextType,
+            contextTitle = contextTitle
         )
     }
 }

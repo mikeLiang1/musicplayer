@@ -9,10 +9,18 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
+import org.example.project.core.model.QueueContext
+import org.example.project.core.model.QueueContextType
 import org.example.project.core.model.Song
 import org.example.project.features.playlist.repository.PlaylistRepository
 
 private const val LIKED_SONGS_CONTEXT_ID = "liked_songs"
+
+private val LIKED_SONGS_QUEUE_CONTEXT = QueueContext(
+    id = LIKED_SONGS_CONTEXT_ID,
+    type = QueueContextType.LIKED_SONGS,
+    title = "Liked songs"
+)
 
 class LikedSongsViewModel(
     private val playlistRepository: PlaylistRepository,
@@ -29,7 +37,7 @@ class LikedSongsViewModel(
             songs = songs,
             isLoading = false,
             currentlyPlayingSongId = queue.current?.uniqueId,
-            isContextActive = queue.contextId == LIKED_SONGS_CONTEXT_ID,
+            isContextActive = queue.context?.id == LIKED_SONGS_CONTEXT_ID,
             isPlaying = playerState.isPlaying
         )
     }
@@ -48,7 +56,7 @@ class LikedSongsViewModel(
                 if (!state.isContextActive) {
                     queueManager.setBaseQueue(
                         songs = state.songs,
-                        contextId = LIKED_SONGS_CONTEXT_ID,
+                        context = LIKED_SONGS_QUEUE_CONTEXT,
                         currentBaseIndex = action.index
                     )
                 }
@@ -64,7 +72,7 @@ class LikedSongsViewModel(
                     // setBaseQueue sets autoPlay and emits NewQueue, so this starts playback.
                     queueManager.setBaseQueue(
                         songs = state.songs,
-                        contextId = LIKED_SONGS_CONTEXT_ID,
+                        context = LIKED_SONGS_QUEUE_CONTEXT,
                         currentBaseIndex = 0
                     )
                 }
@@ -76,7 +84,7 @@ class LikedSongsViewModel(
                 // otherwise shuffle-play would always open with the most recently liked song.
                 queueManager.setBaseQueue(
                     songs = state.songs,
-                    contextId = LIKED_SONGS_CONTEXT_ID,
+                    context = LIKED_SONGS_QUEUE_CONTEXT,
                     currentBaseIndex = state.songs.indices.random()
                 )
                 queueManager.shuffle()

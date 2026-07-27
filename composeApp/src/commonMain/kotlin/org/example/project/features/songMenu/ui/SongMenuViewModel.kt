@@ -3,9 +3,12 @@ package org.example.project.features.songMenu.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,6 +28,11 @@ class SongMenuViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SongMenuState())
     val uiState = _uiState.asStateFlow()
+
+    // One-shot effects for rows the song menu can't service itself (playback-scoped actions).
+    // Buffered so an emit from the sheet's click handler is never dropped.
+    private val _effect = MutableSharedFlow<SongMenuEffect>(extraBufferCapacity = 1)
+    val effect: SharedFlow<SongMenuEffect> = _effect.asSharedFlow()
 
     val playlists = playlistRepository.getPlaylists()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -54,7 +62,7 @@ class SongMenuViewModel(
         _uiState.map { it.selectedSong?.url }.distinctUntilChanged()
     ) { allPlaylists, url ->
         if (url == null) emptySet()
-        else allPlaylists.filter { playlist -> playlist.songs.any { it.song.url == url } }
+        else allPlaylists.filter { playlist -> playlist.songs.any { it.url == url } }
             .map { it.id }
             .toSet()
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
@@ -126,6 +134,11 @@ class SongMenuViewModel(
             SongMenuAction.GoToAlbum -> {}
             SongMenuAction.GoToArtist -> {}
 
+            SongMenuAction.SleepTimer -> {
+                _effect.tryEmit(SongMenuEffect.OpenSleepTimer)
+                onCloseMenuSheet()
+            }
+
             SongMenuAction.Like, SongMenuAction.Unlike -> {
                 val song = _uiState.value.selectedSong ?: return
                 viewModelScope.launch {
@@ -144,12 +157,13 @@ class SongMenuViewModel(
     fun togglePlaylistForSelectedSong(playlistId: String) {
         val song = _uiState.value.selectedSong ?: return
         val playlist = playlists.value.firstOrNull { it.id == playlistId } ?: return
-        val existing = playlist.songs.filter { it.song.url == song.url }
+        val existing = playlist.songs.filter { it.url == song.url }
         viewModelScope.launch {
             if (existing.isEmpty()) {
                 playlistRepository.addSong(playlistId, song)
             } else {
-                existing.forEach { playlistRepository.removePlaylistSong(it.id) }
+                // uniqueId is the playlist_songs row ID for playlist songs (see Playlist.songs).
+                existing.forEach { playlistRepository.removePlaylistSong(it.uniqueId) }
             }
         }
     }
@@ -161,6 +175,11 @@ class SongMenuViewModel(
             playlistRepository.toggleLike(song)
         }
     }
+}
+
+sealed interface SongMenuEffect {
+    /** The player's ⋮ menu asked for the sleep-timer sheet; the player screen owns that sheet. */
+    data object OpenSleepTimer : SongMenuEffect
 }
 
 data class SongMenuState(

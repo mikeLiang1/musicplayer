@@ -30,6 +30,7 @@ import org.example.project.core.manager.PlaybackMode
 import org.example.project.core.manager.QueueIntent
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.manager.QueueState
+import org.example.project.core.model.QueueContext
 import org.example.project.core.repository.PlaybackRepository
 import org.example.project.features.musicPlayer.model.PlayerQueue
 import org.example.project.features.playlist.repository.PlaylistRepository
@@ -52,13 +53,18 @@ class MusicPlayerViewModel(
 
     val uiState: StateFlow<MusicPlayerUiState> =
         combine(_uiState, queueManager.queueState) { ui, qs ->
-            ui.copy(isShuffled = qs.isShuffled, playbackMode = qs.playbackMode)
+            ui.copy(
+                isShuffled = qs.isShuffled,
+                playbackMode = qs.playbackMode,
+                queueContext = qs.context
+            )
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
             _uiState.value.copy(
                 isShuffled = queueManager.queueState.value.isShuffled,
-                playbackMode = queueManager.queueState.value.playbackMode
+                playbackMode = queueManager.queueState.value.playbackMode,
+                queueContext = queueManager.queueState.value.context
             )
         )
 
@@ -318,6 +324,8 @@ data class MusicPlayerUiState(
     // Derived from QueueManager; populated by the uiState combine, not the mutators.
     val isShuffled: Boolean = false,
     val playbackMode: PlaybackMode = PlaybackMode.OFF,
+    // Where the queue came from — drives the header's "PLAYING FROM …" label. Null = unknown.
+    val queueContext: QueueContext? = null,
     // Sleep timer: either a target timestamp (duration mode) or an end-of-track flag, never both.
     val sleepTimerEndAtMs: Long? = null,
     val sleepTimerEndOfTrack: Boolean = false

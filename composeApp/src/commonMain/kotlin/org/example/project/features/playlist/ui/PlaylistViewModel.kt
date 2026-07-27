@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import org.example.project.core.manager.MusicPlayerManager
 import org.example.project.core.manager.QueueManager
 import org.example.project.core.model.Playlist
+import org.example.project.core.model.QueueContext
+import org.example.project.core.model.QueueContextType
 import org.example.project.core.model.Song
 import org.example.project.core.repository.RecentlyPlayedRepository
 import org.example.project.features.playlist.repository.PlaylistRepository
@@ -35,7 +37,7 @@ class PlaylistViewModel(
             playlist = playlist,
             isLoading = false,
             currentlyPlayingSongId = queue.current?.uniqueId,
-            isPlaylistActive = queue.contextId == playlistId,
+            isPlaylistActive = queue.context?.id == playlistId,
             isPlaying = playerState.isPlaying
         )
     }
@@ -55,8 +57,8 @@ class PlaylistViewModel(
                     if (!state.isPlaylistActive) {
                         state.playlist?.let { playlist ->
                             queueManager.setBaseQueue(
-                                songs = playlist.songs.map { it.song },
-                                contextId = playlistId,
+                                songs = playlist.songs,
+                                context = playlist.toQueueContext(),
                                 currentBaseIndex = playlistAction.index
                             )
                             recentlyPlaylistRepository.recordPlaylist(playlist)
@@ -80,8 +82,8 @@ class PlaylistViewModel(
                     viewModelScope.launch {
                         // setBaseQueue sets autoPlay and emits NewQueue, so this starts playback.
                         queueManager.setBaseQueue(
-                            songs = playlist.songs.map { it.song },
-                            contextId = playlistId,
+                            songs = playlist.songs,
+                            context = playlist.toQueueContext(),
                             currentBaseIndex = 0
                         )
                         recentlyPlaylistRepository.recordPlaylist(playlist)
@@ -103,8 +105,8 @@ class PlaylistViewModel(
                     // Start on a random song, then shuffle() randomises everything after it —
                     // otherwise shuffle-play would always open with the playlist's first track.
                     queueManager.setBaseQueue(
-                        songs = playlist.songs.map { it.song },
-                        contextId = playlistId,
+                        songs = playlist.songs,
+                        context = playlist.toQueueContext(),
                         currentBaseIndex = playlist.songs.indices.random()
                     )
                     queueManager.shuffle()
@@ -116,6 +118,13 @@ class PlaylistViewModel(
     }
 }
 
+
+/** Identity + "PLAYING FROM PLAYLIST · <name>" label for queues started from this playlist. */
+private fun Playlist.toQueueContext() = QueueContext(
+    id = id,
+    type = QueueContextType.PLAYLIST,
+    title = name
+)
 
 sealed interface PlaylistAction {
     data object OnShuffledPressed : PlaylistAction

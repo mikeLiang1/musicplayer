@@ -34,17 +34,15 @@ Visual states via the sealed interface `SongItemState`:
 `isEditMode = true` swaps the trailing `MoreVert` menu button for a `Close` remove button (`onRemoveClicked`) and shows a leading `Reorder` icon that you make draggable by passing `dragHandleModifier = Modifier.draggableHandle()` inside a `ReorderableItem` (see Lists below). The preview at the bottom of the file renders all five combinations — extend it when you add a state.
 
 ### SongCollectionScaffold.kt — the shell for "one collection of songs" screens
-Used by `PlaylistScreen` and `LikedSongsScreen`. Generic over the caller's item type so each screen keeps its own row model:
+Used by `PlaylistScreen` and `LikedSongsScreen`. Takes plain `List<Song>` — both screens' rows are just songs:
 
 ```kotlin
-fun <T> SongCollectionScaffold(
+fun SongCollectionScaffold(
     title: String,
-    items: List<T>,
-    songOf: (T) -> Song,
-    itemKey: (T) -> Any,
+    songs: List<Song>,
     onBackPressed: () -> Unit,
-    onSongClicked: (item: T, index: Int) -> Unit,
-    onSongMenuClicked: (T) -> Unit,
+    onSongClicked: (song: Song, index: Int) -> Unit,
+    onSongMenuClicked: (Song) -> Unit,
     isLoading: Boolean = false,
     emptyMessage: String = "No songs",
     currentlyPlayingSongId: String? = null,
@@ -55,9 +53,11 @@ fun <T> SongCollectionScaffold(
 )
 ```
 
-It owns the `Scaffold` + back-arrow top bar (title `titleLarge`, single-line ellipsized, `topBarActions` trailing), the loading/empty/list switch, and the `SongItem` rows — including the currently-playing highlight, computed once as `if (currentlyPlayingSongId == song.uniqueId && isContextActive) SongItemState.Current(isPlaying) else Default`. PlaylistScreen passes `PlaylistSong` (so `onSongMenuClicked` still has `playlistSongId` for `RemoveFromPlaylist`); LikedSongsScreen passes `Song` with `songOf = { it }`.
+It owns the `Scaffold` + back-arrow top bar (title `titleLarge`, single-line ellipsized, `topBarActions` trailing), the loading/empty/list switch, and the `SongItem` rows — including the currently-playing highlight, computed once as `if (currentlyPlayingSongId == song.uniqueId && isContextActive) SongItemState.Current(isPlaying) else Default`.
 
-`header` renders as the first scrolling item followed by a `HorizontalDivider`; pass `null` for a bare list. When `items` is empty the header still renders and `emptyMessage` takes the list's place, so an empty playlist keeps its cover art. PlaylistScreen also folds its "playlist not found" case in here by passing `header = null` + `emptyMessage = "Playlist not found"` when `state.playlist == null`.
+Rows are keyed on `Song.uniqueId`, which both callers make unique per row: playlist songs carry their `playlist_songs` row ID (set in `PlaylistMapper`), liked songs their URL. That is why PlaylistScreen needs no wrapper type — it passes `song.uniqueId` straight through as `playlistSongId` for `RemoveFromPlaylist`. **Anything else feeding this scaffold must guarantee unique `uniqueId`s**, or the LazyColumn keys collide.
+
+`header` renders as the first scrolling item followed by a `HorizontalDivider`; pass `null` for a bare list. When `songs` is empty the header still renders and `emptyMessage` takes the list's place, so an empty playlist keeps its cover art. PlaylistScreen also folds its "playlist not found" case in here by passing `header = null` + `emptyMessage = "Playlist not found"` when `state.playlist == null`.
 
 **Call `rememberSongMenuController()` at the top of the screen composable, not inside a branch** — gating it on a non-empty list tears the bottom sheets down whenever the list empties or loading flips.
 
@@ -124,6 +124,11 @@ Shrinks to 0.95f over 90ms on press, springs back (`Spring.DampingRatioMediumBou
 ### SearchBar.kt
 `SearchBar(modifier, query, onSuggestionPressed, onQueryChange, onVoiceSearch, isListening = false, onVoiceSearchCancel = {}, openKeyboardOnLaunch = false, onTextCleared)`. A `BasicTextField` with custom `decorationBox` (rounded `Dimens.radiusL`, `appColors.backgroundElevated` background, animated border color when focused), a state-machine trailing icon (`Stop` while listening / `Clear` when text present / `Mic` when focused+empty), and an animated "Cancel" text that slides in on focus. It syncs an internal `TextFieldValue` with the external `query` so voice transcripts move the cursor to the end. Search-specific; reuse as-is rather than forking.
 
+### MenuBottomSheet.kt — the shared ⋮ sheet
+`MenuBottomSheet(isVisible, actions: List<T : MenuAction>, onActionSelected, onDismissRequest)` renders a column of rows; `SongMenuAction` and `CollectionMenuAction` both implement `MenuAction` (label + icon + `MenuAccent`). Selecting a row **hides the sheet first, then fires `onDismissRequest` and `onActionSelected`**, so a row may open another sheet without fighting this one's exit animation.
+
+A row that the owning ViewModel can't service itself reports back via a one-shot effect rather than doing cross-feature work: `SongMenuAction.SleepTimer` (passed only by the full-screen player, deliberately excluded from `SongMenuAction.all`) makes `SongMenuViewModel` emit `SongMenuEffect.OpenSleepTimer`, which `MusicPlayerScreen` collects off `SongMenuController.effect` to show its own `SleepTimerBottomSheet`. Follow that shape for any future player-scoped menu row.
+
 ## Theming — the honest rules
 
 Theme composable: **`BudgetTheme`** in `ui/theme/Theme.kt` (name is a template leftover; it IS the app theme, applied in `App.kt`).
@@ -135,7 +140,7 @@ Theme composable: **`BudgetTheme`** in `ui/theme/Theme.kt` (name is a template l
 
 ## Lists
 
-- Plain lists: `LazyColumn` with stable `key`s — `items(state.libraryItems, key = { it.stableKey() })` (LibraryScreen), `itemsIndexed(items, key = { _, item -> itemKey(item) })` (SongCollectionScaffold), `key = { "${it.contentType}:${it.contentId}" }` (HomeScreen LazyRow).
+- Plain lists: `LazyColumn` with stable `key`s — `items(state.libraryItems, key = { it.stableKey() })` (LibraryScreen), `itemsIndexed(songs, key = { _, song -> song.uniqueId })` (SongCollectionScaffold), `key = { "${it.contentType}:${it.contentId}" }` (HomeScreen LazyRow).
 - Screens use `Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = {...})` — insets are handled by the dashboard scaffold, so feature screens zero them out. Song-list screens get this for free from `SongCollectionScaffold`.
 - **Drag-to-reorder** (`sh.calvin.reorderable` 3.0.0) is used only in `features/musicPlayer/ui/QueueScreen.kt`. The exact pattern:
 

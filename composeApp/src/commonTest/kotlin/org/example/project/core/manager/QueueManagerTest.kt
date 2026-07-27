@@ -1,6 +1,8 @@
 package org.example.project.core.manager
 
 import kotlinx.coroutines.runBlocking
+import org.example.project.core.model.QueueContext
+import org.example.project.core.model.QueueContextType
 import org.example.project.core.model.Song
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -58,6 +60,11 @@ class QueueManagerTest {
         duration = 150000L
     )
     private val allSongs = listOf(song1, song2, song3, song4, song5)
+    private val testContext = QueueContext(
+        id = "test-context",
+        type = QueueContextType.PLAYLIST,
+        title = "Test Playlist"
+    )
 
     /**
      * Drains all pending intents from the channel into [collectedIntents].
@@ -88,7 +95,7 @@ class QueueManagerTest {
         assertNull(state.currentManualSong)
         assertFalse(state.isShuffled)
         assertEquals(PlaybackMode.OFF, state.playbackMode)
-        assertNull(state.contextId)
+        assertNull(state.context)
     }
 
     @Test
@@ -213,7 +220,7 @@ class QueueManagerTest {
         manager.addToManualQueue(song5)
         assertEquals(1, manager.queueState.value.manualQueue.size)
 
-        manager.setBaseQueue(allSongs, contextId = "test-context", currentBaseIndex = 2)
+        manager.setBaseQueue(allSongs, context = testContext, currentBaseIndex = 2)
         drain()
 
         val state = manager.queueState.value
@@ -221,7 +228,7 @@ class QueueManagerTest {
         assertEquals(2, state.currentBaseIndex)
         assertTrue(state.manualQueue.isEmpty())
         assertNull(state.currentManualSong)
-        assertEquals("test-context", state.contextId)
+        assertEquals(testContext, state.context)
         assertTrue(state.autoPlay)
         assertFalse(state.isShuffled)
 
@@ -233,6 +240,14 @@ class QueueManagerTest {
     fun `setBaseQueue with default index starts at 0`() {
         manager.setBaseQueue(allSongs)
         assertEquals(0, manager.queueState.value.currentBaseIndex)
+    }
+
+    @Test
+    fun `setBaseQueue without a context clears the previous one`() {
+        manager.setBaseQueue(allSongs, context = testContext)
+        // A sourceless queue (e.g. radio with no seed) must not inherit the old label.
+        manager.setBaseQueue(listOf(song1, song2))
+        assertNull(manager.queueState.value.context)
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -962,7 +977,7 @@ class QueueManagerTest {
             currentBaseIndex = 2,
             currentManualSong = song4,
             playbackMode = PlaybackMode.REPEAT,
-            contextId = "restored-context"
+            context = testContext
         )
 
         manager.restoreState(savedState, positionMs = 50000L)

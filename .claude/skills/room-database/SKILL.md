@@ -22,7 +22,7 @@ Room 2.8.4 in KMP mode. All database code lives in `commonMain`; only the platfo
 | Schema JSONs | `composeApp/schemas/org.example.project.core.database.MusicDatabase/1.json` … `8.json` |
 | Gradle (KSP, room plugin) | `composeApp/build.gradle.kts` |
 
-## Current schema (version 8)
+## Current schema (version 9)
 
 Entities registered in `MusicDatabase.kt`:
 
@@ -33,11 +33,12 @@ Entities registered in `MusicDatabase.kt`:
         PlaylistSongEntity::class, SongEntity::class, RecentlyPlayedEntity::class,
         LikedSongEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
     autoMigrations = [
         // Append one entry per version bump.
         AutoMigration(from = 7, to = 8), // playlists.lastPlayedAt
+        AutoMigration(from = 8, to = 9), // PlaybackStateEntity.context{Id,Type,Title}
     ]
 )
 ```
@@ -45,7 +46,7 @@ Entities registered in `MusicDatabase.kt`:
 | Entity (file) | Table name | Primary key | Notable columns / relationships |
 |---|---|---|---|
 | `QueueEntity` (QueueEntity.kt) | `QueueEntity` (default) | `autoId: Int` autoGenerate | `type: String` discriminates rows: `"base"`, `"manual"`, `"current_manual"`, `"shuffle_snapshot"`. `orderIndex` preserves order. `isManual` is dead ("unused; distinction is carried by `type`"). One table stores all four queues. |
-| `PlaybackStateEntity` (PlaybackEntity.kt) | `PlaybackStateEntity` (default) | `id: Int = 0` | Singleton row (always id 0): `currentSongId`, `positionMs`, `currentIndex`, `isShuffled`, `repeatMode`, `currentManualSongId` |
+| `PlaybackStateEntity` (PlaybackEntity.kt) | `PlaybackStateEntity` (default) | `id: Int = 0` | Singleton row (always id 0): `currentSongId`, `positionMs`, `currentIndex`, `isShuffled`, `repeatMode`, `currentManualSongId`, plus the saved queue's source `contextId`/`contextType`/`contextTitle` (all nullable, v9 — rebuilt into a `QueueContext` only when all three survive) |
 | `PlaylistEntity` (PlaylistEntity.kt) | `playlists` | `id: String` (UUID) | `name`, `createdAt`, `updatedAt`, `thumbnailUrl`, `lastPlayedAt` (SQL default 0). Sorted by `MAX(lastPlayedAt, createdAt) DESC` — recency of *use*, with a createdAt fallback so never-played playlists sort by creation instead of sinking to the bottom. `updatedAt` records content edits only (add/remove/reorder/rename) and is **not** a sort key: sorting on it made rows jump under the user's finger in the add-to-playlist sheet. |
 | `PlaylistSongEntity` (PlaylistEntity.kt) | `playlist_songs` | `id: String` (UUID default) | Junction table. FK `playlistId` → `playlists.id` with `onDelete = CASCADE`; FK `songUrl` → `songs.url` (no cascade). Indices on both FK columns. `position: Int` for ordering. |
 | `SongEntity` (PlaylistEntity.kt) | `songs` | `url: String` | Canonical song library shared by all playlists: `title`, `artist`, `thumbnailUrl`, `duration`, `firstAddedAt` |
@@ -115,10 +116,10 @@ Other spec annotations: `@RenameColumn(tableName, fromColumnName, toColumnName)`
    - Queries returning `PlaylistWithSongs` need `@Transaction` on the `@Query` too.
    - Upsert styles in use: `@Upsert` (PlaybackDao), `@Insert(onConflict = OnConflictStrategy.REPLACE)` (RecentlyPlayedDao), `@Insert(onConflict = OnConflictStrategy.IGNORE)` (`insertSongIfMissing`).
    - A brand-new DAO also needs an `abstract fun myDao(): MyDao` in `MusicDatabase`.
-4. **Mapper** — add `toDomain()` / `toEntity()` extensions in `core/database/mapper/`. Domain models live in `core/model/`. Note the pattern in `PlaylistMapper.kt`: `SongEntity.toSong(idOverride)` injects the persistent `playlist_songs.id` as the domain `Song.uniqueId`.
+4. **Mapper** — add `toDomain()` / `toEntity()` extensions in `core/database/mapper/`. Domain models live in `core/model/`. Note the pattern in `PlaylistMapper.kt`: `SongEntity.toSong(idOverride)` injects the persistent `playlist_songs.id` as the domain `Song.uniqueId`. That is why `Playlist.songs` is a plain `List<Song>` and not a wrapper type — the row ID rides along on the song, so removal and LazyColumn keys both work off `uniqueId`. Keep it that way: if you add a per-row column the UI needs, prefer another `Song` field over reintroducing a wrapper.
 5. **Repository** — consume the DAO from a repository, not from ViewModels directly. Existing patterns: `RecentlyPlayedRepository` takes `MusicDatabase` and calls `database.playlistDao()` itself; `PlaybackRepository` and `PlaylistRepository` both take their DAO directly (injected in `AppModule.kt` as `PlaybackRepository(get<MusicDatabase>().playbackDao())` / `PlaylistRepository(get<MusicDatabase>().playlistDao())`). **Prefer taking the DAO directly** — it's what makes the repository unit-testable with a hand-written fake DAO (see `PlaylistRepositoryTest.kt` / `PlaybackRepositoryTest.kt`) without needing a fake `MusicDatabase`/`RoomDatabase`.
 6. **Koin** — if you created a new repository, register it in `repositoryModule` in `core/di/AppModule.kt` (`single { MyRepository(get()) }`). The database itself is already provided: `databaseModule` has `single<MusicDatabase> { getRoomDatabase(get()) }`, and the `RoomDatabase.Builder` comes from `androidModule` in `AndroidModule.kt`. New Koin modules must also be added to `startKoin { modules(...) }` in `androidMain/MainApplication.kt` — but adding to an existing module needs nothing extra.
-7. **Bump version** — `version = 8` → `9` in the `@Database` annotation. Skipping this on an already-installed app crashes with an integrity error (see failures table).
+7. **Bump version** — `version = 9` → `10` in the `@Database` annotation. Skipping this on an already-installed app crashes with an integrity error (see failures table).
 8. **Add the migration** — append `AutoMigration(from = 8, to = 9)` to `autoMigrations` in the same annotation. Skipping this crashes on first open with `A migration from 8 to 9 was required but not found`. See the migration policy section for `@ColumnInfo(defaultValue = ...)` and `AutoMigrationSpec` cases.
 9. **Rebuild** — `./gradlew :composeApp:assembleDebug`. KSP regenerates the DAO/database impls, generates `MusicDatabase_AutoMigration_8_9_Impl`, and writes `composeApp/schemas/org.example.project.core.database.MusicDatabase/9.json`. **Commit that JSON** — future migrations diff against it.
 10. **Verify** — install *over* the previous build (don't uninstall) and confirm existing playlists, liked songs and the saved queue survived. Uninstalling first hides exactly the bug you're checking for.
@@ -132,7 +133,7 @@ Other spec annotations: `@RenameColumn(tableName, fromColumnName, toColumnName)`
   ```
   Missing `kspAndroid` → "cannot find implementation for MusicDatabase" at runtime. Missing `kspCommonMainMetadata` → unresolved generated symbols when compiling common metadata.
 - `room { schemaDirectory("$projectDir/schemas") }` sits OUTSIDE the `android {}` block (comment in the file says MUST).
-- `composeApp/schemas/` currently contains versions 1–5, 7 and 8 under `org.example.project.core.database.MusicDatabase/` (**6 was never exported** — that gap is why 6 sits in the destructive-fallback list and can never be auto-migrated from), plus a stale leftover directory `org.example.project.core.dao.MusicDatabase/1.json` from before the class moved packages — ignore it, don't "fix" it.
+- `composeApp/schemas/` currently contains versions 1–5 and 7–9 under `org.example.project.core.database.MusicDatabase/` (**6 was never exported** — that gap is why 6 sits in the destructive-fallback list and can never be auto-migrated from), plus a stale leftover directory `org.example.project.core.dao.MusicDatabase/1.json` from before the class moved packages — ignore it, don't "fix" it.
 - Deleting or failing to commit a schema JSON permanently breaks auto-migration from that version. Treat `composeApp/schemas/` as append-only.
 - Room runtime deps in commonMain are `libs.androidx.room.runtime` + `libs.sqlite.bundled` (the `BundledSQLiteDriver`). Don't add the Android-only `room-ktx`.
 

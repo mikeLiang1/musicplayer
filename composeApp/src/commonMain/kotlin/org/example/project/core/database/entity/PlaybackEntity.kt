@@ -11,5 +11,10 @@ data class PlaybackStateEntity(
     val currentIndex: Int? = null,
     val isShuffled: Boolean = false,
     val repeatMode: String? = null,
-    val currentManualSongId: String? = null
+    val currentManualSongId: String? = null,
+    // Where the saved queue came from (QueueContext). Nullable throughout: rows written before
+    // v9, and queues with no source, simply have no context to restore.
+    val contextId: String? = null,
+    val contextType: String? = null,
+    val contextTitle: String? = null
 )

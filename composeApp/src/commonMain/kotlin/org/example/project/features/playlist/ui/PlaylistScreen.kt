@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.project.core.model.Playlist
-import org.example.project.core.model.PlaylistSong
 import org.example.project.core.model.Song
 import org.example.project.features.songMenu.ui.SongMenuAction
 import org.example.project.features.songMenu.ui.rememberSongMenuController
@@ -47,15 +46,15 @@ fun PlaylistScreen(
 
     SongCollectionScaffold(
         title = playlist?.name ?: "",
-        items = playlist?.songs ?: emptyList(),
-        songOf = { it.song },
-        itemKey = { it.id },
+        songs = playlist?.songs ?: emptyList(),
         onBackPressed = onBackPressed,
-        onSongClicked = { playlistSong, index ->
-            onAction(PlaylistAction.OnPlaylistSongPressed(playlistSong.song, index))
+        onSongClicked = { song, index ->
+            onAction(PlaylistAction.OnPlaylistSongPressed(song, index))
         },
-        onSongMenuClicked = { playlistSong ->
-            songMenu.show(playlistSong.song, playlistSongMenuActions, playlistSongId = playlistSong.id)
+        onSongMenuClicked = { song ->
+            // uniqueId is the playlist_songs row ID (see Playlist.songs) — exactly what
+            // remove-from-playlist deletes.
+            songMenu.show(song, playlistSongMenuActions, playlistSongId = song.uniqueId)
         },
         isLoading = state.isLoading,
         emptyMessage = if (playlist == null) "Playlist not found" else "No songs in playlist",
@@ -98,14 +97,12 @@ private fun PlaylistPreview() {
             state = PlaylistUiState(
                 playlist = Playlist(
                     name = "Title", id = "", thumbnailUrl = "", songs = listOf(
-                        PlaylistSong(
-                            song = Song(
-                                url = "item.url",
-                                title = "Currently Playing Song",
-                                artist = "Artist",
-                                thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
-                                duration = 3000L
-                            ), position = 0, id = ""
+                        Song(
+                            url = "item.url",
+                            title = "Currently Playing Song",
+                            artist = "Artist",
+                            thumbnailUrl = "item.thumbnails.firstOrNull()?.url",
+                            duration = 3000L
                         )
                     )
                 )

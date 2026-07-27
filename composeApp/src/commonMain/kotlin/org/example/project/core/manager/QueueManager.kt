@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import org.example.project.core.model.QueueContext
 import org.example.project.core.model.Song
 import java.util.UUID
 
@@ -31,7 +32,7 @@ data class QueueState(
     val preShuffleBaseIndex: Int? = null,                 // index before shuffle
     val playbackMode: PlaybackMode = PlaybackMode.OFF,
     val autoPlay: Boolean = false,
-    val contextId: String? = null,
+    val context: QueueContext? = null,
     val seenIds: Set<String> = emptySet()
 ) {
     // Computed properties for UI consumption (formerly in ResolvedQueue)
@@ -81,8 +82,11 @@ class QueueManager() {
 
     /**
      * Sets the base queue and starts playback from the specified index.
+     *
+     * [context] records where the queue came from — used both for "is this collection playing?"
+     * checks and for the player's "PLAYING FROM …" label.
      */
-    fun setBaseQueue(songs: List<Song>, contextId: String? = null, currentBaseIndex: Int = 0) {
+    fun setBaseQueue(songs: List<Song>, context: QueueContext? = null, currentBaseIndex: Int = 0) {
         _queueState.update { state ->
             state.copy(
                 baseQueue = songs,
@@ -93,7 +97,7 @@ class QueueManager() {
                 preShuffleBaseIndex = null,
                 autoPlay = true,
                 currentManualSong = null,
-                contextId = contextId,
+                context = context,
                 seenIds = songs.map { it.uniqueId }.toSet()
             )
         }
